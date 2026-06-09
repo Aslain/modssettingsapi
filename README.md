@@ -102,7 +102,7 @@ Everything else (checkboxes, sliders, dropdowns, radio button groups, step slide
 ## Dependencies
 
 - [ModsList API](https://gitlab.com/wot-public-mods/mods-list) by poliroid, opens the settings window.
-- `net.openwg.gameface`, renders the menu UI.
+- [`net.openwg.gameface`](https://gitlab.com/openwg/wot.gameface), renders the menu UI.
 
 ## Build
 
