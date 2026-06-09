@@ -162,7 +162,7 @@ package poliroid.gui.lobby.modsSettings.components
 				if ('varName' in componentConfig)
 					_componentsByVar[componentConfig.varName] = entry;
 
-				component.x = componentConfig.hasOwnProperty('masterVarName') ? x + Constants.MOD_CHILD_INDENT : x;
+				component.x = (componentConfig.hasOwnProperty('masterVarName') && componentConfig.masterIndent != false) ? x + Constants.MOD_CHILD_INDENT : x;
 				component.y = lastPos + Constants.COMPONENT_MARGIN_BOTTOM;
 				lastPos = component.y + component.height;
 				parentObj.addChild(component);
@@ -201,7 +201,7 @@ package poliroid.gui.lobby.modsSettings.components
 				var enabled:Boolean = modEnabled;
 
 				if (enabled && entry.data.hasOwnProperty('masterVarName'))
-					enabled = isMasterOn(String(entry.data.masterVarName));
+					enabled = entry.data.hasOwnProperty('masterValue') ? masterValueMatches(String(entry.data.masterVarName), entry.data.masterValue) : isMasterOn(String(entry.data.masterVarName));
 
 				component.alpha = enabled ? 1 : 0.5;
 				component.mouseEnabled = enabled;
@@ -223,6 +223,28 @@ package poliroid.gui.lobby.modsSettings.components
 				return true;
 
 			return Boolean(returnValue.value);
+		}
+
+		private function getMasterValue(varName:String):Object
+		{
+			var entry:Object = _componentsByVar[varName];
+
+			if (entry == null)
+				return null;
+
+			var returnValue:Object = entry.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY];
+
+			return returnValue == null ? null : returnValue.value;
+		}
+
+		private function masterValueMatches(varName:String, allowed:Object):Boolean
+		{
+			var value:Object = getMasterValue(varName);
+
+			if (allowed is Array)
+				return (allowed as Array).indexOf(value) != -1;
+
+			return value == allowed;
 		}
 
 		private function createCollapseArrow():void
@@ -399,7 +421,48 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
-		public function updateImage(varName:String, source:String, w:int, h:int):Boolean
+		// Re-stack both columns by their current heights and recompute the mod height, then ask the
+		// window to reflow the list. Used after an Image collapses/expands (removeImage) so the
+		// controls below it - and the mods below this one - move up to fit.
+		private function reflow():void
+		{
+			var c1len:int = (data && data.column1) ? data.column1.length : 0;
+			var pos1:Number = Constants.MOD_PADDING_TOP;
+			var pos2:Number = Constants.MOD_PADDING_TOP;
+
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var comp:DisplayObject = DisplayObject(components[i].componentObject);
+
+				if (i < c1len)
+				{
+					comp.y = pos1 + Constants.COMPONENT_MARGIN_BOTTOM;
+					pos1 = comp.y + comp.height;
+				}
+				else
+				{
+					comp.y = pos2 + Constants.COMPONENT_MARGIN_BOTTOM;
+					pos2 = comp.y + comp.height;
+				}
+			}
+
+			_fullHeight = Math.max(pos1, pos2) + Constants.MOD_PADDING_BOTTOM;
+
+			var h:Number = _collapsed ? _collapsedHeight : _fullHeight;
+
+			if (_fieldSet != null)
+			{
+				_fieldSet.height = h;
+				if (_fieldSet.bg != null)
+					_fieldSet.bg.height = h;
+			}
+
+			height = h;
+
+			dispatchEvent(new InteractiveEvent(InteractiveEvent.HEIGHT_CHANGED, modLinkage));
+		}
+
+		public function updateImage(varName:String, source:String, w:int, h:int, removeImage:Boolean = false):Boolean
 		{
 			for (var i:Number = 0; i < components.length; i++)
 			{
@@ -407,30 +470,26 @@ package poliroid.gui.lobby.modsSettings.components
 
 				if (component.data.hasOwnProperty('varName') && component.data.varName == varName && component.data.type == 'Image')
 				{
-					var tf:Object = component.componentObject['tf'];
+					var holder:MovieClip = component.componentObject as MovieClip;
 
-					if (tf != null)
+					if (holder != null)
 					{
-						var boxW:int = int(component.componentObject['boxW']);
-						var boxH:int = int(component.componentObject['boxH']);
-						var halign:String = String(component.componentObject['halign']);
-						var valign:String = String(component.componentObject['valign']);
+						var wasCollapsed:Boolean = holder['collapsed'] == true;
 
-						var auto:Boolean = w <= 0 || h <= 0;
-
-						tf.multiline = true;
-						tf.wordWrap = true;
-						tf.width = auto ? boxW : (w + ComponentsFactory.IMAGE_PAD);
-						tf.height = auto ? boxH : (h + ComponentsFactory.IMAGE_PAD);
-						if (source == null || source == '')
+						if (removeImage)
 						{
-							tf.htmlText = '';
+							ComponentsFactory.collapseImage(holder);
+							if (!wasCollapsed)
+								reflow();
 						}
 						else
 						{
-							tf.htmlText = ComponentsFactory.imageHtml(source, w, h);
+							holder['imgW'] = w;
+							holder['imgH'] = h;
+							ComponentsFactory.loadImageInto(holder, source);
+							if (wasCollapsed)
+								reflow();
 						}
-						ComponentsFactory.positionImageField(DisplayObject(tf), boxW, boxH, halign, valign);
 						return true;
 					}
 				}

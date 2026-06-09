@@ -55,6 +55,13 @@ template = {
 	]
 }
 
+# enableWhen (aslainMenu-only): grey a control unless a master control holds a value
+if hasattr(templates, 'enableWhen'):
+	template['column2'].append(templates.createRadioButtonGroup('Spot mode', 'spotMode', ['Minimap', 'Chat'], 0))
+	template['column2'].append(templates.enableWhen(templates.createSlider('Minimap blink count', 'blinkCount', 3, 1, 10, 1), 'spotMode', 0))
+	template['column2'].append(templates.enableWhen(templates.createDropdown('Chat phrase', 'chatPhrase', ['Help!', 'SOS', 'Spotted'], 0), 'spotMode', 1))
+
+
 settings = {
 	'sixthSenseSound' : 0,
 	'stateKeyset' : [Keys.KEY_J],

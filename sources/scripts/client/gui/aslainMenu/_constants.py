@@ -47,6 +47,15 @@ class COMPONENT_TYPE:
 	IMAGE = 'Image'
 
 
+class LIVE_SETTINGS_MODE:
+	# Delivery mode for registerLiveSettingsChange callbacks.
+	# FULL_SETTINGS (default): callback receives the full settings dict (legacy behavior).
+	# CHANGED_ONLY: callback receives only the keys whose value changed since the previous live event.
+	FULL_SETTINGS = 'fullsettings'
+	CHANGED_ONLY = 'changedOnly'
+	ALL = (FULL_SETTINGS, CHANGED_ONLY)
+
+
 class HOTKEY_ACTIONS:
 	START_ACCEPT = 'startAccept'
 	STOP_ACCEPT = 'stopAccept'

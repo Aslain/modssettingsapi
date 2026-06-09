@@ -67,7 +67,7 @@ clips them and never shifts the layout.
 
 ---
 
-## 2. `g_modsSettingsApi.updateImage(linkage, varName, source, width=96, height=96)`
+## 2. `g_modsSettingsApi.updateImage(linkage, varName, source, width=96, height=96, removeImage=False)`
 
 Replaces an already-displayed Image **in place** — no full menu re-render, so scroll
 position and focus are preserved. The target is matched by `linkage` + `varName`.
@@ -76,11 +76,16 @@ position and focus are preserved. The target is matched by `linkage` + `varName`
 g_modsSettingsApi.updateImage('MyMod', 'iconPreview', newSrc, w, h)
 ```
 
+Pass **`removeImage=True`** to **collapse** the image container to zero height (the
+`source`/`width`/`height` are ignored): the controls below it — and the mods below this
+one — jump up to fill the gap. Default `False` keeps the reserved slot. Set a `source` again later to bring it back
+(the slot re-expands).
+
 Returns nothing; safe to call whenever the window is open.
 
 ---
 
-## 3. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback)`
+## 3. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback, mode='fullsettings')`
 
 Registers a callback fired on **every** in-menu value change (dropdown / slider /
 checkbox / …) **immediately, before the user presses Apply**. Use it to drive live
@@ -89,6 +94,13 @@ previews.
 - `callback(linkage, settings)` — `settings` is a dict of the **current
   (uncommitted)** values of that mod's components (same shape as the
   `onModSettingsChanged` settings, minus value-less components such as Image).
+- **`mode='changedOnly'`** — `settings` then holds **only the keys whose value changed**
+  since the previous live event, so you don't have to cache and diff yourself. The
+  default `mode='fullsettings'` keeps the full dict (legacy behaviour); the callback
+  signature is always `(linkage, dict)`, only the content differs. Setting a value back
+  to its previous value yields an **empty dict `{}`** (treat as a no-op). The first
+  change after the window opens is diffed against your committed settings, later changes
+  against the previous live value.
 - Filter by `linkage == YOUR_LINKAGE`.
 - These changes are **not persisted** — pressing **Cancel** discards them. The normal
   `onModSettingsChanged` callback still fires on **Apply/OK** to commit.
@@ -192,14 +204,15 @@ dropdown change (AS3)
   -> ModsSettingsWindow.handleModSettingsChanged
        -> notifyLiveChange(linkage): componentChanged(JSON of mod.getConfigData())
   -> view.componentChanged  ->  api.notifyLiveSettingsChange(linkage, settings)
-  -> api.onLiveSettingsChange event  ->  mod callback  ->  g_modsSettingsApi.updateImage(...)
+  -> per-linkage callbacks (registerLiveSettingsChange)  ->  mod callback  ->  g_modsSettingsApi.updateImage(...)
   -> view.__onImageUpdate -> as_updateImage -> ModsSettingsComponent.updateImage
-       -> TextField.htmlText = "<img src='img://...'>"
+       -> ComponentsFactory.loadImageInto(holder, source)
 ```
 
-The Image component renders through a plain `flash.text.TextField` (multiline) with an
-`<img>` tag — the same path Scaleform uses for tooltip images — rather than a
-`UILoaderAlt`, which cannot read from `mods/config`. Components with a `varName` but no
+The Image component loads through a plain `flash.display.Loader` (which reads both
+`res/` and `mods/config`) and renders the decoded `Bitmap`, scaled to fit its container
+while keeping aspect ratio and clipped (`scrollRect`) so it can never overflow the box;
+decoded images are cached by source. Components with a `varName` but no
 return value (Image) are guarded in `getConfigData` (AS3) and `generateSettingsData`
 (Python) so they don't break settings collection.
 

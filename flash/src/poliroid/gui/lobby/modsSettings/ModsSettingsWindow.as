@@ -63,6 +63,7 @@ package poliroid.gui.lobby.modsSettings
 			content.addEventListener(InteractiveEvent.BUTTON_CLICK, handleModSettingsButtonClick);
 			content.addEventListener(InteractiveEvent.HOTKEY_ACTION, handleModSettingsHotkeyAction);
 			content.addEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
+			content.addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
 
 			footer.addEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.addEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -88,6 +89,7 @@ package poliroid.gui.lobby.modsSettings
 			content.removeEventListener(InteractiveEvent.BUTTON_CLICK, handleModSettingsButtonClick);
 			content.removeEventListener(InteractiveEvent.HOTKEY_ACTION, handleModSettingsHotkeyAction);
 			content.removeEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
+			content.removeEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
 
 			footer.removeEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.removeEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -173,12 +175,12 @@ package poliroid.gui.lobby.modsSettings
 			}
 		}
 
-		public function as_updateImage(linkage:String, varName:String, source:String, width:int, height:int):void
+		public function as_updateImage(linkage:String, varName:String, source:String, width:int, height:int, removeImage:Boolean = false):void
 		{
 			for each (var mod:ModsSettingsComponent in modsArray)
 			{
 				if (mod.modLinkage == linkage)
-					mod.updateImage(varName, source, width, height);
+					mod.updateImage(varName, source, width, height, removeImage);
 			}
 		}
 
@@ -266,6 +268,11 @@ package poliroid.gui.lobby.modsSettings
 				setModCollapsed(event.linkage, event.value);
 
 			refreshCollapseAllIcon();
+		}
+
+		private function handleModHeightChanged(event:InteractiveEvent):void
+		{
+			content.reflowMods();
 		}
 
 		private function handleCollapseAll(event:InteractiveEvent):void

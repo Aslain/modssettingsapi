@@ -10,8 +10,9 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
 - Mods list **sorted by display name** (case-insensitive), ignoring a leading badge or symbol before the name.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on.
-- **`Image` component** to render an image in the menu body, with `updateImage(...)` to refresh it in place (live previews).
-- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage) and a global `onLiveSettingsChange` event for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window.
+- **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value)`: grey a control unless another control holds a given value (e.g. mutually-exclusive radio branches), updating live as the master changes — extends the master/child idea beyond a boolean On/Off.
+- **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, or collapse its slot with `updateImage(..., removeImage=True)`. Image sources are plain root-relative paths resolved from the WoT root.
+- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage, optionally `mode='changedOnly'` to receive only the keys that changed) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window.
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
 
@@ -59,6 +60,27 @@ templates.createControlsGroup(
 )
 ```
 
+### Value-conditional grey-out
+
+`createControlsGroup` greys its children while a *boolean* master is Off. To grey a control unless a master holds a **specific value** - e.g. mutually-exclusive radio branches - use `enableWhen`, which updates live as the master changes:
+
+```python
+column = [
+    templates.createRadioButtonGroup('Indicator', 'indicator', ['Static', 'Animated'], 0),
+    # editable only while 'indicator' is on Static (value 0)
+    templates.enableWhen(templates.createSlider('Hold time', 'holdTime', 5, 1, 15, 1),
+                         'indicator', 0),
+    # editable only while 'indicator' is on Animated (value 1)
+    templates.enableWhen(templates.createDropdown('Animation', 'anim', ANIMS, 0),
+                         'indicator', 1),
+]
+```
+
+`value` may be a list to enable a control for several master values, and `indent=True`
+indents it like a sub-option. `enableWhen` is aslainMenu-only - guard it with
+`hasattr(templates, 'enableWhen')`; a control without the binding simply stays
+always-enabled, so older API builds degrade gracefully.
+
 ### Staying compatible with plain izeberg
 
 The import above lets your mod *run* on either menu, but the features below exist **only** on `gui.aslainMenu`. Calling them on plain izeberg raises an error (and can blank the whole settings window), so feature-detect each one with `hasattr(...)` and skip it when missing. A skipped control is simply left out of the template - no error, and no empty slot: the layout just closes up.
@@ -94,8 +116,8 @@ if hasattr(g_modsSettingsApi, 'updateImage'):
 
 **aslainMenu-only - guard before use:**
 
-- `templates`: `createImage`, `createControlsGroup`
-- `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, and the `onLiveSettingsChange` event
+- `templates`: `createImage`, `createControlsGroup`, `enableWhen`
+- `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`
 
 Everything else (checkboxes, sliders, dropdowns, radio button groups, step sliders, hotkeys, color choice, range slider, labels, `setModTemplate`, `getModSettings`, ...) exists on both menus, so it needs no guard.
 

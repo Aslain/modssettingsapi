@@ -82,15 +82,18 @@ class _ModsSettingsApi(IModsSettingsApi):
 		"""
 		return self.__instance.updateModSettings(linkage, newSettings)
 
-	def updateImage(self, linkage, varName, source, width=96, height=96):
+	def updateImage(self, linkage, varName, source, width=96, height=96, removeImage=False):
 		""" Live-update of an Image component while the settings window is open.
 		:param linkage: Mod linkage
 		:param varName: varName of the Image component to update
 		:param source: New image path (readable by the menu image loader)
 		:param width: Image width in pixels
 		:param height: Image height in pixels
+		:param removeImage: When True, collapse the image container to zero height so the
+			controls below it jump up (source/width/height are ignored). Default False keeps
+			the current behaviour (reserved slot), so existing mods need no change.
 		"""
-		return self.__instance.updateImage(linkage, varName, source, width, height)
+		return self.__instance.updateImage(linkage, varName, source, width, height, removeImage)
 
 	def checkKeyset(self, keyset):
 		""" Проверка нажатия клавиш

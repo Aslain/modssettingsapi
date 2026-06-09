@@ -10,7 +10,8 @@
 		public static const COMPONENT_HEADER_MARGIN:Number = 20;
 		public static const COMPONENT_MARGIN_BOTTOM:Number = 10;
 
-		public static const RADIO_BUTTONS_MARGIN:Number = 20;
+		public static const RADIO_BUTTONS_MARGIN:Number = 22;
+		public static const RADIO_HEADER_MARGIN:Number = 24;
 
 		public static const MOD_PADDING_TOP:Number = 20;
 		public static const MOD_PADDING_BOTTOM:Number = 20;

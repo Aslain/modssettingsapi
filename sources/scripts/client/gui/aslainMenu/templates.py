@@ -467,3 +467,36 @@ def createControlsGroup(master, children):
 		child['masterVarName'] = masterVarName
 		group.append(child)
 	return group
+
+
+def enableWhen(control, masterVarName, value, indent=False):
+	""" Enable a control only while a master control holds a given value
+
+	Where createControlsGroup greys its children while a *boolean* master is Off,
+	this binds a control to a *specific value* of any master - e.g. grey a slider
+	unless a RadioButtonGroup / Dropdown sits on a given option. The control is
+	enabled (editable, full opacity) when the master's current value equals
+	`value` (or is one of them when `value` is a list), and greyed-out / disabled
+	otherwise. Ideal for mutually-exclusive controls (each branch gated on its own
+	value). The grey-out updates live as the master changes.
+
+	The control is treated as a sibling, not a sub-option, so by default it is NOT
+	indented (pass indent=True to indent it like createControlsGroup does).
+
+	Backward compatible: the binding is just plain keys ('masterVarName',
+	'masterValue', 'masterIndent') so they can also be set by hand, and a control
+	without the binding is unaffected. On older API builds that predate this
+	feature the keys are ignored and the control stays always-enabled, so
+	feature-detect with hasattr(templates, 'enableWhen') and skip it when missing.
+
+	:param control: The control component to gate (e.g. createSlider(...))
+	:param masterVarName: varName of the master control whose value gates this one
+	:param value: Master value (or list of values) that keeps this control enabled
+	:param indent: Indent the control under the master like a sub-option (default False)
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	control['masterVarName'] = masterVarName
+	control['masterValue'] = value
+	control['masterIndent'] = indent
+	return control

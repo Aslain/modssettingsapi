@@ -6,6 +6,13 @@
 	import flash.display.DisplayObject;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
+	import flash.display.Loader;
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
+	import flash.net.URLRequest;
+	import flash.events.IOErrorEvent;
+	import flash.geom.Rectangle;
+	import flash.utils.Dictionary;
 	import scaleform.clik.controls.ButtonGroup;
 	import scaleform.clik.core.UIComponent;
 	import scaleform.clik.events.SliderEvent;
@@ -36,6 +43,7 @@
 	public class ComponentsFactory
 	{
 		private static const SCROLL_ITEM_LIMIT:int = 9;
+		private static var _imageCache:Dictionary = new Dictionary();
 
 		public function ComponentsFactory()
 		{
@@ -88,73 +96,125 @@
 			return result;
 		}
 
-		// Padding around the image so the TextField's 2px gutter and line leading
-		// do not clip the <img> (sizing it exactly to the image clips it).
+		// Default breathing room added around the image when no explicit container
+		// size is given (boxW/boxH default to the image size plus this margin).
 		public static const IMAGE_PAD:int = 8;
-
-		public static function imageHtml(src:String, w:int, h:int):String
-		{
-			if (w <= 0 || h <= 0)
-				return "<img src='img://" + src + "'>";
-
-			return "<img src='img://" + src + "' width='" + w + "' height='" + h + "'>";
-		}
-
-		public static function positionImageField(tf:DisplayObject, boxW:int, boxH:int, halign:String, valign:String):void
-		{
-			if (halign == "center")
-				tf.x = (boxW - tf.width) / 2;
-			else if (halign == "right")
-				tf.x = boxW - tf.width;
-			else
-				tf.x = 0;
-
-			if (valign == "center")
-				tf.y = (boxH - tf.height) / 2;
-			else if (valign == "bottom")
-				tf.y = boxH - tf.height;
-			else
-				tf.y = 0;
-		}
 
 		public static function createImage(componentConfig:Object):DisplayObject
 		{
-			// Render image via a plain TextField <img> (same loader as tooltips,
-			// which read from mods/config). The TextField is sized to the image and
-			// positioned inside a fixed box (containerWidth x containerHeight). A
-			// transparent rect fixes the MovieClip bounds to the box, so the layout
-			// slot stays constant even when updateImage changes the image size.
-			var w:int = componentConfig.hasOwnProperty("width") ? int(componentConfig.width) : 96;
-			var h:int = componentConfig.hasOwnProperty("height") ? int(componentConfig.height) : 96;
+			// Load the image with a plain Loader and render it as a Bitmap, scaled to fit the
+			// container while keeping aspect ratio. A transparent rect fixes the layout slot and
+			// scrollRect clips the content, so a too-big image can never overflow the container.
+			var w:int = componentConfig.hasOwnProperty("width") ? int(componentConfig.width) : 0;
+			var h:int = componentConfig.hasOwnProperty("height") ? int(componentConfig.height) : 0;
 			var src:String = String(componentConfig.source);
 			var halign:String = componentConfig.hasOwnProperty("align") ? String(componentConfig.align) : "left";
 			var valign:String = componentConfig.hasOwnProperty("valign") ? String(componentConfig.valign) : "top";
-			var boxW:int = componentConfig.hasOwnProperty("containerWidth") ? int(componentConfig.containerWidth) : (w + IMAGE_PAD);
-			var boxH:int = componentConfig.hasOwnProperty("containerHeight") ? int(componentConfig.containerHeight) : (h + IMAGE_PAD);
-
-			var tf:TextField = new TextField();
-			tf.multiline = true;
-			tf.wordWrap = true;
-			tf.selectable = false;
-			tf.mouseEnabled = false;
-			tf.autoSize = TextFieldAutoSize.NONE;
-			tf.width = w + IMAGE_PAD;
-			tf.height = h + IMAGE_PAD;
-			tf.htmlText = imageHtml(src, w, h);
-			positionImageField(tf, boxW, boxH, halign, valign);
+			var boxW:int = componentConfig.hasOwnProperty("containerWidth") ? int(componentConfig.containerWidth) : ((w > 0 ? w : 96) + IMAGE_PAD);
+			var boxH:int = componentConfig.hasOwnProperty("containerHeight") ? int(componentConfig.containerHeight) : ((h > 0 ? h : 96) + IMAGE_PAD);
 
 			var result:MovieClip = new MovieClip();
 			result.graphics.beginFill(0, 0);
 			result.graphics.drawRect(0, 0, boxW, boxH);
 			result.graphics.endFill();
-			result.addChild(tf);
-			result["tf"] = tf;
+			result.scrollRect = new Rectangle(0, 0, boxW, boxH);
+			result["imgW"] = w;
+			result["imgH"] = h;
 			result["boxW"] = boxW;
 			result["boxH"] = boxH;
 			result["halign"] = halign;
 			result["valign"] = valign;
 
+			loadImageInto(result, src);
 			return result;
+		}
+
+		// Loads `src` and renders it scaled-to-fit into `holder` (clipped to its box, ratio kept),
+		// caching decoded images by source. Shared by createImage and updateImage so both size the
+		// image identically; the API never lets a too-big image overflow the container.
+		public static function loadImageInto(holder:MovieClip, src:String):void
+		{
+			// Restore the full box height in case the holder was collapsed by removeImage.
+			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["boxH"]));
+			holder["collapsed"] = false;
+			holder["src"] = src;
+			if (src == null || src == "")
+			{
+				while (holder.numChildren > 0)
+					holder.removeChildAt(holder.numChildren - 1);
+				return;
+			}
+
+			if (_imageCache[src] != null)
+			{
+				renderBitmapInto(holder, BitmapData(_imageCache[src]));
+				return;
+			}
+
+			// The SWF lives in gui/flash/, so a root-relative source has to climb out first:
+			// resource paths (gui/..., scaleform/...) sit at the res root (2 up), on-disk
+			// mods/ paths one level higher at the game root (3 up). Mods pass clean paths.
+			var url:String = (src.indexOf("mods/") == 0 ? "../../../" : "../../") + src;
+			var loader:Loader = new Loader();
+			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e:Event):void {
+				var bmp:Bitmap = loader.content as Bitmap;
+				if (bmp != null && bmp.bitmapData != null)
+				{
+					var bmd:BitmapData = bmp.bitmapData.clone();
+					_imageCache[src] = bmd;
+					if (holder["src"] == src)
+						renderBitmapInto(holder, bmd);
+				}
+				try { loader.unload(); } catch (err:Error) {}
+			});
+			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void {});
+			try { loader.load(new URLRequest(url)); } catch (err:Error) {}
+		}
+
+		// Collapse the image holder to zero height (removeImage) so the layout reflows the
+		// controls below it upward. loadImageInto restores the box height when a source is set.
+		public static function collapseImage(holder:MovieClip):void
+		{
+			while (holder.numChildren > 0)
+				holder.removeChildAt(holder.numChildren - 1);
+			holder["src"] = "";
+			holder["collapsed"] = true;
+			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), 0);
+		}
+
+		private static function renderBitmapInto(holder:MovieClip, bmd:BitmapData):void
+		{
+			// Clear the old bitmap and add the new one together, so loadImageInto can keep the
+			// previous frame on screen while the next one loads - the holder never blanks
+			// mid-load, which is what made fast frame-by-frame animation flicker on first play.
+			while (holder.numChildren > 0)
+				holder.removeChildAt(holder.numChildren - 1);
+
+			var w:int = int(holder["imgW"]);
+			var h:int = int(holder["imgH"]);
+			var boxW:int = int(holder["boxW"]);
+			var boxH:int = int(holder["boxH"]);
+			var halign:String = String(holder["halign"]);
+			var valign:String = String(holder["valign"]);
+
+			var bmp:Bitmap = new Bitmap(bmd);
+			var scale:Number = (w > 0 && h > 0)
+				? Math.min(w / bmd.width, h / bmd.height)
+				: Math.min(boxW / bmd.width, boxH / bmd.height);
+			// Never upscale: keep natural size when the image fits, only shrink when oversize.
+			if (scale > 1)
+				scale = 1;
+			if (scale > 0)
+			{
+				bmp.scaleX = scale;
+				bmp.scaleY = scale;
+			}
+			// Smooth only when shrinking; at natural size keep it pixel-sharp (no blur). Round the
+			// position so a centered image lands on whole pixels, not a blurry half-pixel offset.
+			bmp.smoothing = scale < 1;
+			bmp.x = Math.round((halign == "center") ? (boxW - bmp.width) / 2 : (halign == "right") ? (boxW - bmp.width) : 0);
+			bmp.y = Math.round((valign == "center") ? (boxH - bmp.height) / 2 : (valign == "bottom") ? (boxH - bmp.height) : 0);
+			holder.addChild(bmp);
 		}
 
 		public static function createCheckBox(componentConfig:Object, modLinkage:String, text:String, value:Boolean, tooltip:String = '', tooltipIcon:String = ''):DisplayObject
@@ -225,14 +285,14 @@
 			{
 				var radioButton:RadioButton = RadioButton(App.utils.classFactory.getComponent('RadioButton', RadioButton));
 
-				radioButton.y = i * Constants.RADIO_BUTTONS_MARGIN + margin;
+				radioButton.y = i * Constants.RADIO_BUTTONS_MARGIN + (margin ? Constants.RADIO_HEADER_MARGIN : 0);
 				radioButton.label = options[i].label;
 				radioButton.autoSize = TextFieldAutoSize.LEFT;
 
 				ui.addChild(radioButton);
 				buttonGroup.addButton(radioButton);
 
-				radioButton.addEventListener(MouseEvent.CLICK, handleComponentEvent);
+				radioButton.addEventListener(Event.SELECT, handleComponentEvent);
 			}
 
 			buttonGroup.setSelectedButtonByIndex(value);

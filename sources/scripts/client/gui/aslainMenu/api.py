@@ -34,6 +34,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		}
 		self.userSettings = {}
 		self._liveSettingsChangeCallbacks = {}
+		self._lastLiveSettings = {}
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
@@ -43,8 +44,11 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onButtonClicked = Event.Event()
 		self.onSettingsChanged = Event.Event()
 		self.onImageUpdate = Event.Event()
-		self.onLiveSettingsChange = Event.Event()
 		self.onReloadMod = Event.Event()
+
+		# Live changes are uncommitted, so the diff baseline must not survive a window
+		# session: drop it on open so the first change re-diffs against committed settings.
+		self.onWindowOpened += self._resetLiveSettingsBaseline
 
 		self.loadSettings()
 		self.loadState()
@@ -166,23 +170,58 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.state.setdefault('collapsed', {})[linkage] = bool(collapsed)
 		self.saveState()
 
-	def updateImage(self, linkage, varName, source, width=None, height=None):
+	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
-		self.onImageUpdate(linkage, varName, source, w, h)
+		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage))
 
-	def registerLiveSettingsChange(self, linkage, callback):
-		self._liveSettingsChangeCallbacks.setdefault(linkage, []).append(callback)
+	def registerLiveSettingsChange(self, linkage, callback, mode=LIVE_SETTINGS_MODE.FULL_SETTINGS):
+		# mode=FULL_SETTINGS (default): callback gets the full settings dict (legacy behavior).
+		# mode=CHANGED_ONLY: callback gets only the keys whose value changed since the previous
+		# live event. Any unknown mode degrades to FULL_SETTINGS so a bad value never raises.
+		if mode not in LIVE_SETTINGS_MODE.ALL:
+			mode = LIVE_SETTINGS_MODE.FULL_SETTINGS
+		self._liveSettingsChangeCallbacks.setdefault(linkage, []).append((callback, mode))
 
 	def unregisterLiveSettingsChange(self, linkage, callback):
+		# Unregister by callback identity regardless of the mode it was registered with;
+		# the public signature is (linkage, callback), matching legacy behavior.
 		callbacks = self._liveSettingsChangeCallbacks.get(linkage)
-		if callbacks and callback in callbacks:
-			callbacks.remove(callback)
+		if callbacks:
+			self._liveSettingsChangeCallbacks[linkage] = [
+				entry for entry in callbacks if entry[0] != callback
+			]
+
+	def _resetLiveSettingsBaseline(self):
+		# Runtime-only diff baseline; never persisted. Cleared on window open so the
+		# first live change re-diffs against committed settings (uncommitted live
+		# values from a previous session must not leak into the next one).
+		self._lastLiveSettings = {}
+
+	def _computeChangedSettings(self, previous, settings):
+		# A key is "changed" if it is new or its value differs from the baseline.
+		return dict(
+			(key, value) for key, value in settings.items()
+			if key not in previous or previous[key] != value
+		)
 
 	def notifyLiveSettingsChange(self, linkage, settings):
-		for callback in tuple(self._liveSettingsChangeCallbacks.get(linkage, ())):
-			callback(linkage, settings)
-		self.onLiveSettingsChange(linkage, settings)
+		callbacks = tuple(self._liveSettingsChangeCallbacks.get(linkage, ()))
+		# Diff against the previous live settings; on the first change after the window
+		# opened (no live baseline yet) diff against the committed settings instead.
+		previous = self._lastLiveSettings.get(linkage)
+		if previous is None:
+			previous = self.state['settings'].get(linkage, {})
+		changedOnly = None
+		for callback, mode in callbacks:
+			if mode == LIVE_SETTINGS_MODE.CHANGED_ONLY:
+				if changedOnly is None:
+					changedOnly = self._computeChangedSettings(previous, settings)
+				callback(linkage, changedOnly)
+			else:
+				callback(linkage, settings)
+		# Update the baseline only after diffing this event.
+		self._lastLiveSettings[linkage] = dict(settings)
 
 	def reloadModTemplate(self, linkage, template):
 		""" Re-render one mod's component subtree in the open settings window
