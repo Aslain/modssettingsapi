@@ -23,6 +23,8 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPD
 
 ![Per-mod settings with image preview and language switch](./assets/aslainMenu_3.png)
 
+![Sub-options grouped under a master toggle - they grey out while it is off](./assets/aslainMenu_4.png)
+
 ## Using it in your mod
 
 Import the fork first, with a fallback to izeberg, so your mod also runs where only the original is installed. Importing `gui.aslainMenu` first means it wins when both are present:
@@ -56,6 +58,46 @@ templates.createControlsGroup(
     ],
 )
 ```
+
+### Staying compatible with plain izeberg
+
+The import above lets your mod *run* on either menu, but the features below exist **only** on `gui.aslainMenu`. Calling them on plain izeberg raises an error (and can blank the whole settings window), so feature-detect each one with `hasattr(...)` and skip it when missing. A skipped control is simply left out of the template - no error, and no empty slot: the layout just closes up.
+
+```python
+column = [
+    templates.createCheckbox('Sixth Sense enabled', 'enabled', True),
+    templates.createDropdown('Icon', 'icon', ICON_NAMES, 0),
+]
+
+# createImage is aslainMenu-only -> add the preview only when available,
+# otherwise it is simply omitted (no error, no empty gap).
+if hasattr(templates, 'createImage'):
+    column.append(templates.createImage('myicons/%s.png' % ICON_NAMES[0],
+                                        containerHeight=96, align='center'))
+
+# createControlsGroup (grey-out sub-options under a master) is aslainMenu-only too.
+master = templates.createCheckbox('Enable extras', 'extrasOn', True)
+children = [templates.createSlider('Glow size', 'glow', 24, 8, 64, 1)]
+if hasattr(templates, 'createControlsGroup'):
+    column += templates.createControlsGroup(master, children)  # grouped + greyed when off
+else:
+    column += [master] + children                              # flat fallback on izeberg
+```
+
+Guard the singleton's new methods the same way, e.g. the live image preview:
+
+```python
+if hasattr(g_modsSettingsApi, 'updateImage'):
+    g_modsSettingsApi.registerLiveSettingsChange(MOD_LINKAGE, onLiveChange)
+    # inside onLiveChange call g_modsSettingsApi.updateImage(MOD_LINKAGE, 'icon', newSource)
+```
+
+**aslainMenu-only - guard before use:**
+
+- `templates`: `createImage`, `createControlsGroup`
+- `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, and the `onLiveSettingsChange` event
+
+Everything else (checkboxes, sliders, dropdowns, radio button groups, step sliders, hotkeys, color choice, range slider, labels, `setModTemplate`, `getModSettings`, ...) exists on both menus, so it needs no guard.
 
 ## Dependencies
 
