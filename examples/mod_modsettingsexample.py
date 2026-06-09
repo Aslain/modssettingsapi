@@ -2,37 +2,40 @@
 import BigWorld
 import game
 import Keys
-from gui.modsSettingsApi import g_modsSettingsApi
+try:
+	from gui.aslainMenu import g_modsSettingsApi
+except ImportError:
+	from gui.modsSettingsApi import g_modsSettingsApi
 
 modLinkage = 'test_iamspotted'
 modDataVersion = 1
 
 template  = {
-	'modDisplayName': 'Мод «Я обнаружен»',
+	'modDisplayName': 'I Am Spotted',
 	'enabled': True,
 	'column1': [
 		{
 			'type': 'CheckBox',
-			'text': 'Показать на миникарте квадрат засвета',
+			'text': 'Show the spotted square on the minimap',
 			'value': True,
-			'tooltip': '{HEADER}Показать на миникарте квадрат засвета{/HEADER}{BODY}При вашем обнаружении мод автоматические кликнет на миникарте в квадрат где вы находитесь{/BODY}',
+			'tooltip': '{HEADER}Show the spotted square on the minimap{/HEADER}{BODY}When you get spotted, the mod automatically clicks the minimap cell where you are{/BODY}',
 			'varName': 'minimapClick'
 		},
 		{
 			'type': 'CheckBox',
-			'text': 'Сообщить в командный чат «Нужна помощь!»',
+			'text': 'Send "Need help!" to team chat',
 			'value': True,
-			'tooltip': '{HEADER}Сообщить в командный чат «Нужна помощь!»{/HEADER}{BODY}При вашем обнаружении мод автоматические отправит команду «Нужна помощь!» вашим союзникам{/BODY}',
+			'tooltip': '{HEADER}Send "Need help!" to team chat{/HEADER}{BODY}When you get spotted, the mod automatically sends the "Need help!" command to your allies{/BODY}',
 			'varName': 'neadHelp'
 		},
 		{
 			'type': 'Dropdown',
-			'text': 'Озвучка «Шестого чувства»',
-			'tooltip': '{HEADER}Озвучка «Шестого чувства»{/HEADER}{BODY}При срабатывании навыка «Шестого чувства» будет воспроизводиться один из нескольких вариантов озвучки.{/BODY}',
+			'text': 'Sixth Sense voice line',
+			'tooltip': '{HEADER}Sixth Sense voice line{/HEADER}{BODY}When the Sixth Sense perk triggers, one of several voice lines is played.{/BODY}',
 			'options':  [
-				{ 'label': 'Стандартная' },
-				{ 'label': 'Тихая' },
-				{ 'label': 'Громкая' }
+				{ 'label': 'Standard' },
+				{ 'label': 'Quiet' },
+				{ 'label': 'Loud' }
 			],
 			'button': {
 				'width': 30,
@@ -52,7 +55,7 @@ template  = {
 	'column2': [
 		{
 			'type': 'Slider',
-			'text': 'Число живых союзников для активации мода',
+			'text': 'Number of alive allies required to activate the mod',
 			'minimum': 1,
 			'maximum': 15,
 			'snapInterval': 1,
@@ -65,23 +68,23 @@ template  = {
 			'text': 'StepSlider example',
 			'value': 0,
 			'options':  [
-				{ 'label': 'Стандартная' },
-				{ 'label': 'Тихая' },
-				{ 'label': 'Громкая' }
+				{ 'label': 'Standard' },
+				{ 'label': 'Quiet' },
+				{ 'label': 'Loud' }
 			],
 			'varName': 'stepSliderTest'
 		},
 		{
 			'type': 'CheckBox',
-			'text': 'Всегда оповещать о засвете при игре на артиллерии',
-			'tooltip': '{HEADER}Всегда оповещать о засвете при игре на артиллерии{/HEADER}{BODY}Если вы вишли в бой на артилерии, мод будет всегда оповещать о вашем засвете независимо от выставленного лимита на число оставшехся в живих союзниках{/BODY}',
+			'text': 'Always warn about being spotted when playing artillery',
+			'tooltip': '{HEADER}Always warn about being spotted when playing artillery{/HEADER}{BODY}If you enter a battle in an SPG, the mod always warns you about being spotted, regardless of the configured limit on the number of allies left alive{/BODY}',
 			'value': True,
 			'varName': 'alwaysOnArty'
 		},
 		{
 			'type': 'HotKey',
-			'text': 'Включение/отключение по кнопке',
-			'tooltip': '{HEADER}Включение/отключение по кнопке{/HEADER}{BODY}Активирует либо деактивирует модификацию при нажатии кнопки/комбинации кнопок{/BODY}',
+			'text': 'Toggle on/off with a key',
+			'tooltip': '{HEADER}Toggle on/off with a key{/HEADER}{BODY}Activates or deactivates the mod when the key / key combination is pressed{/BODY}',
 			'value': [Keys.KEY_J],
 			'varName': 'stateKeyset'
 		},

@@ -1,0 +1,11 @@
+name: Konfigurátor modů
+description: Tento mod umožňuje snadno konfigurovat nainstalované mody.
+buttons/ok: OK
+buttons/cancel: Zrušit
+buttons/apply: Použít
+buttons/close: ZAVŘÍT
+buttons/clear: Vymazat
+buttons/default: Výchozí
+stateswitcher/tooltip/header: Zapnout / Vypnout mod
+stateswitcher/tooltip/body: Zelený indikátor - mod zapnut\nČervený indikátor - mod vypnut
+colorchoice/header: BARVA

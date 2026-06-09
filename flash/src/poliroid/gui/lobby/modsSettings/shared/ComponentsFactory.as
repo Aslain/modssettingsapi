@@ -4,6 +4,7 @@
 	import flash.events.MouseEvent;
 	import flash.display.MovieClip;
 	import flash.display.DisplayObject;
+	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import scaleform.clik.controls.ButtonGroup;
 	import scaleform.clik.core.UIComponent;
@@ -20,6 +21,7 @@
 	import net.wg.gui.components.controls.DropdownMenu;
 	import net.wg.gui.components.controls.ButtonIconNormal;
 	import net.wg.gui.components.controls.LabelControl;
+	import net.wg.gui.components.controls.UILoaderAlt;
 	import net.wg.gui.components.controls.SoundButton;
 	import net.wg.gui.components.controls.InfoIcon;
 	import net.wg.gui.components.controls.Slider;
@@ -82,6 +84,75 @@
 
 			result.addChild(ui);
 			result['label'] = label;
+
+			return result;
+		}
+
+		// Padding around the image so the TextField's 2px gutter and line leading
+		// do not clip the <img> (sizing it exactly to the image clips it).
+		public static const IMAGE_PAD:int = 8;
+
+		public static function imageHtml(src:String, w:int, h:int):String
+		{
+			if (w <= 0 || h <= 0)
+				return "<img src='img://" + src + "'>";
+
+			return "<img src='img://" + src + "' width='" + w + "' height='" + h + "'>";
+		}
+
+		public static function positionImageField(tf:DisplayObject, boxW:int, boxH:int, halign:String, valign:String):void
+		{
+			if (halign == "center")
+				tf.x = (boxW - tf.width) / 2;
+			else if (halign == "right")
+				tf.x = boxW - tf.width;
+			else
+				tf.x = 0;
+
+			if (valign == "center")
+				tf.y = (boxH - tf.height) / 2;
+			else if (valign == "bottom")
+				tf.y = boxH - tf.height;
+			else
+				tf.y = 0;
+		}
+
+		public static function createImage(componentConfig:Object):DisplayObject
+		{
+			// Render image via a plain TextField <img> (same loader as tooltips,
+			// which read from mods/config). The TextField is sized to the image and
+			// positioned inside a fixed box (containerWidth x containerHeight). A
+			// transparent rect fixes the MovieClip bounds to the box, so the layout
+			// slot stays constant even when updateImage changes the image size.
+			var w:int = componentConfig.hasOwnProperty("width") ? int(componentConfig.width) : 96;
+			var h:int = componentConfig.hasOwnProperty("height") ? int(componentConfig.height) : 96;
+			var src:String = String(componentConfig.source);
+			var halign:String = componentConfig.hasOwnProperty("align") ? String(componentConfig.align) : "left";
+			var valign:String = componentConfig.hasOwnProperty("valign") ? String(componentConfig.valign) : "top";
+			var boxW:int = componentConfig.hasOwnProperty("containerWidth") ? int(componentConfig.containerWidth) : (w + IMAGE_PAD);
+			var boxH:int = componentConfig.hasOwnProperty("containerHeight") ? int(componentConfig.containerHeight) : (h + IMAGE_PAD);
+
+			var tf:TextField = new TextField();
+			tf.multiline = true;
+			tf.wordWrap = true;
+			tf.selectable = false;
+			tf.mouseEnabled = false;
+			tf.autoSize = TextFieldAutoSize.NONE;
+			tf.width = w + IMAGE_PAD;
+			tf.height = h + IMAGE_PAD;
+			tf.htmlText = imageHtml(src, w, h);
+			positionImageField(tf, boxW, boxH, halign, valign);
+
+			var result:MovieClip = new MovieClip();
+			result.graphics.beginFill(0, 0);
+			result.graphics.drawRect(0, 0, boxW, boxH);
+			result.graphics.endFill();
+			result.addChild(tf);
+			result["tf"] = tf;
+			result["boxW"] = boxW;
+			result["boxH"] = boxH;
+			result["halign"] = halign;
+			result["valign"] = valign;
 
 			return result;
 		}

@@ -1,0 +1,11 @@
+name: Modu konfigurators
+description: Šis mods ļauj viegli konfigurēt instalētos modus.
+buttons/ok: OK
+buttons/cancel: Atcelt
+buttons/apply: Lietot
+buttons/close: AIZVĒRT
+buttons/clear: Notīrīt
+buttons/default: Noklusējums
+stateswitcher/tooltip/header: Iespējot / Atspējot modu
+stateswitcher/tooltip/body: Zaļš indikators - mods iespējots\nSarkans indikators - mods atspējots
+colorchoice/header: KRĀSA

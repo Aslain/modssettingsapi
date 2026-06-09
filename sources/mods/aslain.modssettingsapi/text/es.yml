@@ -1,0 +1,11 @@
+name: Configurador de mods
+description: Este mod te permite configurar fácilmente los mods instalados.
+buttons/ok: OK
+buttons/cancel: Cancelar
+buttons/apply: Aplicar
+buttons/close: CERRAR
+buttons/clear: Borrar
+buttons/default: Predeterminado
+stateswitcher/tooltip/header: Activar / Desactivar mod
+stateswitcher/tooltip/body: Indicador verde - mod activado\nIndicador rojo - mod desactivado
+colorchoice/header: COLOR

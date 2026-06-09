@@ -1,0 +1,11 @@
+name: Конфигуратор на модове
+description: Този мод позволява лесно конфигуриране на инсталираните модове.
+buttons/ok: OK
+buttons/cancel: Отказ
+buttons/apply: Приложи
+buttons/close: ЗАТВОРИ
+buttons/clear: Изчисти
+buttons/default: По подразбиране
+stateswitcher/tooltip/header: Включи / Изключи мод
+stateswitcher/tooltip/body: Зелен индикатор - мод включен\nЧервен индикатор - мод изключен
+colorchoice/header: ЦВЯТ

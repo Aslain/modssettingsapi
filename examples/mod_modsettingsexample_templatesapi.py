@@ -2,43 +2,46 @@
 import BigWorld
 import game
 import Keys
-from gui.modsSettingsApi import g_modsSettingsApi, templates
+try:
+	from gui.aslainMenu import g_modsSettingsApi, templates
+except ImportError:
+	from gui.modsSettingsApi import g_modsSettingsApi, templates
 
 modLinkage = 'test_iamspotted_templatesAPI'
 modDataVersion = 1
 
 template = {
-	'modDisplayName': 'Мод «Я обнаружен» #2',
+	'modDisplayName': 'I Am Spotted #2',
 	'enabled': True,
 	'column1': [
-		templates.createCheckbox('Показать на миникарте квадрат засвета', 
+		templates.createCheckbox('Show the spotted square on the minimap', 
 								 'minimapClick', 
 								 True, 
-								 tooltip='{HEADER}Показать на миникарте квадрат засвета{/HEADER}{BODY}При вашем обнаружении мод автоматические кликнет на миникарте в квадрат где вы находитесь{/BODY}'),
-		templates.createCheckbox('Сообщить в командный чат «Нужна помощь!»', 
+								 tooltip='{HEADER}Show the spotted square on the minimap{/HEADER}{BODY}When you get spotted, the mod automatically clicks the minimap cell where you are{/BODY}'),
+		templates.createCheckbox('Send "Need help!" to team chat', 
 								 'neadHelp', 
 								 True, 
-								 tooltip='{HEADER}Сообщить в командный чат «Нужна помощь!»{/HEADER}{BODY}При вашем обнаружении мод автоматические отправит команду «Нужна помощь!» вашим союзникам{/BODY}'),
-		templates.createDropdown('Озвучка «Шестого чувства»', 'sixthSenseSound', 
-								 ['Стандартная', 'Тихая', 'Громкая'], 0, 
-								 tooltip='{HEADER}Озвучка «Шестого чувства»{/HEADER}{BODY}При срабатывании навыка «Шестого чувства» будет воспроизводиться один из нескольких вариантов озвучки.{/BODY}', 
+								 tooltip='{HEADER}Send "Need help!" to team chat{/HEADER}{BODY}When you get spotted, the mod automatically sends the "Need help!" command to your allies{/BODY}'),
+		templates.createDropdown('Sixth Sense voice line', 'sixthSenseSound', 
+								 ['Standard', 'Quiet', 'Loud'], 0, 
+								 tooltip='{HEADER}Sixth Sense voice line{/HEADER}{BODY}When the Sixth Sense perk triggers, one of several voice lines is played.{/BODY}', 
 								 button=templates.createButton(width=30, height=23, offsetTop=0, offsetLeft=0, 
 															   icon='../maps/icons/buttons/sound.png', 
 															   iconOffsetTop=0, iconOffsetLeft=1), 
 								 width=200)
 	],
 	'column2': [
-		templates.createSlider('Число живых союзников для активации мода', 
+		templates.createSlider('Number of alive allies required to activate the mod', 
 							   'aliveCounter', 
 							   5, 1, 15, 1),
 		templates.createStepSlider('StepSlider example', 
-								   'stepSliderTest', ['Стандартная', 'Тихая', 'Громкая'], 0),
-		templates.createCheckbox('Всегда оповещать о засвете при игре на артиллерии',
+								   'stepSliderTest', ['Standard', 'Quiet', 'Loud'], 0),
+		templates.createCheckbox('Always warn about being spotted when playing artillery',
 								 'alwaysOnArty', True,
-								 tooltip='{HEADER}Всегда оповещать о засвете при игре на артиллерии{/HEADER}{BODY}Если вы вишли в бой на артилерии, мод будет всегда оповещать о вашем засвете независимо от выставленного лимита на число оставшехся в живих союзниках{/BODY}'),
-		templates.createHotkey('Включение/отключение по кнопке',
+								 tooltip='{HEADER}Always warn about being spotted when playing artillery{/HEADER}{BODY}If you enter a battle in an SPG, the mod always warns you about being spotted, regardless of the configured limit on the number of allies left alive{/BODY}'),
+		templates.createHotkey('Toggle on/off with a key',
 							   'stateKeyset', [Keys.KEY_J],
-							   tooltip='{HEADER}Включение/отключение по кнопке{/HEADER}{BODY}Активирует либо деактивирует модификацию при нажатии кнопки/комбинации кнопок{/BODY}'),
+							   tooltip='{HEADER}Toggle on/off with a key{/HEADER}{BODY}Activates or deactivates the mod when the key / key combination is pressed{/BODY}'),
 		templates.createNumericStepper('NumericStepper test',
 									   'numStepperTest', 5,
 									   1, 15, 0.1, 

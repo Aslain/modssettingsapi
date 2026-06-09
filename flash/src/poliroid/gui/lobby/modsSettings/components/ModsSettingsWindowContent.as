@@ -1,6 +1,7 @@
 package poliroid.gui.lobby.modsSettings.components
 {
 	import flash.display.MovieClip;
+	import flash.events.Event;
 	import net.wg.infrastructure.base.UIComponentEx;
 	import net.wg.gui.components.controls.ScrollBar;
 	import poliroid.gui.lobby.modsSettings.controls.SmoothResizableScrollPane;
@@ -76,6 +77,69 @@ package poliroid.gui.lobby.modsSettings.components
 			container.addChild(renderer);
 
 			return renderer;
+		}
+
+		public function reloadMod(linkage:String, template:Object):ModsSettingsComponent
+		{
+			var oldRenderer:ModsSettingsComponent = null;
+			var idx:int = -1;
+
+			for (var i:int = 0; i < container.numChildren; i++)
+			{
+				var child:ModsSettingsComponent = container.getChildAt(i) as ModsSettingsComponent;
+
+				if (child != null && child.modLinkage == linkage)
+				{
+					oldRenderer = child;
+					idx = i;
+					break;
+				}
+			}
+
+			if (oldRenderer == null)
+				return null;
+
+			var renderer:ModsSettingsComponent = new ModsSettingsComponent(linkage);
+
+			renderer.setData(template);
+			renderer.validateNow();
+
+			container.removeChild(oldRenderer);
+			container.addChildAt(renderer, idx);
+
+			reflowMods();
+
+			return renderer;
+		}
+
+		public function scrollToMod(mod:ModsSettingsComponent):void
+		{
+			if (mod == null || scrollPane == null)
+				return;
+
+			var pos:Number = Math.max(0, Math.min(mod.y, scrollPane.maxScroll));
+			scrollPane.smoothScrollPosition = pos;
+		}
+
+		public function reflowMods():void
+		{
+			var pos:int = 0;
+
+			for (var i:int = 0; i < container.numChildren; i++)
+			{
+				var child:ModsSettingsComponent = container.getChildAt(i) as ModsSettingsComponent;
+
+				if (child == null)
+					continue;
+
+				child.y = pos;
+				pos = child.y + child.height + Constants.MOD_MARGIN_BOTTOM;
+			}
+
+			// Tell the scroll pane its content height changed: ResizableScrollPane re-reads
+			// the target height and clamps the scroll position on the target's RESIZE event
+			if (container != null)
+				container.dispatchEvent(new Event(Event.RESIZE));
 		}
 	}
 }

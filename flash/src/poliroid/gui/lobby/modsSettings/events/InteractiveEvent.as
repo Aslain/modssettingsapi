@@ -12,6 +12,9 @@
 		public static const CANCEL_BUTTON_CLICK:String = "сancelButtonClick";
 		public static const APPLY_BUTTON_CLICK:String = "applyButtonClick";
 		public static const CLOSE_BUTTON_CLICK:String = "closeButtonClick";
+		public static const COLLAPSE_CHANGED:String = "collapseChanged";
+		public static const COLLAPSE_ALL:String = "collapseAll";
+		public static const JUMP_TO_LETTER:String = "jumpToLetter";
 
 		private var _modLinkage:String = "";
 		private var _varName:String = "";

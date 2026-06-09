@@ -1,0 +1,11 @@
+name: Konfigurator modova
+description: Ovaj mod omogućuje jednostavno konfiguriranje instaliranih modova.
+buttons/ok: OK
+buttons/cancel: Odustani
+buttons/apply: Primijeni
+buttons/close: ZATVORI
+buttons/clear: Očisti
+buttons/default: Zadano
+stateswitcher/tooltip/header: Omogući / Onemogući mod
+stateswitcher/tooltip/body: Zeleni indikator - mod omogućen\nCrveni indikator - mod onemogućen
+colorchoice/header: BOJA

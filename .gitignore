@@ -3,3 +3,5 @@ bin/
 .vscode/
 *.swf
 EvalScript error.tmp/
+_mla/
+*.pyc

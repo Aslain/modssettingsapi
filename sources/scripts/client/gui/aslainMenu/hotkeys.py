@@ -80,7 +80,7 @@ class HotkeysController(object):
 
 	def getHotkeyData(self, linkage, varName):
 		settings = self.api.state['settings'][linkage]
-		keyset = self._migrateKeys(settings[varName])
+		keyset = self._migrateKeys(settings.get(varName) or [])
 		data = {
 			'linkage': linkage,
 			'varName': varName,

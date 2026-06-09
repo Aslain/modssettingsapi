@@ -1,0 +1,11 @@
+name: Διαμορφωτής mod
+description: Αυτό το mod σάς επιτρέπει να ρυθμίζετε εύκολα τα εγκατεστημένα mod.
+buttons/ok: OK
+buttons/cancel: Άκυρο
+buttons/apply: Εφαρμογή
+buttons/close: ΚΛΕΙΣΙΜΟ
+buttons/clear: Εκκαθάριση
+buttons/default: Προεπιλογή
+stateswitcher/tooltip/header: Ενεργοποίηση / Απενεργοποίηση mod
+stateswitcher/tooltip/body: Πράσινη ένδειξη - το mod είναι ενεργό\nΚόκκινη ένδειξη - το mod είναι ανενεργό
+colorchoice/header: ΧΡΩΜΑ

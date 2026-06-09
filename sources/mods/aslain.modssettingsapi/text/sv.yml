@@ -1,0 +1,11 @@
+name: Mod-konfigurator
+description: Denna mod låter dig enkelt konfigurera installerade mods.
+buttons/ok: OK
+buttons/cancel: Avbryt
+buttons/apply: Tillämpa
+buttons/close: STÄNG
+buttons/clear: Rensa
+buttons/default: Standard
+stateswitcher/tooltip/header: Aktivera / Inaktivera mod
+stateswitcher/tooltip/body: Grön indikator - mod aktiverad\nRöd indikator - mod inaktiverad
+colorchoice/header: FÄRG

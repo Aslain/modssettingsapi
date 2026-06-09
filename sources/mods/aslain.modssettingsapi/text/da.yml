@@ -1,0 +1,11 @@
+name: Mod-konfigurator
+description: Dette mod giver dig mulighed for nemt at konfigurere installerede mods.
+buttons/ok: OK
+buttons/cancel: Annuller
+buttons/apply: Anvend
+buttons/close: LUK
+buttons/clear: Ryd
+buttons/default: Standard
+stateswitcher/tooltip/header: Aktivér / Deaktivér mod
+stateswitcher/tooltip/body: Grøn indikator - mod aktiveret\nRød indikator - mod deaktiveret
+colorchoice/header: FARVE

@@ -1,4 +1,5 @@
 import os
+import re
 import functools
 import copy
 import logging
@@ -29,8 +30,10 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			'settings': {},
 			'templates': {},
 			'storage': {},
+			'collapsed': {},
 		}
 		self.userSettings = {}
+		self._liveSettingsChangeCallbacks = {}
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
@@ -39,6 +42,9 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onHotkeysUpdated = Event.Event()
 		self.onButtonClicked = Event.Event()
 		self.onSettingsChanged = Event.Event()
+		self.onImageUpdate = Event.Event()
+		self.onLiveSettingsChange = Event.Event()
+		self.onReloadMod = Event.Event()
 
 		self.loadSettings()
 		self.loadState()
@@ -72,6 +78,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			with open(STATE_FILE_PATH, 'rb') as stateFile:
 				self.state = jsonLoad(stateFile)
 				self.state.setdefault('storage', {})
+				self.state.setdefault('collapsed', {})
 				self.__migrateState()
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
@@ -154,6 +161,42 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.state['settings'][linkage] = newSettings
 		self.onSettingsChanged(linkage, newSettings)
 
+	def setModCollapsed(self, linkage, collapsed):
+		# Persist per-mod collapsed state of the settings list (UI only, no settings impact)
+		self.state.setdefault('collapsed', {})[linkage] = bool(collapsed)
+		self.saveState()
+
+	def updateImage(self, linkage, varName, source, width=None, height=None):
+		w = int(width) if width else 0
+		h = int(height) if height else 0
+		self.onImageUpdate(linkage, varName, source, w, h)
+
+	def registerLiveSettingsChange(self, linkage, callback):
+		self._liveSettingsChangeCallbacks.setdefault(linkage, []).append(callback)
+
+	def unregisterLiveSettingsChange(self, linkage, callback):
+		callbacks = self._liveSettingsChangeCallbacks.get(linkage)
+		if callbacks and callback in callbacks:
+			callbacks.remove(callback)
+
+	def notifyLiveSettingsChange(self, linkage, settings):
+		for callback in tuple(self._liveSettingsChangeCallbacks.get(linkage, ())):
+			callback(linkage, settings)
+		self.onLiveSettingsChange(linkage, settings)
+
+	def reloadModTemplate(self, linkage, template):
+		""" Re-render one mod's component subtree in the open settings window
+		from a fresh template (e.g. with new-language labels), without closing it.
+		The mod is responsible for filling the template with the values it wants
+		shown. Has no effect if the window is closed.
+		"""
+		template = dict(template)
+		template['linkage'] = linkage
+		self.onReloadMod(linkage, template)
+		# Re-rendered hotkey controls start blank; re-apply their stored values so
+		# they keep their keysets (otherwise Apply would persist empty hotkeys).
+		self.onHotkeysUpdated()
+
 	def checkKeyset(self, keys):
 		return self.hotkeys.checkKeyset(keys)
 
@@ -183,20 +226,32 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				result[component['varName']] = component['value']
 		return result
 
+	def _modSortKey(self, linkage):
+		# Sort key for the mods list / A-Z jump: ignore a leading image badge or any
+		# symbols/whitespace before the real name so e.g. an '<img>'-prefixed mod still
+		# sorts under its first real letter
+		name = self.state['templates'][linkage].get('modDisplayName') or linkage
+		name = re.sub('<[^>]*>', '', name)
+		name = re.sub('^[^0-9A-Za-z]+', '', name)
+		return (name or linkage).lower()
+
 	def generateSettingsData(self):
 		# Make copy of current templates and updates component's values from actual settings
 		templates = []
-		linkages = sorted(self.state['templates'], key=str.lower)
+		# Sort by display name (case-insensitive) so the A-Z quick-jump bar is monotonic;
+		# fall back to the linkage when a mod has no display name
+		linkages = sorted(self.state['templates'], key=self._modSortKey)
 		for linkage in linkages:
 			template = copy.deepcopy(self.state['templates'][linkage])
 			settings = self.getModSettings(linkage, template)
 			template['linkage'] = linkage
+			template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
 			if 'enabled' in template:
 				template['enabled'] = settings['enabled']
 			for column in COLUMNS:
 				if column in template:
 					for component in template[column]:
-						if 'varName' in component:
+						if 'varName' in component and component['varName'] in settings:
 							component['value'] = settings[component['varName']]
 			templates.append(template)
 		return templates

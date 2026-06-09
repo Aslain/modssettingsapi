@@ -1,0 +1,11 @@
+name: Configurator de moduri
+description: Acest mod îți permite să configurezi cu ușurință modurile instalate.
+buttons/ok: OK
+buttons/cancel: Anulează
+buttons/apply: Aplică
+buttons/close: ÎNCHIDE
+buttons/clear: Șterge
+buttons/default: Implicit
+stateswitcher/tooltip/header: Activează / Dezactivează modul
+stateswitcher/tooltip/body: Indicator verde - mod activat\nIndicator roșu - mod dezactivat
+colorchoice/header: CULOARE

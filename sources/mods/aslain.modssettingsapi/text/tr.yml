@@ -1,0 +1,11 @@
+name: Mod yapılandırıcı
+description: Bu mod, yüklü modları kolayca yapılandırmanıza olanak tanır.
+buttons/ok: OK
+buttons/cancel: İptal
+buttons/apply: Uygula
+buttons/close: KAPAT
+buttons/clear: Temizle
+buttons/default: Varsayılan
+stateswitcher/tooltip/header: Modu etkinleştir / devre dışı bırak
+stateswitcher/tooltip/body: Yeşil gösterge - mod etkin\nKırmızı gösterge - mod devre dışı
+colorchoice/header: RENK

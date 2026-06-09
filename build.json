@@ -1,10 +1,12 @@
 {
 	"meta": {
-		"id": "izeberg.modssettingsapi",
+		"id": "aslain.modssettingsapi",
+		"version": "1.0.0",
 		"name": "ModsSettings API",
-		"description": "This mod allows you to easily configure installed mods"
+		"description": "This modification allows you to configure installed mods even more easily"
 	},
 	"flash_fla": {
-		"flash/modsSettingsWindow/modsSettingsWindow.xfl": "res/gui/flash/modsSettingsWindow.swf"
-	}
+		"flash/modsSettingsWindow/modsSettingsWindow.xfl": "res/gui/flash/aslainMenu.swf"
+	},
+	"copy": {}
 }

@@ -1,0 +1,11 @@
+name: Modų konfigūratorius
+description: Šis modas leidžia lengvai konfigūruoti įdiegtus modus.
+buttons/ok: OK
+buttons/cancel: Atšaukti
+buttons/apply: Taikyti
+buttons/close: UŽDARYTI
+buttons/clear: Išvalyti
+buttons/default: Numatytasis
+stateswitcher/tooltip/header: Įjungti / Išjungti modą
+stateswitcher/tooltip/body: Žalias indikatorius - modas įjungtas\nRaudonas indikatorius - modas išjungtas
+colorchoice/header: SPALVA

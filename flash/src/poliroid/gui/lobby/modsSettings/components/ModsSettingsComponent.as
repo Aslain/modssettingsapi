@@ -2,7 +2,10 @@ package poliroid.gui.lobby.modsSettings.components
 {
 	import flash.display.DisplayObject;
 	import flash.display.MovieClip;
+	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.MouseEvent;
+	import flash.geom.Rectangle;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
 	import scaleform.clik.constants.InvalidationType;
@@ -12,6 +15,7 @@ package poliroid.gui.lobby.modsSettings.components
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
 	import poliroid.gui.lobby.modsSettings.shared.ComponentsFactory;
 	import poliroid.gui.lobby.modsSettings.shared.Constants;
+	import poliroid.gui.lobby.modsSettings.shared.HoverBrightener;
 
 	public class ModsSettingsComponent extends UIComponent
 	{
@@ -21,6 +25,17 @@ package poliroid.gui.lobby.modsSettings.components
 		public var components:Array;
 
 		private var _stateSwitcher:StateSwitcher;
+		private var _componentsByVar:Object;
+		private var _fieldSet:FieldSet;
+		private var _collapseArrow:Sprite;
+		private var _collapsed:Boolean = false;
+		private var _fullHeight:Number = 0;
+		private var _collapsedHeight:Number = 52;
+		private var _arrowColor:uint = 0xCCCCCC;
+		private var _arrowHovered:Boolean = false;
+		private var _nameHovered:Boolean = false;
+		private var _arrowBright:HoverBrightener;
+		private var _nameBright:HoverBrightener;
 
 		public function ModsSettingsComponent(linkage:String)
 		{
@@ -28,6 +43,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 			modLinkage = linkage;
 			components = new Array();
+			_componentsByVar = new Object();
 		}
 
 		public function setData(newData:Object):void
@@ -47,7 +63,7 @@ package poliroid.gui.lobby.modsSettings.components
 			{
 				var component:Object = components[i];
 
-				if ('varName' in component.data)
+				if ('varName' in component.data && component.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY] != null)
 					result[component.data.varName] = component.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY].value;
 			}
 
@@ -91,7 +107,8 @@ package poliroid.gui.lobby.modsSettings.components
 
 			var fieldSet:FieldSet = FieldSet(App.utils.classFactory.getObject('FieldSet'));
 
-			fieldSet.textField.htmlText = data.modDisplayName;
+			fieldSet.textField.condenseWhite = false;
+			fieldSet.textField.htmlText = Constants.MOD_TITLE_INDENT + String(data.modDisplayName).replace(/<img[^>]*>/gi, "");
 			fieldSet.textField.autoSize = TextFieldAutoSize.LEFT;
 			fieldSet.width = Constants.MOD_COMPONENT_WIDTH;
 			fieldSet.height = lastPos + Constants.MOD_PADDING_BOTTOM;
@@ -105,11 +122,26 @@ package poliroid.gui.lobby.modsSettings.components
 
 			addChildAt(fieldSet, 0);
 			height = fieldSet.height;
+
+			_fieldSet = fieldSet;
+			_fullHeight = fieldSet.height;
+			createCollapseArrow();
+
+			// Collapsed height keeps a symmetric margin around the on/off switcher
+			// (top margin == bottom margin) so the green button doesn't touch the border
+			_collapsedHeight = Constants.MOD_COLLAPSED_HEIGHT;
+			if (_stateSwitcher != null && _stateSwitcher.height > 0)
+				_collapsedHeight = Math.max(_collapsedHeight, _stateSwitcher.y * 2 + _stateSwitcher.height);
+
 			updateComponentsState();
+
+			if (data.hasOwnProperty('collapsed') && data.collapsed)
+				applyCollapsed(true);
 		}
 
 		private function handleComponentEvent(event:InteractiveEvent = null):void
 		{
+			updateComponentsState();
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.SETTINGS_CHANGED, modLinkage));
 		}
 
@@ -119,11 +151,18 @@ package poliroid.gui.lobby.modsSettings.components
 
 			for (var i:Number = 0; i < column.length; i++)
 			{
-				var component:DisplayObject = getComponentByType(column[i]);
+				var componentConfig:Object = column[i];
+				var component:DisplayObject = getComponentByType(componentConfig);
 
 				component.addEventListener(InteractiveEvent.VALUE_CHANGED, handleComponentEvent);
-				components.push({'componentObject': component, 'data': column[i]});
-				component.x = x;
+
+				var entry:Object = {'componentObject': component, 'data': componentConfig};
+				components.push(entry);
+
+				if ('varName' in componentConfig)
+					_componentsByVar[componentConfig.varName] = entry;
+
+				component.x = componentConfig.hasOwnProperty('masterVarName') ? x + Constants.MOD_CHILD_INDENT : x;
 				component.y = lastPos + Constants.COMPONENT_MARGIN_BOTTOM;
 				lastPos = component.y + component.height;
 				parentObj.addChild(component);
@@ -157,13 +196,171 @@ package poliroid.gui.lobby.modsSettings.components
 		{
 			for (var i:Number = 0; i < components.length; i++)
 			{
-				var component:MovieClip = MovieClip(components[i].componentObject);
+				var entry:Object = components[i];
+				var component:MovieClip = MovieClip(entry.componentObject);
+				var enabled:Boolean = modEnabled;
 
-				component.alpha = modEnabled ? 1 : 0.5;
-				component.mouseEnabled = modEnabled;
-				component.mouseChildren = modEnabled;
-				component.tabChildren = modEnabled;
+				if (enabled && entry.data.hasOwnProperty('masterVarName'))
+					enabled = isMasterOn(String(entry.data.masterVarName));
+
+				component.alpha = enabled ? 1 : 0.5;
+				component.mouseEnabled = enabled;
+				component.mouseChildren = enabled;
+				component.tabChildren = enabled;
 			}
+		}
+
+		private function isMasterOn(varName:String):Boolean
+		{
+			var entry:Object = _componentsByVar[varName];
+
+			if (entry == null)
+				return true;
+
+			var returnValue:Object = entry.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY];
+
+			if (returnValue == null)
+				return true;
+
+			return Boolean(returnValue.value);
+		}
+
+		private function createCollapseArrow():void
+		{
+			_collapseArrow = new Sprite();
+			_collapseArrow.buttonMode = true;
+			_collapseArrow.useHandCursor = true;
+			_collapseArrow.addEventListener(MouseEvent.CLICK, handleCollapseClick);
+			_collapseArrow.addEventListener(MouseEvent.ROLL_OVER, onArrowOver);
+			_collapseArrow.addEventListener(MouseEvent.ROLL_OUT, onArrowOut);
+			addChild(_collapseArrow);
+			_arrowBright = new HoverBrightener(_collapseArrow, Constants.HOVER_BRIGHTEN);
+
+			if (_fieldSet != null)
+			{
+				// Inherit the mod title's text colour so the arrow matches the menu text
+				_arrowColor = _fieldSet.textField.textColor;
+				_collapseArrow.x = _fieldSet.textField.x + 3;
+				_collapseArrow.y = _fieldSet.textField.y + (_fieldSet.textField.height - Constants.MOD_COLLAPSE_ARROW_SIZE) / 2;
+
+				// Make the mod name itself toggle collapse (in addition to the arrow)
+				_fieldSet.textField.selectable = false;
+				_fieldSet.textField.mouseEnabled = true;
+				_fieldSet.textField.addEventListener(MouseEvent.CLICK, handleCollapseClick);
+				_fieldSet.textField.addEventListener(MouseEvent.ROLL_OVER, onNameOver);
+				_fieldSet.textField.addEventListener(MouseEvent.ROLL_OUT, onNameOut);
+				_nameBright = new HoverBrightener(_fieldSet.textField, Constants.HOVER_BRIGHTEN);
+			}
+
+			drawCollapseArrow();
+		}
+
+		private function drawCollapseArrow():void
+		{
+			if (_collapseArrow == null)
+				return;
+
+			var s:Number = Constants.MOD_COLLAPSE_ARROW_SIZE;
+
+			_collapseArrow.graphics.clear();
+			_collapseArrow.graphics.beginFill(0, 0);
+			_collapseArrow.graphics.drawRect(-4, -4, s + 8, s + 8);
+			_collapseArrow.graphics.endFill();
+			_collapseArrow.graphics.beginFill(_arrowColor, 1);
+
+			if (_collapsed)
+			{
+				_collapseArrow.graphics.moveTo(0, 0);
+				_collapseArrow.graphics.lineTo(0, s);
+				_collapseArrow.graphics.lineTo(s * 0.85, s / 2);
+			}
+			else
+			{
+				_collapseArrow.graphics.moveTo(0, 0);
+				_collapseArrow.graphics.lineTo(s, 0);
+				_collapseArrow.graphics.lineTo(s / 2, s * 0.85);
+			}
+
+			_collapseArrow.graphics.endFill();
+		}
+
+		private function onArrowOver(event:MouseEvent):void
+		{
+			_arrowHovered = true;
+			refreshHeaderHighlight();
+		}
+
+		private function onArrowOut(event:MouseEvent):void
+		{
+			_arrowHovered = false;
+			refreshHeaderHighlight();
+		}
+
+		private function onNameOver(event:MouseEvent):void
+		{
+			_nameHovered = true;
+			refreshHeaderHighlight();
+		}
+
+		private function onNameOut(event:MouseEvent):void
+		{
+			_nameHovered = false;
+			refreshHeaderHighlight();
+		}
+
+		private function refreshHeaderHighlight():void
+		{
+			var on:Boolean = _arrowHovered || _nameHovered;
+			if (_arrowBright != null)
+				_arrowBright.on = on;
+			if (_nameBright != null)
+				_nameBright.on = on;
+		}
+
+		private function handleCollapseClick(event:MouseEvent):void
+		{
+			applyCollapsed(!_collapsed);
+			dispatchEvent(new InteractiveEvent(InteractiveEvent.COLLAPSE_CHANGED, modLinkage, '', _collapsed));
+		}
+
+		private function applyCollapsed(value:Boolean):void
+		{
+			_collapsed = value;
+
+			for (var i:Number = 0; i < components.length; i++)
+				MovieClip(components[i].componentObject).visible = !_collapsed;
+
+			var h:Number = _collapsed ? _collapsedHeight : _fullHeight;
+
+			if (_fieldSet != null)
+			{
+				_fieldSet.height = h;
+				// FieldSet.draw() does not resize its background box, so resize the
+				// 9-slice bg sprite directly to keep the border wrapping the content
+				if (_fieldSet.bg != null)
+					_fieldSet.bg.height = h;
+			}
+
+			height = h;
+
+			// Clip a collapsed mod to its header height so its hidden controls don't
+			// inflate the scroll content bounds (which would leave an empty scroll gap)
+			if (_collapsed)
+				scrollRect = new Rectangle(0, 0, Constants.MOD_COMPONENT_WIDTH, h);
+			else
+				scrollRect = null;
+
+			drawCollapseArrow();
+		}
+
+		public function setCollapsed(value:Boolean):void
+		{
+			applyCollapsed(value);
+		}
+
+		public function get isCollapsed():Boolean
+		{
+			return _collapsed;
 		}
 
 		private function getComponentByType(componentConfig:Object):DisplayObject
@@ -194,10 +391,51 @@ package poliroid.gui.lobby.modsSettings.components
 					return ComponentsFactory.createColorChoice(componentConfig, modLinkage, componentConfig.value, componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
 				case 'RangeSlider':
 					return ComponentsFactory.createRangeSlider(componentConfig, modLinkage);
+				case 'Image':
+					return ComponentsFactory.createImage(componentConfig);
 				default:
 					DebugUtils.LOG_ERROR('[ModsSettings API] Unexpected type of component: ', componentConfig.type);
 					return new MovieClip();
 			}
+		}
+
+		public function updateImage(varName:String, source:String, w:int, h:int):Boolean
+		{
+			for (var i:Number = 0; i < components.length; i++)
+			{
+				var component:Object = components[i];
+
+				if (component.data.hasOwnProperty('varName') && component.data.varName == varName && component.data.type == 'Image')
+				{
+					var tf:Object = component.componentObject['tf'];
+
+					if (tf != null)
+					{
+						var boxW:int = int(component.componentObject['boxW']);
+						var boxH:int = int(component.componentObject['boxH']);
+						var halign:String = String(component.componentObject['halign']);
+						var valign:String = String(component.componentObject['valign']);
+
+						var auto:Boolean = w <= 0 || h <= 0;
+
+						tf.multiline = true;
+						tf.wordWrap = true;
+						tf.width = auto ? boxW : (w + ComponentsFactory.IMAGE_PAD);
+						tf.height = auto ? boxH : (h + ComponentsFactory.IMAGE_PAD);
+						if (source == null || source == '')
+						{
+							tf.htmlText = '';
+						}
+						else
+						{
+							tf.htmlText = ComponentsFactory.imageHtml(source, w, h);
+						}
+						ComponentsFactory.positionImageField(DisplayObject(tf), boxW, boxH, halign, valign);
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 	}
 }

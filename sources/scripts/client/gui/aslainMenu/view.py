@@ -42,11 +42,17 @@ class ModsSettingsApiWindowMeta(View):
 	def sendModsData(self, data):
 		self._printOverrideError('sendModsData')
 
+	def componentChanged(self, data):
+		self._printOverrideError('componentChanged')
+
 	def hotkeyAction(self, linkage, varName, action):
 		self._printOverrideError('hotKeyAction')
 
 	def buttonAction(self, linkage, varName, value):
 		self._printOverrideError('buttonAction')
+
+	def setModCollapsed(self, linkage, collapsed):
+		self._printOverrideError('setModCollapsed')
 
 	def closeView(self):
 		self._printOverrideError('closeView')
@@ -63,6 +69,14 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			self.flashObject.as_setHotkeys(data)
 
+	def as_updateImageS(self, linkage, varName, source, width, height):
+		if self._isDAAPIInited():
+			self.flashObject.as_updateImage(linkage, varName, source, width, height)
+
+	def as_reloadModS(self, linkage, template):
+		if self._isDAAPIInited():
+			self.flashObject.as_reloadMod(linkage, template)
+
 	def onFocusIn(self, *args):
 		if self._isDAAPIInited():
 			return False
@@ -73,14 +87,24 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 
 	def _populate(self):
 		super(ModsSettingsApiWindow, self)._populate()
+		self._blur = None
 		self.api.onWindowOpened()
 		self.api.onHotkeysUpdated += self.__onHotkeysUpdated
+		if hasattr(self.api, 'onImageUpdate'):
+			self.api.onImageUpdate += self.__onImageUpdate
+		if hasattr(self.api, 'onReloadMod'):
+			self.api.onReloadMod += self.__onReloadMod
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
-		self._blur.fini()
-		self._blur = None
+		if self._blur is not None:
+			self._blur.fini()
+			self._blur = None
 		self.api.onHotkeysUpdated -= self.__onHotkeysUpdated
+		if hasattr(self.api, 'onImageUpdate'):
+			self.api.onImageUpdate -= self.__onImageUpdate
+		if hasattr(self.api, 'onReloadMod'):
+			self.api.onReloadMod -= self.__onReloadMod
 		self.api.onWindowClosed()
 		super(ModsSettingsApiWindow, self)._dispose()
 
@@ -97,16 +121,34 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.updateModSettings(linkage, settings)
 		self.api.saveState()
 
+	def componentChanged(self, data):
+		if not hasattr(self.api, 'notifyLiveSettingsChange'):
+			return
+		try:
+			data = byteify(json.loads(data))
+			for linkage in data:
+				self.api.notifyLiveSettingsChange(linkage, data[linkage])
+		except Exception:
+			pass
+
 	def hotkeyAction(self, linkage, varName, action):
-		if action == HOTKEY_ACTIONS.START_ACCEPT:
-			self.api.onHotkeyStartAccept(linkage, varName)
-		elif action == HOTKEY_ACTIONS.STOP_ACCEPT:
-			self.api.onHotkeyStopAccept(linkage, varName)
-		else:
-			raise NotImplementedError(action)
+		try:
+			if action == HOTKEY_ACTIONS.START_ACCEPT:
+				self.api.onHotkeyStartAccept(linkage, varName)
+			elif action == HOTKEY_ACTIONS.STOP_ACCEPT:
+				self.api.onHotkeyStopAccept(linkage, varName)
+		except Exception:
+			pass
 
 	def buttonAction(self, linkage, varName, value):
-		self.api.onButtonClicked(linkage, varName, value)
+		try:
+			self.api.onButtonClicked(linkage, varName, value)
+		except Exception:
+			pass
+
+	def setModCollapsed(self, linkage, collapsed):
+		if hasattr(self.api, 'setModCollapsed'):
+			self.api.setModCollapsed(linkage, collapsed)
 
 	def closeView(self):
 		self.api.saveState()
@@ -115,6 +157,12 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 	def __onHotkeysUpdated(self):
 		data = self.api.getAllHotkeys()
 		self.as_setHotkeysS(data)
+
+	def __onImageUpdate(self, linkage, varName, source, width, height):
+		self.as_updateImageS(linkage, varName, source, width, height)
+
+	def __onReloadMod(self, linkage, template):
+		self.as_reloadModS(linkage, template)
 
 
 def getViewSettings():

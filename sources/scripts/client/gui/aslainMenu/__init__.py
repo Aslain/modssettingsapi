@@ -82,6 +82,16 @@ class _ModsSettingsApi(IModsSettingsApi):
 		"""
 		return self.__instance.updateModSettings(linkage, newSettings)
 
+	def updateImage(self, linkage, varName, source, width=96, height=96):
+		""" Live-update of an Image component while the settings window is open.
+		:param linkage: Mod linkage
+		:param varName: varName of the Image component to update
+		:param source: New image path (readable by the menu image loader)
+		:param width: Image width in pixels
+		:param height: Image height in pixels
+		"""
+		return self.__instance.updateImage(linkage, varName, source, width, height)
+
 	def checkKeyset(self, keyset):
 		""" Проверка нажатия клавиш
 		:param keyset: Набор клавиш для проверки

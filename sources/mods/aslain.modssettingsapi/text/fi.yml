@@ -1,0 +1,11 @@
+name: Modien määritys
+description: Tämä modi mahdollistaa asennettujen modien helpon määrittämisen.
+buttons/ok: OK
+buttons/cancel: Peruuta
+buttons/apply: Käytä
+buttons/close: SULJE
+buttons/clear: Tyhjennä
+buttons/default: Oletus
+stateswitcher/tooltip/header: Ota modi käyttöön / poista käytöstä
+stateswitcher/tooltip/body: Vihreä ilmaisin - modi käytössä\nPunainen ilmaisin - modi pois käytöstä
+colorchoice/header: VÄRI

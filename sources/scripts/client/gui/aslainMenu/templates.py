@@ -173,6 +173,51 @@ def createLabel(text, tooltip=None, tooltipIcon=None):
 	return createBase(COMPONENT_TYPE.LABEL, text, tooltip, tooltipIcon)
 
 
+def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None,
+				align=None, valign=None, containerWidth=None, containerHeight=None):
+	""" Helper to create Image component (displays an image in the menu body)
+
+	:param source: Image path readable by the game's image loader, e.g.
+		'gui/maps/icons/...' or a path inside a mod's res, optionally with the
+		'img://' prefix
+	:param width: Image width in pixels, optional
+	:param height: Image height in pixels, optional
+	:param tooltip: Component tooltip, optional
+	:param tooltipIcon: Component tooltip icon, optional
+	:param varName: Optional identifier; required only for live updates via
+		g_modsSettingsApi.updateImage()
+	:param align: Horizontal alignment inside the box, 'left' (default), 'center'
+		or 'right'
+	:param valign: Vertical alignment inside the box, 'top' (default), 'center'
+		or 'bottom'
+	:param containerWidth: Width in px of the box the image is aligned within
+		(defaults to the image width). Use it together with align.
+	:param containerHeight: Height in px of the box the image is aligned within
+		(defaults to the image height). A fixed containerHeight gives the
+		component a fixed layout slot, so live updates that change the image
+		size do not shift the components below it.
+
+	:return: Image component
+	"""
+	component = createBase(COMPONENT_TYPE.IMAGE, '', tooltip, tooltipIcon)
+	component['source'] = source
+	if width is not None:
+		component['width'] = width
+	if height is not None:
+		component['height'] = height
+	if varName is not None:
+		component['varName'] = varName
+	if align is not None:
+		component['align'] = align
+	if valign is not None:
+		component['valign'] = valign
+	if containerWidth is not None:
+		component['containerWidth'] = containerWidth
+	if containerHeight is not None:
+		component['containerHeight'] = containerHeight
+	return component
+
+
 def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=None):
 	""" Helper to create Checkbox component
 
@@ -397,3 +442,28 @@ def createRangeSlider(text, varName, value, min, max, interval, step, minRange, 
 		'divisionLabelPostfix': labelPostfix,
 	})
 	return stepper
+
+
+def createControlsGroup(master, children):
+	""" Bind a group of sub-option components to a master control
+
+	While the master control's (boolean) value is False, every child is shown
+	greyed-out and disabled (not editable); children keep their stored values.
+	Children are rendered indented under the master. The master is typically a
+	Checkbox, the children any control type, including a RadioButtonGroup
+	(single choice) or several Checkboxes (multiple choice).
+
+	:param master: Master control component (e.g. createCheckbox(...)), must have a 'varName'
+	:param children: List of sub-option components bound to the master
+
+	:return: Flat list [master, child1, ...] ready to splice into a column
+
+	Note: the binding is just a 'masterVarName' key (= master's varName) set on
+	each child, so you can also set that key by hand instead of using this helper.
+	"""
+	masterVarName = master['varName']
+	group = [master]
+	for child in children:
+		child['masterVarName'] = masterVarName
+		group.append(child)
+	return group

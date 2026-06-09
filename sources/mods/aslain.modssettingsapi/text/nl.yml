@@ -1,0 +1,11 @@
+name: Mod-configurator
+description: Met deze mod kun je geïnstalleerde mods eenvoudig configureren.
+buttons/ok: OK
+buttons/cancel: Annuleren
+buttons/apply: Toepassen
+buttons/close: SLUITEN
+buttons/clear: Wissen
+buttons/default: Standaard
+stateswitcher/tooltip/header: Mod inschakelen / uitschakelen
+stateswitcher/tooltip/body: Groene indicator - mod ingeschakeld\nRode indicator - mod uitgeschakeld
+colorchoice/header: KLEUR
