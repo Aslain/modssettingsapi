@@ -1,5 +1,5 @@
-name: Modų konfigūratorius
-description: Šis modas leidžia lengvai konfigūruoti įdiegtus modus.
+name: Modų nustatymai+
+description: Šis modas leidžia dar paprasčiau konfigūruoti įdiegtus modus.
 buttons/ok: OK
 buttons/cancel: Atšaukti
 buttons/apply: Taikyti

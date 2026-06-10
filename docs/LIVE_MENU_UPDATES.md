@@ -12,26 +12,33 @@ can feature-detect with `hasattr(...)` so your mod still runs on older API build
 
 ---
 
-## 1. `templates.createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None)`
+## 1. `templates.createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None, align=None, valign=None, containerWidth=None, containerHeight=None, collapsed=False)`
 
 Creates a component that renders an image in the menu body.
 
 | param | meaning |
 |---|---|
-| `source` | Image path readable by the game's image loader (the **same loader** tooltips use for `<img src="img://...">`). Pass the path **without** the `img://` prefix. |
-| `width`, `height` | Render size in px. Pass an **aspect-correct** pair to avoid distortion (see below). Optional; default 96×96. |
+| `source` | Plain root-relative image path resolved from the WoT root: `gui/maps/...` for resources (including images packed in your mod's `res/`) or `mods/configs/<yourmod>/<file>.png` for files on disk. No `img://` prefix, no `../` climbing. |
+| `width`, `height` | Maximum render size in px: the image is fitted (aspect-correct) within `width`×`height`, **never upscaled**. Optional; when omitted the image renders at its natural size, shrunk to fit the container if oversized. |
 | `tooltip`, `tooltipIcon` | Optional, like other components. |
 | `varName` | Optional. **Only** needed if you want to live-update this image via `updateImage()`. It is *not* a value field — it never appears in your settings dict. |
 | `align` | `'left'` (default), `'center'` or `'right'` — horizontal position inside the box. |
 | `valign` | `'top'` (default), `'center'` or `'bottom'` — vertical position inside the box. |
 | `containerWidth` | Width in px of the box the image is positioned within (defaults to the image width). |
 | `containerHeight` | Height in px of the box the image is positioned within (defaults to the image height). |
+| `collapsed` | `True` starts the slot **collapsed** (zero height) instead of reserving the full box; expand it later with `updateImage(..., source)`. Default `False` keeps the reserved slot. |
+| `label` | Optional text label rendered **above the image, inside the component** — it collapses/expands together with the image (no orphaned caption over a collapsed preview) and can be live-updated via `updateImage(..., label=...)`. Same html markup as other menu labels (e.g. `<font color='#80D639'>`). Pass `''` to reserve an empty label slot; omitted = no label slot. |
+| `labelAlign` | `'left'` (default), `'center'` or `'right'` — horizontal alignment of the label within the container box, independent of the image's own `align`. |
 
-The image keeps its `width`×`height` (aspect-correct) and is placed inside the
-`containerWidth`×`containerHeight` box per `align`/`valign`. A **fixed
-`containerHeight` gives the component a fixed layout slot**, so live updates that
-change the image size do not shift the components below it. `align`/`valign`/
+The image is fitted (aspect-correct, never upscaled) within `width`×`height` and
+placed inside the `containerWidth`×`containerHeight` box per `align`/`valign`. A
+**fixed `containerHeight` gives the component a fixed layout slot**, so live updates
+that change the image size do not shift the components below it. `align`/`valign`/
 `containerWidth`/`containerHeight` are preserved across `updateImage()` calls.
+
+Pass **`collapsed=True`** to start with no reserved slot at all — handy when the
+mod's default option shows no image (e.g. a "Deactivated" state): the placeholder
+takes zero height until the first `updateImage()` with a source expands it.
 
 ```python
 # fixed 240x110 slot, image centered — live updates never shift the layout below
@@ -41,40 +48,43 @@ templates.createImage(src, w, h, varName='iconPreview',
 ```
 
 ```python
-templates.createImage('../../mods/config/mymod/icon.png', 96, 72, varName='iconPreview')
+templates.createImage('mods/configs/mymod/icon.png', 96, 72, varName='iconPreview')
 ```
 
 ### Image path
-- Resolved **relative to the menu SWF** (`res/gui/flash/`). For files under
-  `mods/config` use `../../mods/config/<yourmod>/<file>.png`.
-- Works for images packed in your mod's `res/` **and** physical files in `mods/config`.
+- Plain root-relative paths resolved from the WoT root: `gui/maps/...` for resources
+  (including images packed in your mod's `res/`), `mods/configs/...` for physical
+  files on disk. The API does the climbing internally — pass clean paths.
 - Spaces in the path are fine (do **not** URL-encode them).
 
-### Keep proportions yourself
-The image is rendered at exactly `width`×`height` (no auto-fit), so compute an
-aspect-correct size from the real pixel dimensions to fit your box:
-
-```python
-BOX_W, BOX_H = 200.0, 96.0
-scale = min(BOX_W / imgW, BOX_H / imgH)
-w, h = max(1, int(round(imgW * scale))), max(1, int(round(imgH * scale)))
-```
-
-Then place that `w`×`h` image inside a slightly larger fixed box with
-`containerWidth`/`containerHeight` + `align`/`valign`. Keeping the box larger than the
-biggest image (and fixed) means switching between images of different sizes never
-clips them and never shifts the layout.
+### Sizing
+Aspect ratio is always preserved and the image is **never upscaled**, so
+`width`×`height` act as a maximum box: an oversized image is shrunk to fit, a smaller
+one renders at its natural size. Omit both to simply fit the container. A fixed,
+slightly larger `containerWidth`/`containerHeight` box (with `align`/`valign`) keeps
+the layout stable when switching between images of different sizes, and `scrollRect`
+clipping guarantees nothing can overflow it.
 
 ---
 
-## 2. `g_modsSettingsApi.updateImage(linkage, varName, source, width=96, height=96, removeImage=False)`
+## 2. `g_modsSettingsApi.updateImage(linkage, varName, source, width=None, height=None, removeImage=False, label=None)`
 
 Replaces an already-displayed Image **in place** — no full menu re-render, so scroll
 position and focus are preserved. The target is matched by `linkage` + `varName`.
+`width`/`height` work like in `createImage`: a maximum fit box, optional — omitted
+means natural size, shrunk to fit the container if oversized.
 
 ```python
 g_modsSettingsApi.updateImage('MyMod', 'iconPreview', newSrc, w, h)
 ```
+
+Pass **`label`** to change the text of the image's label slot on the fly (e.g.
+`label='Preview (unsaved)'` while the user has uncommitted changes). `None` (default)
+keeps the current text, `''` clears it. The slot itself must exist — create the Image
+with `label=...` (use `label=''` to reserve an empty slot); its height is fixed at
+creation so text changes never shift the layout. Passing `label` for an Image created
+**without** a label slot is a safe no-op: the text is silently ignored (no error) and
+the image itself still updates.
 
 Pass **`removeImage=True`** to **collapse** the image container to zero height (the
 `source`/`width`/`height` are ignored): the controls below it — and the mods below this

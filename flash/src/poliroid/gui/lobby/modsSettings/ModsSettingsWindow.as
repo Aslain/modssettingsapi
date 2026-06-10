@@ -175,12 +175,12 @@ package poliroid.gui.lobby.modsSettings
 			}
 		}
 
-		public function as_updateImage(linkage:String, varName:String, source:String, width:int, height:int, removeImage:Boolean = false):void
+		public function as_updateImage(linkage:String, varName:String, source:String, width:int, height:int, removeImage:Boolean = false, label:String = null):void
 		{
 			for each (var mod:ModsSettingsComponent in modsArray)
 			{
 				if (mod.modLinkage == linkage)
-					mod.updateImage(varName, source, width, height, removeImage);
+					mod.updateImage(varName, source, width, height, removeImage, label);
 			}
 		}
 

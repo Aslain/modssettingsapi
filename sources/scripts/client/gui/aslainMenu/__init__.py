@@ -1,13 +1,14 @@
 # coding: utf-8
 
-__author__ = 'Renat Iliev'
-__copyright__ = 'Copyright 2025, Wargaming'
-__credits__ = ['Andrii Andrushchyshyn', 'Renat Iliev', 'Paul Ekshmidt']
+__author__ = 'Renat Iliev (izeberg)'
+__copyright__ = 'Original work Copyright Renat Iliev; fork enhancements Copyright 2026 Aslain'
+__credits__ = ['Renat Iliev (izeberg) - original author',
+	'Andrii Andrushchyshyn - original contributor',
+	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.6.4'
-__maintainer__ = 'Paul Ekshmidt'
-__email__ = 'contact@kurzdor.me'
-__doc__ = 'https://wiki.wargaming.net/ru/ModsettingsAPI'
+__version__ = '1.1.1'
+__maintainer__ = 'Aslain'
+__doc__ = 'https://github.com/Aslain/modssettingsapi'
 
 import templates
 from .api import ModsSettingsApi
@@ -19,7 +20,7 @@ __all__ = ('g_modsSettingsApi', 'IModsSettingsApi', 'templates', 'SPECIAL_KEYS',
 
 class _ModsSettingsApi(IModsSettingsApi):
 	"""
-	API доступа к меню настроек
+	Public API of the mods settings menu
 	"""
 
 	def __init__(self):
@@ -31,73 +32,77 @@ class _ModsSettingsApi(IModsSettingsApi):
 			manager.addInstance(IModsSettingsApi, self)
 
 	def saveModData(self, linkage, version, data):
-		""" Сохранение данных мода
-		:param linkage: Идентификатор
-		:param version: Версия данных
-		:param data: Данные для сохранения
-		:return: Сохраненные настройки
+		""" Save mod data
+		:param linkage: Mod identifier
+		:param version: Data version
+		:param data: Data to save
+		:return: Saved data
 		"""
 		return self.__instance.saveModData(linkage, version, data)
 
 	def getModData(self, linkage, version, default):
-		""" Получение данных мода
-		Eсли запрошенная версия не соответствует сохраненной, будут сохранены и возвращены стандартные данные
-		:param linkage: Идентификатор
-		:param version: Версия данных
-		:param default: Стандартные данные
-		:return: Сохраненные настройки
+		""" Get mod data
+		If the requested version does not match the saved one, the default data is saved and returned
+		:param linkage: Mod identifier
+		:param version: Data version
+		:param default: Default data
+		:return: Saved data
 		"""
 		return self.__instance.getModData(linkage, version, default)
 
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None):
-		""" Инициализация настроек
-		:param linkage: Идентификатор настроек
-		:param template: Шаблон настроек
-		:param callback: Функция-обработчик новых настроек
-		:param buttonHandler: Функция-обработчик нажатий на кнопку
-		:return: Сохраненные настройки
+		""" Initialize mod settings
+		:param linkage: Settings identifier
+		:param template: Settings template
+		:param callback: Handler called with new settings
+		:param buttonHandler: Handler called on button clicks
+		:return: Saved settings
 		"""
 		return self.__instance.setModTemplate(linkage, template, callback, buttonHandler)
 
 	def registerCallback(self, linkage, callback, buttonHandler=None):
-		""" Регистрация функций-обработчиков вызова
-		:param linkage: Идентификатор настроек
-		:param callback: Функция-обработчик новых настроек
-		:param buttonHandler: Функция-обработчик нажатий на кнопку
+		""" Register handler callbacks
+		:param linkage: Settings identifier
+		:param callback: Handler called with new settings
+		:param buttonHandler: Handler called on button clicks
 		"""
 		return self.__instance.registerCallback(linkage, callback, buttonHandler)
 
 	def getModSettings(self, linkage, template):
-		""" Получение сохраненных настроек
-		:param linkage: Идентификатор настроек
-		:param template: Шаблон настроек
-		:return: Сохраненные настройки, если таковых нет (либо есть, но устаревшие) - None
+		""" Get saved settings
+		:param linkage: Settings identifier
+		:param template: Settings template
+		:return: Saved settings, or None when there are none (or they are outdated)
 		"""
 		return self.__instance.getModSettings(linkage, template)
 
 	def updateModSettings(self, linkage, newSettings):
-		""" Изменение сохраненных настроек
-		:param linkage: Идентификатор настроек
-		:param newSettings: Новые настройки
+		""" Update saved settings
+		:param linkage: Settings identifier
+		:param newSettings: New settings
 		"""
 		return self.__instance.updateModSettings(linkage, newSettings)
 
-	def updateImage(self, linkage, varName, source, width=96, height=96, removeImage=False):
+	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False, label=None):
 		""" Live-update of an Image component while the settings window is open.
 		:param linkage: Mod linkage
 		:param varName: varName of the Image component to update
-		:param source: New image path (readable by the menu image loader)
-		:param width: Image width in pixels
-		:param height: Image height in pixels
+		:param source: New image path (root-relative, e.g. 'gui/maps/...' or 'mods/configs/...')
+		:param width: Image width in pixels, optional. When omitted the image renders at
+			its natural size, shrunk to fit the container if oversized (never upscaled)
+		:param height: Image height in pixels, optional (see width)
 		:param removeImage: When True, collapse the image container to zero height so the
 			controls below it jump up (source/width/height are ignored). Default False keeps
 			the current behaviour (reserved slot), so existing mods need no change.
+		:param label: New text for the image's label, optional. None (default) keeps the
+			current text, '' clears it. Only applies when the Image was created with a
+			label slot (createImage(..., label=...)).
 		"""
-		return self.__instance.updateImage(linkage, varName, source, width, height, removeImage)
+		return self.__instance.updateImage(linkage, varName, source, width, height, removeImage, label)
 
 	def checkKeyset(self, keyset):
-		""" Проверка нажатия клавиш
-		:param keyset: Набор клавиш для проверки
+		""" Check whether a keyset is currently pressed
+		:param keyset: Keys to check
 		:return: bool
 		"""
 		return self.__instance.checkKeyset(keyset)

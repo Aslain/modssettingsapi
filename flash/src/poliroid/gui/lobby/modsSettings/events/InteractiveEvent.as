@@ -9,7 +9,7 @@
 		public static const SETTINGS_CHANGED:String = "onModSettingsChanged";
 		public static const VALUE_CHANGED:String = "onValueChanged";
 		public static const OK_BUTTON_CLICK:String = "okButtonClick";
-		public static const CANCEL_BUTTON_CLICK:String = "сancelButtonClick";
+		public static const CANCEL_BUTTON_CLICK:String = "cancelButtonClick";
 		public static const APPLY_BUTTON_CLICK:String = "applyButtonClick";
 		public static const CLOSE_BUTTON_CLICK:String = "closeButtonClick";
 		public static const COLLAPSE_CHANGED:String = "collapseChanged";

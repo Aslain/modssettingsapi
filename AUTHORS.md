@@ -3,6 +3,8 @@
 ## Original work
 
 - **izeberg (Renat Iliev)**, author of the original [ModsSettings API](https://github.com/izeberg/modssettingsapi). All original credit and copyright remain with the author.
+- **Andrii Andrushchyshyn**, contributor to the original project.
+- **Paul Ekshmidt (Kurzdor)**, maintainer of the original project.
 
 ## This fork
 

@@ -1,5 +1,5 @@
-name: Mod-configurator
-description: Met deze mod kun je geïnstalleerde mods eenvoudig configureren.
+name: Mod-instellingen+
+description: Deze mod maakt het configureren van geïnstalleerde mods nog eenvoudiger.
 buttons/ok: OK
 buttons/cancel: Annuleren
 buttons/apply: Toepassen

@@ -1,5 +1,5 @@
-name: Mod konfigurátor
-description: Ez a mod lehetővé teszi a telepített modok egyszerű konfigurálását.
+name: Modbeállítások+
+description: Ez a mod még könnyebbé teszi a telepített modok beállítását.
 buttons/ok: OK
 buttons/cancel: Mégsem
 buttons/apply: Folytatás

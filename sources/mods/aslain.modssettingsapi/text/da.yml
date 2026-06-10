@@ -1,5 +1,5 @@
-name: Mod-konfigurator
-description: Dette mod giver dig mulighed for nemt at konfigurere installerede mods.
+name: Mod-indstillinger+
+description: Denne mod gør det endnu nemmere at konfigurere installerede mods.
 buttons/ok: OK
 buttons/cancel: Annuller
 buttons/apply: Anvend

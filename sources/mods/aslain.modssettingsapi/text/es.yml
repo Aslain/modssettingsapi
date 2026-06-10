@@ -1,5 +1,5 @@
-name: Configurador de mods
-description: Este mod te permite configurar fácilmente los mods instalados.
+name: Ajustes de mods+
+description: Este mod permite configurar los mods instalados aún más fácilmente.
 buttons/ok: OK
 buttons/cancel: Cancelar
 buttons/apply: Aplicar

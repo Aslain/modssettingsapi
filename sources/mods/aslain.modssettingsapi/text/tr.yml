@@ -1,5 +1,5 @@
-name: Mod yapılandırıcı
-description: Bu mod, yüklü modları kolayca yapılandırmanıza olanak tanır.
+name: Mod ayarları+
+description: Bu mod, kurulu modları daha da kolay yapılandırmanızı sağlar.
 buttons/ok: OK
 buttons/cancel: İptal
 buttons/apply: Uygula

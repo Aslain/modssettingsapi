@@ -1,5 +1,5 @@
-name: Modu konfigurators
-description: Šis mods ļauj viegli konfigurēt instalētos modus.
+name: Modu iestatījumi+
+description: Šis mods ļauj vēl vienkāršāk konfigurēt instalētos modus.
 buttons/ok: OK
 buttons/cancel: Atcelt
 buttons/apply: Lietot

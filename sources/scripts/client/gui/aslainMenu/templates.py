@@ -174,7 +174,8 @@ def createLabel(text, tooltip=None, tooltipIcon=None):
 
 
 def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None,
-				align=None, valign=None, containerWidth=None, containerHeight=None):
+				align=None, valign=None, containerWidth=None, containerHeight=None,
+				collapsed=False, label=None, labelAlign=None):
 	""" Helper to create Image component (displays an image in the menu body)
 
 	:param source: Image path readable by the game's image loader, e.g.
@@ -196,6 +197,18 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 		(defaults to the image height). A fixed containerHeight gives the
 		component a fixed layout slot, so live updates that change the image
 		size do not shift the components below it.
+	:param collapsed: When True the image starts collapsed (a zero-height slot)
+		instead of reserving the full container; call updateImage() with a path
+		to expand it. Default False keeps the full reserved slot (current
+		behaviour). Useful when the default state shows no image.
+	:param label: Optional text label rendered above the image, inside the
+		component - it collapses and expands together with the image (unlike a
+		separate createLabel) and can be live-updated via updateImage(). Supports
+		the same html markup as other menu labels (e.g. font color). Pass '' to
+		reserve an empty label slot; None (default) = no label slot at all.
+	:param labelAlign: 'left' (default), 'center' or 'right' - horizontal
+		alignment of the label within the container box, independent of the
+		image's own align.
 
 	:return: Image component
 	"""
@@ -215,6 +228,12 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 		component['containerWidth'] = containerWidth
 	if containerHeight is not None:
 		component['containerHeight'] = containerHeight
+	if collapsed:
+		component['collapsed'] = True
+	if label is not None:
+		component['label'] = label
+	if labelAlign is not None:
+		component['labelAlign'] = labelAlign
 	return component
 
 

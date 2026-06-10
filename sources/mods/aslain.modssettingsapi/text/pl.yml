@@ -1,5 +1,5 @@
-name: Konfigurator modów
-description: Mod ten umożliwia łatwą konfigurację zainstalowanych modów.
+name: Ustawienia modów+
+description: Mod ten umożliwia jeszcze łatwiejszą konfigurację zainstalowanych modów.
 buttons/ok: OK
 buttons/cancel: Anuluj
 buttons/apply: Zastosuj

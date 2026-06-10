@@ -69,9 +69,9 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			self.flashObject.as_setHotkeys(data)
 
-	def as_updateImageS(self, linkage, varName, source, width, height, removeImage):
+	def as_updateImageS(self, linkage, varName, source, width, height, removeImage, label):
 		if self._isDAAPIInited():
-			self.flashObject.as_updateImage(linkage, varName, source, width, height, removeImage)
+			self.flashObject.as_updateImage(linkage, varName, source, width, height, removeImage, label)
 
 	def as_reloadModS(self, linkage, template):
 		if self._isDAAPIInited():
@@ -158,8 +158,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		data = self.api.getAllHotkeys()
 		self.as_setHotkeysS(data)
 
-	def __onImageUpdate(self, linkage, varName, source, width, height, removeImage):
-		self.as_updateImageS(linkage, varName, source, width, height, removeImage)
+	def __onImageUpdate(self, linkage, varName, source, width, height, removeImage, label):
+		self.as_updateImageS(linkage, varName, source, width, height, removeImage, label)
 
 	def __onReloadMod(self, linkage, template):
 		self.as_reloadModS(linkage, template)

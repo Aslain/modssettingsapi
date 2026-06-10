@@ -114,18 +114,48 @@
 			var boxH:int = componentConfig.hasOwnProperty("containerHeight") ? int(componentConfig.containerHeight) : ((h > 0 ? h : 96) + IMAGE_PAD);
 
 			var result:MovieClip = new MovieClip();
+
+			// Optional label above the image, part of the component: it collapses/expands with
+			// the image (unlike a separate createLabel) and can be live-updated via updateImage.
+			var labelH:int = 0;
+			if (componentConfig.hasOwnProperty("label"))
+			{
+				var labelField:LabelControl = LabelControl(App.utils.classFactory.getComponent('LabelControl', LabelControl));
+				labelField.width = boxW;
+				labelField.htmlText = String(componentConfig.label);
+				labelField.validateNow();
+				result.addChild(labelField);
+				result["labelField"] = labelField;
+				result["labelAlign"] = componentConfig.hasOwnProperty("labelAlign") ? String(componentConfig.labelAlign) : "left";
+				labelH = Constants.COMPONENT_HEADER_MARGIN;
+			}
+			result["labelH"] = labelH;
+
+			// The bitmaps live in their own sub-container so frame swaps never touch the label.
+			var imgBox:MovieClip = new MovieClip();
+			imgBox.y = labelH;
+			result.addChild(imgBox);
+			result["imgBox"] = imgBox;
+
 			result.graphics.beginFill(0, 0);
-			result.graphics.drawRect(0, 0, boxW, boxH);
+			result.graphics.drawRect(0, 0, boxW, labelH + boxH);
 			result.graphics.endFill();
-			result.scrollRect = new Rectangle(0, 0, boxW, boxH);
+			result.scrollRect = new Rectangle(0, 0, boxW, labelH + boxH);
 			result["imgW"] = w;
 			result["imgH"] = h;
 			result["boxW"] = boxW;
 			result["boxH"] = boxH;
+			result["totalH"] = labelH + boxH;
 			result["halign"] = halign;
 			result["valign"] = valign;
+			positionImageLabel(result);
 
-			loadImageInto(result, src);
+			// collapsed=true starts the slot at zero height (no full empty container at the
+			// default state); a later updateImage() with a path expands it. Otherwise load now.
+			if (componentConfig.hasOwnProperty("collapsed") && Boolean(componentConfig.collapsed))
+				collapseImage(result);
+			else
+				loadImageInto(result, src);
 			return result;
 		}
 
@@ -134,14 +164,15 @@
 		// image identically; the API never lets a too-big image overflow the container.
 		public static function loadImageInto(holder:MovieClip, src:String):void
 		{
-			// Restore the full box height in case the holder was collapsed by removeImage.
-			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["boxH"]));
+			// Restore the full slot height in case the holder was collapsed by removeImage.
+			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["totalH"]));
 			holder["collapsed"] = false;
 			holder["src"] = src;
+			var imgBox:MovieClip = MovieClip(holder["imgBox"]);
 			if (src == null || src == "")
 			{
-				while (holder.numChildren > 0)
-					holder.removeChildAt(holder.numChildren - 1);
+				while (imgBox.numChildren > 0)
+					imgBox.removeChildAt(imgBox.numChildren - 1);
 				return;
 			}
 
@@ -175,11 +206,37 @@
 		// controls below it upward. loadImageInto restores the box height when a source is set.
 		public static function collapseImage(holder:MovieClip):void
 		{
-			while (holder.numChildren > 0)
-				holder.removeChildAt(holder.numChildren - 1);
+			var imgBox:MovieClip = MovieClip(holder["imgBox"]);
+			while (imgBox.numChildren > 0)
+				imgBox.removeChildAt(imgBox.numChildren - 1);
 			holder["src"] = "";
 			holder["collapsed"] = true;
 			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), 0);
+		}
+
+		// Replace the text of the label slot created by createImage(label=...); a holder
+		// without a label slot ignores the call (the slot height is fixed at creation).
+		public static function setImageLabel(holder:MovieClip, text:String):void
+		{
+			var labelField:LabelControl = holder["labelField"] as LabelControl;
+			if (labelField == null)
+				return;
+			labelField.htmlText = text;
+			labelField.validateNow();
+			positionImageLabel(holder);
+		}
+
+		private static function positionImageLabel(holder:MovieClip):void
+		{
+			var labelField:LabelControl = holder["labelField"] as LabelControl;
+			if (labelField == null)
+				return;
+			var boxW:int = int(holder["boxW"]);
+			var labelAlign:String = String(holder["labelAlign"]);
+			var tf:TextField = labelField["textField"] as TextField;
+			var textW:Number = (tf != null) ? Math.min(tf.textWidth + 4, boxW) : boxW;
+			var x:Number = (labelAlign == "center") ? (boxW - textW) / 2 : (labelAlign == "right") ? (boxW - textW) : 0;
+			labelField.x = Math.max(0, Math.round(x));
 		}
 
 		private static function renderBitmapInto(holder:MovieClip, bmd:BitmapData):void
@@ -187,8 +244,9 @@
 			// Clear the old bitmap and add the new one together, so loadImageInto can keep the
 			// previous frame on screen while the next one loads - the holder never blanks
 			// mid-load, which is what made fast frame-by-frame animation flicker on first play.
-			while (holder.numChildren > 0)
-				holder.removeChildAt(holder.numChildren - 1);
+			var imgBox:MovieClip = MovieClip(holder["imgBox"]);
+			while (imgBox.numChildren > 0)
+				imgBox.removeChildAt(imgBox.numChildren - 1);
 
 			var w:int = int(holder["imgW"]);
 			var h:int = int(holder["imgH"]);
@@ -214,7 +272,7 @@
 			bmp.smoothing = scale < 1;
 			bmp.x = Math.round((halign == "center") ? (boxW - bmp.width) / 2 : (halign == "right") ? (boxW - bmp.width) : 0);
 			bmp.y = Math.round((valign == "center") ? (boxH - bmp.height) / 2 : (valign == "bottom") ? (boxH - bmp.height) : 0);
-			holder.addChild(bmp);
+			imgBox.addChild(bmp);
 		}
 
 		public static function createCheckBox(componentConfig:Object, modLinkage:String, text:String, value:Boolean, tooltip:String = '', tooltipIcon:String = ''):DisplayObject

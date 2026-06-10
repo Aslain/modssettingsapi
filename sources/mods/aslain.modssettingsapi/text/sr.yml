@@ -1,5 +1,5 @@
-name: Konfigurator modova
-description: Ovaj mod omogućava jednostavno konfigurisanje instaliranih modova.
+name: Podešavanja modova+
+description: Ovaj mod omogućava još lakšu konfiguraciju instaliranih modova.
 buttons/ok: OK
 buttons/cancel: Otkaži
 buttons/apply: Primeni

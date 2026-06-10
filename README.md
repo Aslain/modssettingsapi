@@ -2,7 +2,7 @@
 
 An enhanced fork of [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi), the in-garage settings menu for World of Tanks mods. It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
 
-It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features.
+It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features. In the hangar's mods list the menu appears as **"Mods settings+"** (localized), with a "+" badge on its icon.
 
 ## Enhancements over the original
 
@@ -11,7 +11,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - Mods list **sorted by display name** (case-insensitive), ignoring a leading badge or symbol before the name.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on.
 - **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value)`: grey a control unless another control holds a given value (e.g. mutually-exclusive radio branches), updating live as the master changes — extends the master/child idea beyond a boolean On/Off.
-- **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, or collapse its slot with `updateImage(..., removeImage=True)`. Image sources are plain root-relative paths resolved from the WoT root.
+- **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, collapse its slot with `updateImage(..., removeImage=True)`, or start it collapsed via `createImage(..., collapsed=True)`. An optional built-in `label` (with `labelAlign`) renders above the image, collapses together with it and can be live-updated too. Image sources are plain root-relative paths resolved from the WoT root.
 - **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage, optionally `mode='changedOnly'` to receive only the keys that changed) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window.
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
@@ -94,8 +94,9 @@ column = [
 # createImage is aslainMenu-only -> add the preview only when available,
 # otherwise it is simply omitted (no error, no empty gap).
 if hasattr(templates, 'createImage'):
-    column.append(templates.createImage('myicons/%s.png' % ICON_NAMES[0],
-                                        containerHeight=96, align='center'))
+    column.append(templates.createImage('mods/configs/mymod/icons/%s.png' % ICON_NAMES[0],
+                                        containerHeight=96, align='center',
+                                        label='Preview', labelAlign='center'))
 
 # createControlsGroup (grey-out sub-options under a master) is aslainMenu-only too.
 master = templates.createCheckbox('Enable extras', 'extrasOn', True)
@@ -118,8 +119,6 @@ if hasattr(g_modsSettingsApi, 'updateImage'):
 
 - `templates`: `createImage`, `createControlsGroup`, `enableWhen`
 - `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`
-
-Everything else (checkboxes, sliders, dropdowns, radio button groups, step sliders, hotkeys, color choice, range slider, labels, `setModTemplate`, `getModSettings`, ...) exists on both menus, so it needs no guard.
 
 ## Dependencies
 

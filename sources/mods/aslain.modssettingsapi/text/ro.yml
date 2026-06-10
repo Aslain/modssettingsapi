@@ -1,5 +1,5 @@
-name: Configurator de moduri
-description: Acest mod îți permite să configurezi cu ușurință modurile instalate.
+name: Setări moduri+
+description: Acest mod permite configurarea și mai ușoară a modurilor instalate.
 buttons/ok: OK
 buttons/cancel: Anulează
 buttons/apply: Aplică

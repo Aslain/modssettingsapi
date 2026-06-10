@@ -170,10 +170,10 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.state.setdefault('collapsed', {})[linkage] = bool(collapsed)
 		self.saveState()
 
-	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False):
+	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False, label=None):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
-		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage))
+		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage), label)
 
 	def registerLiveSettingsChange(self, linkage, callback, mode=LIVE_SETTINGS_MODE.FULL_SETTINGS):
 		# mode=FULL_SETTINGS (default): callback gets the full settings dict (legacy behavior).

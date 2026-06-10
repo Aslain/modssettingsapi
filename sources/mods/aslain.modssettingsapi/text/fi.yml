@@ -1,5 +1,5 @@
-name: Modien määritys
-description: Tämä modi mahdollistaa asennettujen modien helpon määrittämisen.
+name: Modien asetukset+
+description: Tämä modi tekee asennettujen modien määrityksestä entistä helpompaa.
 buttons/ok: OK
 buttons/cancel: Peruuta
 buttons/apply: Käytä

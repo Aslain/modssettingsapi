@@ -462,7 +462,7 @@ package poliroid.gui.lobby.modsSettings.components
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.HEIGHT_CHANGED, modLinkage));
 		}
 
-		public function updateImage(varName:String, source:String, w:int, h:int, removeImage:Boolean = false):Boolean
+		public function updateImage(varName:String, source:String, w:int, h:int, removeImage:Boolean = false, label:String = null):Boolean
 		{
 			for (var i:Number = 0; i < components.length; i++)
 			{
@@ -476,6 +476,8 @@ package poliroid.gui.lobby.modsSettings.components
 					{
 						var wasCollapsed:Boolean = holder['collapsed'] == true;
 
+						if (label != null)
+							ComponentsFactory.setImageLabel(holder, label);
 						if (removeImage)
 						{
 							ComponentsFactory.collapseImage(holder);

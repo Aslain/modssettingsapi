@@ -7,41 +7,41 @@ class IModsSettingsApi(object):
 
 	"""Public, can be shared with other mods"""
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None):
-		""" Инициализация настроек
-		:param linkage: Идентификатор настроек
-		:param template: Шаблон настроек
-		:param callback: Функция-обработчик новых настроек
-		:param buttonHandler: Функция-обработчик нажатий на кнопку
-		:return: Сохраненные настройки
+		""" Initialize mod settings
+		:param linkage: Settings identifier
+		:param template: Settings template
+		:param callback: Handler called with new settings
+		:param buttonHandler: Handler called on button clicks
+		:return: Saved settings
 		"""
 		pass
 
 	def registerCallback(self, linkage, callback, buttonHandler=None):
-		""" Регистрация функций-обработчиков вызова
-		:param linkage: Идентификатор настроек
-		:param callback: Функция-обработчик новых настроек
-		:param buttonHandler: Функция-обработчик нажатий на кнопку
+		""" Register handler callbacks
+		:param linkage: Settings identifier
+		:param callback: Handler called with new settings
+		:param buttonHandler: Handler called on button clicks
 		"""
 		pass
 
 	def getModSettings(self, linkage, template):
-		""" Получение сохраненных настроек
-		:param linkage: Идентификатор настроек
-		:param template: Шаблон настроек
-		:return: Сохраненные настройки, если таковых нет (либо есть, но устаревшие) - None
+		""" Get saved settings
+		:param linkage: Settings identifier
+		:param template: Settings template
+		:return: Saved settings, or None when there are none (or they are outdated)
 		"""
 		pass
 
 	def updateModSettings(self, linkage, newSettings):
-		""" Изменение сохраненных настроек
-		:param linkage: Идентификатор настроек
-		:param newSettings: Новые настройки
+		""" Update saved settings
+		:param linkage: Settings identifier
+		:param newSettings: New settings
 		"""
 		pass
 
 	def checkKeyset(self, keyset):
-		""" Проверка нажатия клавиш
-		:param keyset: Набор клавиш для проверки
+		""" Check whether a keyset is currently pressed
+		:param keyset: Keys to check
 		:return: bool
 		"""
 		pass
