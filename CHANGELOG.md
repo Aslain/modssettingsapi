@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### 1.1.2
+- Fixed: the mods-list scrollbar could permanently stop responding to thumb dragging and arrow clicks (only the mouse wheel kept working) when the list height changed - e.g. a mod was collapsed - while a smooth wheel-scroll animation was still running
+- Fixed: after Collapse All followed by Expand All on a long, deeply-scrolled list, a single wheel tick could jump the list back to its old (pre-collapse) scroll position
+
 ### 1.1.1
 - The hangar entry and the settings window are now titled **"Mods settings+"** (localized in all 25 languages) and the menu icon carries a small "+" badge, so the enhanced menu is easy to tell apart from the original
 - `templates.createImage(..., collapsed=True)` — start the image's slot collapsed (zero height) instead of reserving the full container; expand it later with `updateImage(..., source)`. Default `False` keeps the reserved slot (useful when the mod's default state shows no image)

@@ -3,10 +3,10 @@
 __author__ = 'Renat Iliev (izeberg)'
 __copyright__ = 'Original work Copyright Renat Iliev; fork enhancements Copyright 2026 Aslain'
 __credits__ = ['Renat Iliev (izeberg) - original author',
-	'Andrii Andrushchyshyn - original contributor',
+	'Andrii Andrushchyshyn (poliroid) - original contributor',
 	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 __maintainer__ = 'Aslain'
 __doc__ = 'https://github.com/Aslain/modssettingsapi'
 

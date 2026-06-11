@@ -3,7 +3,7 @@
 ## Original work
 
 - **izeberg (Renat Iliev)**, author of the original [ModsSettings API](https://github.com/izeberg/modssettingsapi). All original credit and copyright remain with the author.
-- **Andrii Andrushchyshyn**, contributor to the original project.
+- **Andrii Andrushchyshyn (poliroid)**, contributor to the original project.
 - **Paul Ekshmidt (Kurzdor)**, maintainer of the original project.
 
 ## This fork
@@ -12,4 +12,4 @@
 
 ## Dependency
 
-- **poliroid**, [ModsList API](https://gitlab.com/wot-public-mods/mods-list), required to open the settings window.
+- **poliroid (Andrii Andrushchyshyn)**, [ModsList API](https://gitlab.com/wot-public-mods/mods-list), required to open the settings window.

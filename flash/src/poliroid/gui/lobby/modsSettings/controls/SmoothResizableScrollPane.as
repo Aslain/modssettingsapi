@@ -70,6 +70,9 @@ package poliroid.gui.lobby.modsSettings.controls
 		{
 			super.applyTargetChanges();
 
+			if (_smoothScrollPosition > maxScroll)
+				_smoothScrollPosition = maxScroll;
+
 			if (!_restoreBottomPosition)
 				return;
 
@@ -84,6 +87,8 @@ package poliroid.gui.lobby.modsSettings.controls
 		 */
 		override public function doMouseWheel(value:int):void
 		{
+			if (!_isScrolling)
+				_smoothScrollPosition = scrollPosition;
 			// calculate target scroll position
 			var moveDelta = value > 0 ? _smoothScrollStepFactor : -_smoothScrollStepFactor;
 			_smoothScrollPosition = Math.min(maxScroll, Math.max(0, smoothScrollPosition - moveDelta));
@@ -118,11 +123,22 @@ package poliroid.gui.lobby.modsSettings.controls
 		 */
 		private function _smoothScrollAnimation():void
 		{
+			if (_smoothScrollPosition > maxScroll)
+				_smoothScrollPosition = maxScroll;
+			if (_smoothScrollPosition < 0)
+				_smoothScrollPosition = 0;
 			var animationTime:Number = (getTimer() - _scrollStartTime) / _smoothScrollDuration;
 			var k = animationTime - 1;
 			var animationCoeff:Number = k * k * k + 1;
 			animationCoeff = Math.min(1, animationCoeff);
 			scrollPosition = _scrollStartPosition + int((smoothScrollPosition - _scrollStartPosition) * animationCoeff);
+			if (animationTime >= 1)
+			{
+				scrollPosition = _smoothScrollPosition;
+				App.stage.removeEventListener(Event.ENTER_FRAME, _smoothScrollAnimation);
+				_isScrolling = false;
+				return;
+			}
 			_smoothScrollStop();
 		}
 
