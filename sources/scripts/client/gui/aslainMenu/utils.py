@@ -266,7 +266,6 @@ def jsonRemoveComments(data, strip_space=True):
 		if not (inMultiString or inSingle):
 			tmp = data[index:match.start()]
 			if not inString and strip_space:
-				# replace white space as defined in standard
 				tmp = re.sub('[ \t\n\r]+', '', tmp)
 			result.append(tmp)
 
@@ -276,10 +275,9 @@ def jsonRemoveComments(data, strip_space=True):
 		if group == '"' and not (inMultiString or inSingle):
 			escaped = endSlashes.search(data, 0, match.start())
 
-			# start or unescaped quote character to end
 			if not inString or (escaped is None or len(escaped.group()) % 2 == 0):
 				inString = not inString
-			index -= 1  # include quote character in next catch
+			index -= 1
 		elif not (inString or inMultiString or inSingle):
 			if group == '/*':
 				inMultiString = True

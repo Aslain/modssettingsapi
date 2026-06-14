@@ -10,9 +10,11 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
 - Mods list **sorted by display name** (case-insensitive), ignoring a leading badge or symbol before the name.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on.
-- **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value)`: grey a control unless another control holds a given value (e.g. mutually-exclusive radio branches), updating live as the master changes — extends the master/child idea beyond a boolean On/Off.
+- **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value, condition='==')`: grey a control unless another control's value satisfies a condition — equality / list membership by default, or a comparison (`'!='`, `'>'`, `'>='`, `'<'`, `'<='`, e.g. master `>= 0`; also available as `CONDITION.*` aliases). Updates live as the master changes — extends the master/child idea beyond a boolean On/Off.
 - **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, collapse its slot with `updateImage(..., removeImage=True)`, or start it collapsed via `createImage(..., collapsed=True)`. An optional built-in `label` (with `labelAlign`) renders above the image, collapses together with it and can be live-updated too. Image sources are plain root-relative paths resolved from the WoT root.
-- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage, optionally `mode='changedOnly'` to receive only the keys that changed) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window.
+- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage; pass `fullsettings=False` to receive only the changed keys instead of the full dict — the old `mode='changedOnly'` form is deprecated) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window — only the controls that actually changed are rebuilt, so it no longer flickers.
+- **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) — the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
+- **API version** for feature-gating: `g_modsSettingsApi.getVersion()` (string, e.g. `'1.2.0'`) and `getVersionTuple()` (e.g. `(1, 2, 0)` — compare this, not the string), plus the importable `VERSION` / `VERSION_TUPLE` constants, so a mod can adapt to the running API version (`if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`).
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
 
@@ -73,13 +75,27 @@ column = [
     # editable only while 'indicator' is on Animated (value 1)
     templates.enableWhen(templates.createDropdown('Animation', 'anim', ANIMS, 0),
                          'indicator', 1),
+
+    templates.createSlider('Count', 'count', 0, 0, 10, 1),
+    # comparison, not just equality: editable only while 'count' is >= 3
+    templates.enableWhen(templates.createCheckbox('Extra option', 'extra', False),
+                         'count', 3, condition=CONDITION.GREATER_EQUAL),
 ]
 ```
 
-`value` may be a list to enable a control for several master values, and `indent=True`
-indents it like a sub-option. `enableWhen` is aslainMenu-only - guard it with
-`hasattr(templates, 'enableWhen')`; a control without the binding simply stays
-always-enabled, so older API builds degrade gracefully.
+`condition` compares instead of matching: `'=='` (default), `'!='`, `'>'`, `'>='`, `'<'`, `'<='`. The `CONDITION` constants are aliases for these (`CONDITION.EQUAL`, `CONDITION.GREATER_EQUAL`, …) — import with `from gui.aslainMenu import templates, CONDITION`, or just pass the raw string. With `'=='`, `value` may be a list to enable for several master values. `indent=True` indents the control like a sub-option. `enableWhen` is aslainMenu-only - guard it with `hasattr(templates, 'enableWhen')`; a control without the binding simply stays always-enabled, so older API builds degrade gracefully.
+
+### Wrapping a long hotkey label
+
+A long hotkey label wraps into the narrow column to the left of the keys by default. Pass `float='right'` to wrap it *around* the keys instead (CSS-`float` style) - the keys stay on the right and the overflow lines run the full row width underneath, so a long description reads naturally:
+
+```python
+templates.createHotkey(
+    'A long description for this hotkey that reads better flowing under the keys',
+    'myKey', [Keys.KEY_BACKSPACE, KEY_CONTROL], float='right')
+```
+
+`float='none'` (default) keeps the narrow-column wrap. Plain-text labels only (a label with HTML markup keeps the narrow layout). Older API builds ignore the arg, so it degrades gracefully.
 
 ### Staying compatible with plain izeberg
 
@@ -115,10 +131,19 @@ if hasattr(g_modsSettingsApi, 'updateImage'):
     # inside onLiveChange call g_modsSettingsApi.updateImage(MOD_LINKAGE, 'icon', newSource)
 ```
 
+To gate on a feature level, read the running API version (guard the call — older builds don't provide it). Compare the tuple form, never the string:
+
+```python
+getVer = getattr(g_modsSettingsApi, 'getVersionTuple', None)
+apiVersion = getVer() if getVer else (0, 0, 0)
+if apiVersion >= (1, 2):
+    g_modsSettingsApi.registerLiveSettingsChange(MOD_LINKAGE, onLiveChange, fullsettings=False)
+```
+
 **aslainMenu-only - guard before use:**
 
 - `templates`: `createImage`, `createControlsGroup`, `enableWhen`
-- `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`
+- `g_modsSettingsApi`: `updateImage`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`
 
 ## Dependencies
 

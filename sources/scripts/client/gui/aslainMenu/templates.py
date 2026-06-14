@@ -1,4 +1,4 @@
-from ._constants import COMPONENT_TYPE
+from ._constants import COMPONENT_TYPE, CONDITION
 
 
 def createBase(type, text, tooltip=None, tooltipIcon=None):
@@ -392,7 +392,7 @@ def createNumericStepper(text, varName, value, min, max, interval, tooltip=None,
 	return stepper
 
 
-def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=None):
+def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=None, float='none'):
 	""" Helper to create Hotkey component
 
 	:param text: Component text
@@ -402,10 +402,16 @@ def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=No
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param float: CSS-like float for the keys when the label is long. 'none' (default) keeps
+		the label in the narrow column left of the keys. 'right' floats the keys to the right
+		and wraps the label around them - narrow beside them on top, full row width underneath.
+		Plain-text labels only; a label that contains HTML markup keeps the 'none' layout.
 
 	:return: Hotkey component
 	"""
-	return createControl(COMPONENT_TYPE.HOTKEY, text, varName, value, tooltip, tooltipIcon, button)
+	control = createControl(COMPONENT_TYPE.HOTKEY, text, varName, value, tooltip, tooltipIcon, button)
+	control['float'] = float
+	return control
 
 
 def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None):
@@ -488,34 +494,47 @@ def createControlsGroup(master, children):
 	return group
 
 
-def enableWhen(control, masterVarName, value, indent=False):
-	""" Enable a control only while a master control holds a given value
+def enableWhen(control, masterVarName, value, indent=False, condition=CONDITION.EQUAL):
+	""" Enable a control only while a master control's value satisfies a condition
 
 	Where createControlsGroup greys its children while a *boolean* master is Off,
-	this binds a control to a *specific value* of any master - e.g. grey a slider
-	unless a RadioButtonGroup / Dropdown sits on a given option. The control is
-	enabled (editable, full opacity) when the master's current value equals
-	`value` (or is one of them when `value` is a list), and greyed-out / disabled
-	otherwise. Ideal for mutually-exclusive controls (each branch gated on its own
-	value). The grey-out updates live as the master changes.
+	this binds a control to a *condition* on any master's value - e.g. grey a slider
+	unless a RadioButtonGroup / Dropdown sits on a given option, or unless a numeric
+	master is >= some threshold. The control is enabled (editable, full opacity) when
+	the condition holds and greyed-out / disabled otherwise. Ideal for mutually-
+	exclusive controls (each branch gated on its own value). The grey-out updates live
+	as the master changes.
+
+	`condition` is a standard comparison applied as `masterValue <condition> value`:
+	  '=='  master equals value (or is one of them when `value` is a list)  [default]
+	  '!='  master differs from value (or is none of them when `value` is a list)
+	  '>'  '>='  '<'  '<='   numeric comparison against a single `value`
+	The default '==' is exactly the original behaviour, so existing calls are unchanged.
+	The CONDITION constants are aliases for these strings, so you can write
+	condition=CONDITION.GREATER_EQUAL instead of condition='>=' (EQUAL, NOT_EQUAL, GREATER,
+	GREATER_EQUAL, LESS, LESS_EQUAL). Import it alongside templates: `from gui.aslainMenu
+	import templates, CONDITION`.
 
 	The control is treated as a sibling, not a sub-option, so by default it is NOT
 	indented (pass indent=True to indent it like createControlsGroup does).
 
-	Backward compatible: the binding is just plain keys ('masterVarName',
-	'masterValue', 'masterIndent') so they can also be set by hand, and a control
-	without the binding is unaffected. On older API builds that predate this
-	feature the keys are ignored and the control stays always-enabled, so
-	feature-detect with hasattr(templates, 'enableWhen') and skip it when missing.
+	Backward compatible: the binding is just plain keys ('masterVarName', 'masterValue',
+	'masterIndent', 'condition') so they can also be set by hand, and a control without
+	the binding is unaffected. On older API builds that predate this feature the keys are
+	ignored and the control stays always-enabled, so feature-detect with
+	hasattr(templates, 'enableWhen') and skip it when missing. Builds that have enableWhen
+	but predate `condition` treat every binding as '=='.
 
 	:param control: The control component to gate (e.g. createSlider(...))
 	:param masterVarName: varName of the master control whose value gates this one
-	:param value: Master value (or list of values) that keeps this control enabled
+	:param value: Value compared against the master (a list is allowed for '==' / '!=')
 	:param indent: Indent the control under the master like a sub-option (default False)
+	:param condition: Comparison operator: '==' (default), '!=', '>', '>=', '<', '<='
 
 	:return: The same control, so it can be used inline inside a column
 	"""
 	control['masterVarName'] = masterVarName
 	control['masterValue'] = value
 	control['masterIndent'] = indent
+	control['condition'] = condition
 	return control

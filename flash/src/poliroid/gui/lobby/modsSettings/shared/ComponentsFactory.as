@@ -37,6 +37,7 @@
 	import net.wg.gui.components.controls.RangeSlider;
 	import poliroid.gui.lobby.modsSettings.controls.ColorChoiceButton;
 	import poliroid.gui.lobby.modsSettings.controls.HotkeyControl;
+	import poliroid.gui.lobby.modsSettings.data.HotkeyControlVO;
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
 	import poliroid.gui.lobby.modsSettings.shared.Utilities;
 
@@ -432,6 +433,13 @@
 			dropdown.addEventListener(ListEvent.INDEX_CHANGE, handleComponentEvent);
 			dropdown['componentInspectorSetting'] = true;
 			dropdown.inspectableMenuOffset = {'top': -5, 'right': -6, 'bottom': 0, 'left': 3};
+			// When a scrollbar is shown, inset the popup rows on the right so the selected-row
+			// highlight clears the scrollbar. The clik ScrollingList reserves the bar's width
+			// for item layout (availableWidth), but the highlight skin still overshoots a few
+			// px; menuPadding.right shrinks each row renderer (drawLayout: renderer.width =
+			// availableWidth - padding.horizontal) without moving the row's left edge.
+			if (options.length > SCROLL_ITEM_LIMIT)
+				dropdown.inspectableMenuPadding = {'top': 0, 'right': 6, 'bottom': 0, 'left': 0};
 			dropdown['componentInspectorSetting'] = false;
 
 			if (componentConfig.hasOwnProperty('button'))
@@ -659,6 +667,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(numericStepper, 'value');
+			result['control'] = numericStepper;
 
 			return result;
 		}
@@ -670,6 +679,10 @@
 
 			label.x = 0;
 			label.y = 4;
+			// Hidden until the first real layout pass (when the hotkey VO arrives): the
+			// creation pass doesn't know the combo width yet, so revealing it then would
+			// flash the label full-width under the keys before it re-wraps.
+			label.visible = false;
 			ui.addChild(label);
 
 			var hotkeyCtrl:HotkeyControl = App.utils.classFactory.getComponent('HotkeyControlUI', HotkeyControl);
@@ -684,6 +697,106 @@
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(hotkeyCtrl, 'keyset');
 			result['control'] = hotkeyCtrl;
+
+			var labelCtrl:LabelControl = label['label'] as LabelControl;
+			var fullText:String = text;
+
+			// Optional CSS-like float for the keys: 'right' lets a long label wrap around them
+			// (narrow beside the keys on top, full row width underneath); 'none' (default) keeps
+			// the label in the narrow column. tfBelow carries the under-the-keys lines.
+			var floatMode:String = componentConfig.hasOwnProperty('float') ? String(componentConfig.float) : 'none';
+			// Created but NOT added yet: an empty TextField defaults to 100x100 and would
+			// inflate every hotkey row's height even while invisible. It's added to ui only
+			// when a label actually wraps under the keys, and removed otherwise.
+			var tfBelow:TextField = new TextField();
+			tfBelow.autoSize = TextFieldAutoSize.NONE;
+			tfBelow.multiline = true;
+			tfBelow.wordWrap = true;
+			tfBelow.selectable = false;
+			tfBelow.mouseEnabled = false;
+			tfBelow.x = 0;
+
+			var layoutHotkeyRow:Function = function(event:Event = null):void
+			{
+				if (labelCtrl == null)
+					return;
+				var tf:TextField = labelCtrl['textField'] as TextField;
+				if (tf == null)
+					return;
+				var prevH:Number = result.height;
+				// Real left edge of the combo (negative when a long combo grows leftwards);
+				// the label runs from x=0 up to a small gap before it.
+				var maxW:Number = Math.max(80, (hotkeyCtrl.x + hotkeyCtrl.comboLeft) - 10);
+
+				// Multi-line wrap to show the WHOLE label (no ellipsis). This used to flicker
+				// because a reload rebuilt the hotkey and the wrap fought the vanilla
+				// LabelControl (its validateNow resets wordWrap); with IN-PLACE reload the
+				// hotkey is reused (not rebuilt), so the wrap is set once and holds - no
+				// per-reload re-wrap, no oscillation.
+				tf.autoSize = TextFieldAutoSize.NONE;
+				tf.multiline = true;
+				tf.wordWrap = true;
+
+				// float='right': once the label is taller than the keys, the lines past the keys
+				// run the full row width underneath them (wrap-around), instead of staying in the
+				// narrow column. Plain text only - splitting by displayed-line offset would cut
+				// HTML tags, so a label with markup keeps the narrow layout.
+				var didWrap:Boolean = false;
+				if (floatMode == 'right' && fullText.indexOf('<') == -1)
+				{
+					tf.width = maxW;
+					tf.htmlText = fullText;
+					var lineH:Number = (tf.numLines > 0) ? tf.getLineMetrics(0).height : 18;
+					var comboBottom:Number = hotkeyCtrl.getBounds(ui).bottom;
+					var beside:int = Math.max(1, Math.floor((comboBottom - tf.getBounds(ui).top) / lineH));
+					if (tf.numLines > beside)
+					{
+						var offset:int = tf.getLineOffset(beside);
+						tf.text = fullText.substring(0, offset);
+						tf.height = tf.textHeight + 4;
+						tfBelow.defaultTextFormat = tf.getTextFormat();
+						tfBelow.embedFonts = tf.embedFonts;
+						tfBelow.antiAliasType = tf.antiAliasType;
+						tfBelow.width = Math.max(maxW, hotkeyCtrl.getBounds(ui).right);
+						tfBelow.text = fullText.substring(offset);
+						tfBelow.height = tfBelow.textHeight + 4;
+						tfBelow.y = Math.max(comboBottom, tf.getBounds(ui).bottom);
+						if (tfBelow.parent != ui)
+							ui.addChild(tfBelow);
+						didWrap = true;
+					}
+				}
+
+				if (!didWrap)
+				{
+					tf.width = maxW;
+					tf.htmlText = fullText;
+					tf.height = tf.textHeight + 4;
+					// Keep the empty field out of the display list so it adds no row height.
+					if (tfBelow.parent == ui)
+						ui.removeChild(tfBelow);
+				}
+
+				if (event != null)
+				{
+					label.visible = true;
+					if (Math.abs(result.height - prevH) > 0.5)
+						result.dispatchEvent(new InteractiveEvent(InteractiveEvent.HEIGHT_CHANGED, modLinkage));
+				}
+			};
+
+			hotkeyCtrl.addEventListener(HotkeyControl.DISPLAY_CHANGED, layoutHotkeyRow);
+
+			// Render the hotkey from the template's display data at BUILD time, so the box,
+			// chips and key name exist on the first frame and the label wraps to the real
+			// combo width immediately. The separate as_setHotkeys seed (which can arrive a
+			// frame later) then changes nothing visible - eliminating the whole-mod blink
+			// (label hide->reveal) and the narrow->wide label re-wrap seen on reload. Falls
+			// back to the deferred reveal on the seed when no display data is supplied.
+			if (componentConfig.hotkey != null)
+				hotkeyCtrl.setData(new HotkeyControlVO(componentConfig.hotkey));
+			else
+				layoutHotkeyRow();
 
 			return result;
 		}
@@ -709,6 +822,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(colorChoice, 'color');
+			result['control'] = colorChoice;
 
 			return result;
 		}

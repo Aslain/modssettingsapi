@@ -14,6 +14,8 @@ package poliroid.gui.lobby.modsSettings.components
 		public var container:MovieClip;
 		public var background:MovieClip;
 
+		private var _settledHeight:Number = NaN;
+
 		public function ModsSettingsWindowContent()
 		{
 			super();
@@ -33,6 +35,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 		override protected function onDispose():void
 		{
+			App.utils.scheduler.cancelTask(settleReflow);
 			scrollPane.dispose();
 			scrollBar.dispose();
 			scrollPane = null;
@@ -99,13 +102,24 @@ package poliroid.gui.lobby.modsSettings.components
 			if (oldRenderer == null)
 				return null;
 
+			// In-place first: keep the component + reuse unchanged controls, swap only the
+			// rows that changed. Avoids destroying/recreating the whole mod (the re-render
+			// flash). applyTemplate runs its own reflow via HEIGHT_CHANGED. Falls through to
+			// a full rebuild only for structural changes it can't reconcile.
+			if (oldRenderer.applyTemplate(template))
+				return oldRenderer;
+
 			var renderer:ModsSettingsComponent = new ModsSettingsComponent(linkage);
 
 			renderer.setData(template);
-			renderer.validateNow();
 
 			container.removeChild(oldRenderer);
 			container.addChildAt(renderer, idx);
+
+			// On stage now: re-measure hotkey labels before the reflow so wrapped labels get
+			// their true height the first time.
+			renderer.revalidateHotkeys();
+			renderer.validateNow();
 
 			reflowMods();
 
@@ -124,6 +138,7 @@ package poliroid.gui.lobby.modsSettings.components
 		public function reflowMods():void
 		{
 			var pos:int = 0;
+			var lastBottom:int = 0;
 
 			for (var i:int = 0; i < container.numChildren; i++)
 			{
@@ -133,13 +148,28 @@ package poliroid.gui.lobby.modsSettings.components
 					continue;
 
 				child.y = pos;
-				pos = child.y + child.height + Constants.MOD_MARGIN_BOTTOM;
+				lastBottom = child.y + child.height;
+				pos = lastBottom + Constants.MOD_MARGIN_BOTTOM;
 			}
 
-			// Tell the scroll pane its content height changed: ResizableScrollPane re-reads
-			// the target height and clamps the scroll position on the target's RESIZE event
+			container.graphics.clear();
+			container.graphics.beginFill(0, 0);
+			container.graphics.drawRect(0, 0, 1, lastBottom);
+			container.graphics.endFill();
+
 			if (container != null)
 				container.dispatchEvent(new Event(Event.RESIZE));
+
+			_settledHeight = (container != null) ? container.height : NaN;
+			App.utils.scheduler.scheduleOnNextFrame(settleReflow);
+		}
+
+		private function settleReflow():void
+		{
+			if (container == null)
+				return;
+			if (container.height != _settledHeight)
+				reflowMods();
 		}
 	}
 }

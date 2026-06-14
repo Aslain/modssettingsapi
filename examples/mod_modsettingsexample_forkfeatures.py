@@ -1,8 +1,9 @@
 """Example of the aslainMenu fork-only features:
 - createImage with a built-in label + live updateImage (incl. removeImage)
-- registerLiveSettingsChange with mode='changedOnly'
+- registerLiveSettingsChange with fullsettings=False (changed-only payload)
 - enableWhen (value-conditional grey-out)
 - createControlsGroup (sub-options greyed while the master is off)
+- getVersionTuple() version-gating (guarded for older builds)
 Every fork-only call is feature-detected with hasattr(), so this mod still
 loads (without the extras) on the plain izeberg menu.
 """
@@ -70,7 +71,7 @@ def buildTemplate():
 
 
 def onLiveSettingsChange(linkage, changed):
-	# mode='changedOnly': 'changed' holds only the keys whose value changed
+	# fullsettings=False: 'changed' holds only the keys whose value changed
 	# since the previous live event (uncommitted - Cancel discards them).
 	if linkage != modLinkage:
 		return
@@ -94,5 +95,16 @@ def onModSettingsChanged(linkage, newSettings):
 
 
 g_modsSettingsApi.setModTemplate(modLinkage, buildTemplate(), onModSettingsChanged)
+
+# Read the API version when you need to adapt (guarded - older builds lack getVersionTuple;
+# compare the tuple form, not the string).
+getVer = getattr(g_modsSettingsApi, 'getVersionTuple', None)
+apiVersion = getVer() if getVer else (0, 0, 0)
+
 if hasattr(g_modsSettingsApi, 'registerLiveSettingsChange'):
-	g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, mode='changedOnly')
+	if apiVersion >= (1, 2):
+		# 1.2.0+: choose the payload with the fullsettings flag (False = changed-only keys).
+		g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, fullsettings=False)
+	else:
+		# Older fork builds used the now-deprecated mode= argument for the same thing.
+		g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, mode='changedOnly')

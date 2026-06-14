@@ -11,6 +11,9 @@ package poliroid.gui.lobby.modsSettings.components
 	import scaleform.clik.constants.InvalidationType;
 	import scaleform.clik.core.UIComponent;
 	import net.wg.gui.components.advanced.FieldSet;
+	import net.wg.gui.components.controls.NumericStepper;
+	import poliroid.gui.lobby.modsSettings.controls.ColorChoiceButton;
+	import poliroid.gui.lobby.modsSettings.controls.HotkeyControl;
 	import poliroid.gui.lobby.modsSettings.controls.StateSwitcher;
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
 	import poliroid.gui.lobby.modsSettings.shared.ComponentsFactory;
@@ -19,6 +22,16 @@ package poliroid.gui.lobby.modsSettings.components
 
 	public class ModsSettingsComponent extends UIComponent
 	{
+		// Right-edge breathing room before the centre line (column 1) and before the mod's
+		// right edge (rightmost / single column on a mod with no on/off switcher).
+		private static const HOTKEY_GAP_BEFORE_COL2:Number = 20;
+		// The on/off switcher sits at the mod's top-right; its left edge = WIDTH - SWITCHER_RIGHT_OFFSET.
+		// On a mod that has the switcher, right-aligned controls in the rightmost column stop
+		// GAP_BEFORE_SWITCHER short of it, so nothing slides under the green button and a clear
+		// margin is left to the right frame border.
+		private static const SWITCHER_RIGHT_OFFSET:Number = 41;
+		private static const GAP_BEFORE_SWITCHER:Number = 18;
+
 		public var modLinkage:String;
 		public var modEnabled:Boolean = true;
 		public var data:Object;
@@ -89,12 +102,27 @@ package poliroid.gui.lobby.modsSettings.components
 			var paddingTop:Number = Constants.MOD_PADDING_TOP;
 			var lastPos:Number = 0;
 
+			// Right edge a right-aligned control in the rightmost (or only) column may reach.
+			// With an on/off switcher, stop short of it so the control clears the green button
+			// and keeps a clear margin to the right frame border; without one, use the normal
+			// right-edge gap.
+			var rightmostLimit:Number = data.hasOwnProperty('enabled')
+				? (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER)
+				: (Constants.MOD_COMPONENT_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+
 			if (column1)
-				lastPos = createComponents(this, column1, Constants.MOD_PADDING_LEFT, paddingTop);
+			{
+				var limitCol1:Number = (column2)
+					? (Constants.MOD_COMPONENT_WIDTH / 2 - HOTKEY_GAP_BEFORE_COL2)
+					: rightmostLimit;
+				lastPos = createComponents(this, column1, Constants.MOD_PADDING_LEFT, paddingTop, limitCol1);
+			}
 
 			if (column2)
 			{
-				var lastPosTemp:Number = createComponents(this, column2, Constants.MOD_COMPONENT_WIDTH / 2, paddingTop);
+				// Second column right-aligns to the same rightmost limit: short of the on/off
+				// switcher when the mod has one, otherwise the mod's right edge.
+				var lastPosTemp:Number = createComponents(this, column2, Constants.MOD_COMPONENT_WIDTH / 2, paddingTop, rightmostLimit);
 				if (lastPosTemp > lastPos)
 					lastPos = lastPosTemp;
 			}
@@ -108,7 +136,7 @@ package poliroid.gui.lobby.modsSettings.components
 			var fieldSet:FieldSet = FieldSet(App.utils.classFactory.getObject('FieldSet'));
 
 			fieldSet.textField.condenseWhite = false;
-			fieldSet.textField.htmlText = Constants.MOD_TITLE_INDENT + String(data.modDisplayName).replace(/<img[^>]*>/gi, "");
+			fieldSet.textField.htmlText = String(data.modDisplayName).replace(/<img[^>]*>/gi, "");
 			fieldSet.textField.autoSize = TextFieldAutoSize.LEFT;
 			fieldSet.width = Constants.MOD_COMPONENT_WIDTH;
 			fieldSet.height = lastPos + Constants.MOD_PADDING_BOTTOM;
@@ -118,6 +146,10 @@ package poliroid.gui.lobby.modsSettings.components
 
 			textFormat.bold = true;
 			textFormat.size = 15;
+			// Fixed pixel indent to clear the collapse arrow, instead of a leading run of
+			// spaces: space width is font/scale dependent, so the gap before the title
+			// drifted between clients. leftMargin is a real, constant distance.
+			textFormat.leftMargin = 32;
 			fieldSet.textField.setTextFormat(textFormat);
 
 			addChildAt(fieldSet, 0);
@@ -135,6 +167,8 @@ package poliroid.gui.lobby.modsSettings.components
 
 			updateComponentsState();
 
+			addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleChildHeightChanged);
+
 			if (data.hasOwnProperty('collapsed') && data.collapsed)
 				applyCollapsed(true);
 		}
@@ -145,7 +179,15 @@ package poliroid.gui.lobby.modsSettings.components
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.SETTINGS_CHANGED, modLinkage));
 		}
 
-		private function createComponents(parentObj:UIComponent, column:Array, x:Number, y:Number):Number
+		private function handleChildHeightChanged(event:InteractiveEvent):void
+		{
+			if (event.target == this)
+				return;
+			event.stopImmediatePropagation();
+			reflow();
+		}
+
+		private function createComponents(parentObj:UIComponent, column:Array, x:Number, y:Number, rightLimit:Number = NaN):Number
 		{
 			var lastPos:Number = y;
 
@@ -164,6 +206,11 @@ package poliroid.gui.lobby.modsSettings.components
 
 				component.x = (componentConfig.hasOwnProperty('masterVarName') && componentConfig.masterIndent != false) ? x + Constants.MOD_CHILD_INDENT : x;
 				component.y = lastPos + Constants.COMPONENT_MARGIN_BOTTOM;
+
+				// Right-align the row's control to the column boundary so neighbouring rows
+				// line up (the rightmost column's boundary already clears the on/off switcher).
+				applyControlRightLimit(component, rightLimit);
+
 				lastPos = component.y + component.height;
 				parentObj.addChild(component);
 			}
@@ -175,7 +222,7 @@ package poliroid.gui.lobby.modsSettings.components
 		{
 			_stateSwitcher = App.utils.classFactory.getComponent('StateSwitcherUI', StateSwitcher);
 			_stateSwitcher.selected = modEnabled;
-			_stateSwitcher.x = Constants.MOD_COMPONENT_WIDTH - 41;
+			_stateSwitcher.x = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET;
 			_stateSwitcher.y = 16;
 			addChild(_stateSwitcher);
 			_stateSwitcher.addEventListener(Event.SELECT, handleStateSwitcherClick);
@@ -201,7 +248,7 @@ package poliroid.gui.lobby.modsSettings.components
 				var enabled:Boolean = modEnabled;
 
 				if (enabled && entry.data.hasOwnProperty('masterVarName'))
-					enabled = entry.data.hasOwnProperty('masterValue') ? masterValueMatches(String(entry.data.masterVarName), entry.data.masterValue) : isMasterOn(String(entry.data.masterVarName));
+					enabled = entry.data.hasOwnProperty('masterValue') ? masterValueMatches(String(entry.data.masterVarName), entry.data.masterValue, (entry.data.hasOwnProperty('condition') ? String(entry.data.condition) : "==")) : isMasterOn(String(entry.data.masterVarName));
 
 				component.alpha = enabled ? 1 : 0.5;
 				component.mouseEnabled = enabled;
@@ -237,14 +284,27 @@ package poliroid.gui.lobby.modsSettings.components
 			return returnValue == null ? null : returnValue.value;
 		}
 
-		private function masterValueMatches(varName:String, allowed:Object):Boolean
+		private function masterValueMatches(varName:String, allowed:Object, condition:String):Boolean
 		{
 			var value:Object = getMasterValue(varName);
+			var op:String = (condition == null || condition == "") ? "==" : condition;
 
-			if (allowed is Array)
-				return (allowed as Array).indexOf(value) != -1;
-
-			return value == allowed;
+			switch (op)
+			{
+				case "!=":
+					return (allowed is Array) ? ((allowed as Array).indexOf(value) == -1) : (value != allowed);
+				case ">":
+					return Number(value) > Number(allowed);
+				case ">=":
+					return Number(value) >= Number(allowed);
+				case "<":
+					return Number(value) < Number(allowed);
+				case "<=":
+					return Number(value) <= Number(allowed);
+				case "==":
+				default:
+					return (allowed is Array) ? ((allowed as Array).indexOf(value) != -1) : (value == allowed);
+			}
 		}
 
 		private function createCollapseArrow():void
@@ -383,6 +443,165 @@ package poliroid.gui.lobby.modsSettings.components
 		public function get isCollapsed():Boolean
 		{
 			return _collapsed;
+		}
+
+		// Re-lay every hotkey row now that this component is on stage, so each wrapped
+		// label measures its true (on-stage) height before the list reflows - otherwise the
+		// mod builds ~one text line too short and snaps back a frame later (flicker).
+		public function revalidateHotkeys():void
+		{
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var co:Object = components[i].componentObject;
+				if (co != null && co['control'] is HotkeyControl)
+					HotkeyControl(co['control']).relayout();
+			}
+		}
+
+		private function applyControlRightLimit(component:DisplayObject, rightLimit:Number):void
+		{
+			if (isNaN(rightLimit) || component == null)
+				return;
+			var ctrl:Object = component['control'];
+			if (ctrl is HotkeyControl)
+			{
+				HotkeyControl(ctrl).maxRightLocal = rightLimit - component.x - HotkeyControl(ctrl).x;
+			}
+			else if (ctrl is ColorChoiceButton || ctrl is NumericStepper)
+			{
+				// Fixed-width controls (colour swatch, numeric stepper): move the whole
+				// control so its right edge sits on the boundary. Real bounds, so the inner
+				// hit areas / arrows follow.
+				var fixed:DisplayObject = DisplayObject(ctrl);
+				var bnds:Rectangle = fixed.getBounds(fixed.parent);
+				if (bnds.width > 0)
+					fixed.x += (rightLimit - component.x) - bnds.right;
+			}
+		}
+
+		// Reuse identity for a component config: only rows whose type + varName + label
+		// text + value are all unchanged may be reused as-is. A changed value, changed
+		// label (e.g. new language) or new row gets a fresh control, everything else stays
+		// untouched - so a reload re-renders only what actually changed, not the whole mod.
+		private function reuseKey(cfg:Object):String
+		{
+			if (cfg == null)
+				return null;
+			var t:String = String(cfg.type);
+			if ('varName' in cfg)
+				return t + "|" + String(cfg.varName) + "|" + valStr(cfg.text) + "|" + valStr(cfg.value);
+			if (t == 'Label')
+				return "Label|" + valStr(cfg.text);
+			return null;
+		}
+
+		private function valStr(v:*):String
+		{
+			return (v == null) ? "" : String(v);
+		}
+
+		private function reconcileColumn(col:Array, colX:Number, rightLimit:Number, existing:Object, used:Object, newComps:Array, newByVar:Object):Boolean
+		{
+			var y:Number = Constants.MOD_PADDING_TOP;
+			for (var i:int = 0; i < col.length; i++)
+			{
+				var cfg:Object = col[i];
+				var key:String = reuseKey(cfg);
+				var comp:DisplayObject;
+				if (key != null && existing.hasOwnProperty(key) && !used.hasOwnProperty(key))
+				{
+					comp = DisplayObject(existing[key].componentObject);
+					used[key] = true;
+				}
+				else
+				{
+					comp = getComponentByType(cfg);
+					if (comp == null)
+						return false;
+					comp.addEventListener(InteractiveEvent.VALUE_CHANGED, handleComponentEvent);
+				}
+				comp.x = (cfg.hasOwnProperty('masterVarName') && cfg.masterIndent != false) ? colX + Constants.MOD_CHILD_INDENT : colX;
+				comp.y = y + Constants.COMPONENT_MARGIN_BOTTOM;
+				applyControlRightLimit(comp, rightLimit);
+				if (comp.parent != this)
+					addChild(comp);
+				y = comp.y + comp.height;
+				var entry:Object = {'componentObject': comp, 'data': cfg};
+				newComps.push(entry);
+				if ('varName' in cfg)
+					newByVar[cfg.varName] = entry;
+			}
+			return true;
+		}
+
+		// In-place reload: keep this component (and its FieldSet, scrollRect, collapsed
+		// state) and reuse every unchanged control, swapping only the rows that actually
+		// changed. Avoids destroying + recreating the whole mod each reload, which
+		// re-rendered every control = the flicker. Returns false for structural changes the
+		// reconciler does not handle, so the caller falls back to a full rebuild.
+		public function applyTemplate(newData:Object):Boolean
+		{
+			if (data == null || newData == null)
+				return false;
+			if (Boolean(newData.hasOwnProperty('enabled')) != Boolean(data.hasOwnProperty('enabled')))
+				return false;
+			if (String(newData.modDisplayName) != String(data.modDisplayName))
+				return false;
+
+			var existing:Object = {};
+			var i:int, e:Object, key:String;
+			for (i = 0; i < components.length; i++)
+			{
+				e = components[i];
+				key = reuseKey(e.data);
+				if (key != null && !existing.hasOwnProperty(key))
+					existing[key] = e;
+			}
+
+			var used:Object = {};
+			var newComps:Array = [];
+			var newByVar:Object = {};
+
+			var rightmost:Number = newData.hasOwnProperty('enabled')
+				? (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER)
+				: (Constants.MOD_COMPONENT_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+			var col2Exists:Boolean = (newData.column2 != null);
+
+			if (newData.column1)
+			{
+				var limitCol1:Number = col2Exists
+					? (Constants.MOD_COMPONENT_WIDTH / 2 - HOTKEY_GAP_BEFORE_COL2)
+					: rightmost;
+				if (!reconcileColumn(newData.column1 as Array, Constants.MOD_PADDING_LEFT, limitCol1, existing, used, newComps, newByVar))
+					return false;
+			}
+			if (newData.column2)
+			{
+				if (!reconcileColumn(newData.column2 as Array, Constants.MOD_COMPONENT_WIDTH / 2, rightmost, existing, used, newComps, newByVar))
+					return false;
+			}
+
+			// Drop controls no longer present.
+			for (i = 0; i < components.length; i++)
+			{
+				e = components[i];
+				key = reuseKey(e.data);
+				if (key == null || !used.hasOwnProperty(key))
+				{
+					var old:DisplayObject = DisplayObject(e.componentObject);
+					old.removeEventListener(InteractiveEvent.VALUE_CHANGED, handleComponentEvent);
+					if (old.parent == this)
+						removeChild(old);
+				}
+			}
+
+			components = newComps;
+			_componentsByVar = newByVar;
+			data = newData;
+
+			updateComponentsState();
+			reflow();
+			return true;
 		}
 
 		private function getComponentByType(componentConfig:Object):DisplayObject

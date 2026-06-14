@@ -95,7 +95,7 @@ Returns nothing; safe to call whenever the window is open.
 
 ---
 
-## 3. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback, mode='fullsettings')`
+## 3. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback, fullsettings=True)`
 
 Registers a callback fired on **every** in-menu value change (dropdown / slider /
 checkbox / …) **immediately, before the user presses Apply**. Use it to drive live
@@ -104,23 +104,28 @@ previews.
 - `callback(linkage, settings)` — `settings` is a dict of the **current
   (uncommitted)** values of that mod's components (same shape as the
   `onModSettingsChanged` settings, minus value-less components such as Image).
-- **`mode='changedOnly'`** — `settings` then holds **only the keys whose value changed**
+- **`fullsettings=False`** — `settings` then holds **only the keys whose value changed**
   since the previous live event, so you don't have to cache and diff yourself. The
-  default `mode='fullsettings'` keeps the full dict (legacy behaviour); the callback
-  signature is always `(linkage, dict)`, only the content differs. Setting a value back
-  to its previous value yields an **empty dict `{}`** (treat as a no-op). The first
-  change after the window opens is diffed against your committed settings, later changes
-  against the previous live value.
+  default `fullsettings=True` keeps the full dict; the callback signature is always
+  `(linkage, dict)`, only the content differs. Setting a value back to its previous value
+  yields an **empty dict `{}`** (treat as a no-op). The first change after the window
+  opens is diffed against your committed settings, later changes against the previous
+  live value.
 - Filter by `linkage == YOUR_LINKAGE`.
 - These changes are **not persisted** — pressing **Cancel** discards them. The normal
   `onModSettingsChanged` callback still fires on **Apply/OK** to commit.
 - Detach with `g_modsSettingsApi.unregisterLiveSettingsChange(linkage, callback)`.
 
+> **Deprecated:** the earlier `mode='changedOnly'` / `mode='fullsettings'` argument (and
+> the `LIVE_SETTINGS_MODE` class) still work but are deprecated — passing `mode=` logs a
+> one-time-per-linkage warning to `python.log` and will be removed in a future version.
+> Switch to the `fullsettings` flag (`mode='changedOnly'` → `fullsettings=False`).
+
 ---
 
 ## 4. `g_modsSettingsApi.reloadModTemplate(linkage, template)`
 
-Re-renders **one mod's whole component subtree in place** in the open window, from a
+Re-renders **one mod's component subtree in place** in the open window, from a
 fresh template — without closing/reopening it and without touching other mods. The
 typical use is an **instant language switch**: rebuild the template with new-language
 labels and the current values, then call this.
@@ -132,6 +137,10 @@ labels and the current values, then call this.
   purely visual — Apply/OK still commits via the normal `onModSettingsChanged`, and
   Cancel/Close still discards.
 - Other mods are untouched; the components below are re-flowed to the new height.
+- The re-render is **incremental**: only controls whose type, variable, label or value
+  changed are rebuilt — unchanged controls are reused in place, so the reload does not
+  flicker (an instant language switch, for example, rebuilds the labels but leaves the
+  controls whose values did not change).
 - Re-rendered **hotkey** controls are re-filled automatically (the API re-applies the
   stored keysets after the reload), so a reload never wipes hotkeys.
 - No effect if the window is closed.

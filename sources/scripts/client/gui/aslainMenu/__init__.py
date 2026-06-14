@@ -6,17 +6,17 @@ __credits__ = ['Renat Iliev (izeberg) - original author',
 	'Andrii Andrushchyshyn (poliroid) - original contributor',
 	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.1.2'
+__version__ = '1.2.0'
 __maintainer__ = 'Aslain'
 __doc__ = 'https://github.com/Aslain/modssettingsapi'
 
 import templates
 from .api import ModsSettingsApi
 from .skeleton import IModsSettingsApi
-from ._constants import SPECIAL_KEYS
+from ._constants import SPECIAL_KEYS, CONDITION, VERSION, VERSION_TUPLE
 from .utils import getDependencyManager
 
-__all__ = ('g_modsSettingsApi', 'IModsSettingsApi', 'templates', 'SPECIAL_KEYS', )
+__all__ = ('g_modsSettingsApi', 'IModsSettingsApi', 'templates', 'SPECIAL_KEYS', 'CONDITION', 'VERSION', 'VERSION_TUPLE', )
 
 class _ModsSettingsApi(IModsSettingsApi):
 	"""

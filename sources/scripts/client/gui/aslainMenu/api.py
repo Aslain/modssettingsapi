@@ -35,19 +35,17 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.userSettings = {}
 		self._liveSettingsChangeCallbacks = {}
 		self._lastLiveSettings = {}
+		self._warnedLegacyLiveMode = set()
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
 		self.onWindowClosed = Event.Event()
-		# TODO: remove from public API
 		self.onHotkeysUpdated = Event.Event()
 		self.onButtonClicked = Event.Event()
 		self.onSettingsChanged = Event.Event()
 		self.onImageUpdate = Event.Event()
 		self.onReloadMod = Event.Event()
 
-		# Live changes are uncommitted, so the diff baseline must not survive a window
-		# session: drop it on open so the first change re-diffs against committed settings.
 		self.onWindowOpened += self._resetLiveSettingsBaseline
 
 		self.loadSettings()
@@ -87,7 +85,6 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
 
-	# TODO: delete in next release
 	def __migrateState(self):
 		if 'data' in self.state:
 			data = self.state.pop('data')
@@ -166,7 +163,6 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onSettingsChanged(linkage, newSettings)
 
 	def setModCollapsed(self, linkage, collapsed):
-		# Persist per-mod collapsed state of the settings list (UI only, no settings impact)
 		self.state.setdefault('collapsed', {})[linkage] = bool(collapsed)
 		self.saveState()
 
@@ -175,17 +171,26 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		h = int(height) if height else 0
 		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage), label)
 
-	def registerLiveSettingsChange(self, linkage, callback, mode=LIVE_SETTINGS_MODE.FULL_SETTINGS):
-		# mode=FULL_SETTINGS (default): callback gets the full settings dict (legacy behavior).
-		# mode=CHANGED_ONLY: callback gets only the keys whose value changed since the previous
-		# live event. Any unknown mode degrades to FULL_SETTINGS so a bad value never raises.
-		if mode not in LIVE_SETTINGS_MODE.ALL:
-			mode = LIVE_SETTINGS_MODE.FULL_SETTINGS
-		self._liveSettingsChangeCallbacks.setdefault(linkage, []).append((callback, mode))
+	def getVersion(self):
+		return VERSION
+
+	def getVersionTuple(self):
+		return VERSION_TUPLE
+
+	def registerLiveSettingsChange(self, linkage, callback, fullsettings=True, mode=None):
+		if mode is not None:
+			if linkage not in self._warnedLegacyLiveMode:
+				self._warnedLegacyLiveMode.add(linkage)
+				_logger.warning(
+					"registerLiveSettingsChange(mode=...) is deprecated for '%s' - use fullsettings=True/False "
+					"instead. The mode argument and the LIVE_SETTINGS_MODE class will be removed in a future version.",
+					linkage)
+			changedOnly = (mode == LIVE_SETTINGS_MODE.CHANGED_ONLY)
+		else:
+			changedOnly = not bool(fullsettings)
+		self._liveSettingsChangeCallbacks.setdefault(linkage, []).append((callback, changedOnly))
 
 	def unregisterLiveSettingsChange(self, linkage, callback):
-		# Unregister by callback identity regardless of the mode it was registered with;
-		# the public signature is (linkage, callback), matching legacy behavior.
 		callbacks = self._liveSettingsChangeCallbacks.get(linkage)
 		if callbacks:
 			self._liveSettingsChangeCallbacks[linkage] = [
@@ -193,13 +198,9 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			]
 
 	def _resetLiveSettingsBaseline(self):
-		# Runtime-only diff baseline; never persisted. Cleared on window open so the
-		# first live change re-diffs against committed settings (uncommitted live
-		# values from a previous session must not leak into the next one).
 		self._lastLiveSettings = {}
 
 	def _computeChangedSettings(self, previous, settings):
-		# A key is "changed" if it is new or its value differs from the baseline.
 		return dict(
 			(key, value) for key, value in settings.items()
 			if key not in previous or previous[key] != value
@@ -207,20 +208,17 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def notifyLiveSettingsChange(self, linkage, settings):
 		callbacks = tuple(self._liveSettingsChangeCallbacks.get(linkage, ()))
-		# Diff against the previous live settings; on the first change after the window
-		# opened (no live baseline yet) diff against the committed settings instead.
 		previous = self._lastLiveSettings.get(linkage)
 		if previous is None:
 			previous = self.state['settings'].get(linkage, {})
-		changedOnly = None
-		for callback, mode in callbacks:
-			if mode == LIVE_SETTINGS_MODE.CHANGED_ONLY:
-				if changedOnly is None:
-					changedOnly = self._computeChangedSettings(previous, settings)
-				callback(linkage, changedOnly)
+		changedDict = None
+		for callback, wantsChangedOnly in callbacks:
+			if wantsChangedOnly:
+				if changedDict is None:
+					changedDict = self._computeChangedSettings(previous, settings)
+				callback(linkage, changedDict)
 			else:
 				callback(linkage, settings)
-		# Update the baseline only after diffing this event.
 		self._lastLiveSettings[linkage] = dict(settings)
 
 	def reloadModTemplate(self, linkage, template):
@@ -229,17 +227,15 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		The mod is responsible for filling the template with the values it wants
 		shown. Has no effect if the window is closed.
 		"""
-		template = dict(template)
+		template = copy.deepcopy(template)
 		template['linkage'] = linkage
+		template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
+		self._attachHotkeyDisplay(linkage, template)
 		self.onReloadMod(linkage, template)
-		# Re-rendered hotkey controls start blank; re-apply their stored values so
-		# they keep their keysets (otherwise Apply would persist empty hotkeys).
-		self.onHotkeysUpdated()
 
 	def checkKeyset(self, keys):
 		return self.hotkeys.checkKeyset(keys)
 
-	# TODO: delete in next release
 	@deprecated('checkKeyset')
 	def checkKeySet(self, keys):
 		return self.checkKeyset(keys)
@@ -266,19 +262,21 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		return result
 
 	def _modSortKey(self, linkage):
-		# Sort key for the mods list / A-Z jump: ignore a leading image badge or any
-		# symbols/whitespace before the real name so e.g. an '<img>'-prefixed mod still
-		# sorts under its first real letter
 		name = self.state['templates'][linkage].get('modDisplayName') or linkage
 		name = re.sub('<[^>]*>', '', name)
 		name = re.sub('^[^0-9A-Za-z]+', '', name)
 		return (name or linkage).lower()
 
+	def _attachHotkeyDisplay(self, linkage, template):
+		for column in COLUMNS:
+			if column not in template:
+				continue
+			for component in template[column]:
+				if component.get('type') == COMPONENT_TYPE.HOTKEY and 'varName' in component:
+					component['hotkey'] = self.hotkeys.getHotkeyData(linkage, component['varName'])
+
 	def generateSettingsData(self):
-		# Make copy of current templates and updates component's values from actual settings
 		templates = []
-		# Sort by display name (case-insensitive) so the A-Z quick-jump bar is monotonic;
-		# fall back to the linkage when a mod has no display name
 		linkages = sorted(self.state['templates'], key=self._modSortKey)
 		for linkage in linkages:
 			template = copy.deepcopy(self.state['templates'][linkage])
@@ -292,6 +290,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 					for component in template[column]:
 						if 'varName' in component and component['varName'] in settings:
 							component['value'] = settings[component['varName']]
+			self._attachHotkeyDisplay(linkage, template)
 			templates.append(template)
 		return templates
 

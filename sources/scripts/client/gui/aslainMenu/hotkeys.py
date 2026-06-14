@@ -51,10 +51,8 @@ class HotkeysController(object):
 		migrated = set()
 		for key in keys:
 			if isinstance(key, collections.Iterable):
-				# Make flat set of keys
 				migrated |= self._migrateKeys(key)
 			else:
-				# Migrate special keys to virtual keys
 				migrated.add(SPECIAL_KEYS.KEYS_TO_SPECIAL.get(key, key))
 		return migrated
 
@@ -129,8 +127,6 @@ class HotkeysController(object):
 						result[linkage][component['varName']] = hotkeyData
 		return dict(result)
 
-# Backwards compatibility with mods that still use wrongly named class in imports
-# TODO: delete in next release
 class HotkeysContoller(HotkeysController):
 
 	@deprecated('HotkeysController')

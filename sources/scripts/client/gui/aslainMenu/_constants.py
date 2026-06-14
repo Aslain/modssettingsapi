@@ -7,6 +7,9 @@ from external_strings_utils import unicode_from_utf8
 MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 
+VERSION = '1.2.0'
+VERSION_TUPLE = (1, 2, 0)
+
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
 try:
@@ -47,10 +50,18 @@ class COMPONENT_TYPE:
 	IMAGE = 'Image'
 
 
+class CONDITION:
+	EQUAL = '=='
+	NOT_EQUAL = '!='
+	GREATER = '>'
+	GREATER_EQUAL = '>='
+	LESS = '<'
+	LESS_EQUAL = '<='
+	ALL = (EQUAL, NOT_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)
+
+
 class LIVE_SETTINGS_MODE:
-	# Delivery mode for registerLiveSettingsChange callbacks.
-	# FULL_SETTINGS (default): callback receives the full settings dict (legacy behavior).
-	# CHANGED_ONLY: callback receives only the keys whose value changed since the previous live event.
+	"""DEPRECATED since 1.2.0 - use the fullsettings flag of registerLiveSettingsChange instead; will be removed in a future version."""
 	FULL_SETTINGS = 'fullsettings'
 	CHANGED_ONLY = 'changedOnly'
 	ALL = (FULL_SETTINGS, CHANGED_ONLY)
