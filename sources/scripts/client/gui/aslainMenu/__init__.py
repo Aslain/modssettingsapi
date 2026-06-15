@@ -6,7 +6,7 @@ __credits__ = ['Renat Iliev (izeberg) - original author',
 	'Andrii Andrushchyshyn (poliroid) - original contributor',
 	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 __maintainer__ = 'Aslain'
 __doc__ = 'https://github.com/Aslain/modssettingsapi'
 
@@ -99,6 +99,25 @@ class _ModsSettingsApi(IModsSettingsApi):
 			label slot (createImage(..., label=...)).
 		"""
 		return self.__instance.updateImage(linkage, varName, source, width, height, removeImage, label)
+
+	def updateImageAtlas(self, linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None):
+		""" Live-update of an Image component as a looping sprite-sheet animation (fork-only).
+		Plays the atlas at atlasSource - a grid of `columns` cells, each frameWidth x
+		frameHeight, `count` frames total, row-major - at `fps`, scaled to width/height like
+		updateImage. The sheet is loaded once and animated with copyPixels, so it stays light.
+		:param linkage: Mod linkage
+		:param varName: varName of the Image component to animate
+		:param atlasSource: atlas image path (root-relative, e.g. 'mods/configs/...atlas.png')
+		:param frameWidth: width of one frame cell in px
+		:param frameHeight: height of one frame cell in px
+		:param columns: number of columns in the grid
+		:param count: number of frames
+		:param fps: playback speed
+		:param loop: loop the animation (default True)
+		:param width: display width in px, optional (scaled-to-fit like updateImage)
+		:param height: display height in px, optional
+		"""
+		return self.__instance.updateImageAtlas(linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop, width, height)
 
 	def checkKeyset(self, keyset):
 		""" Check whether a keyset is currently pressed

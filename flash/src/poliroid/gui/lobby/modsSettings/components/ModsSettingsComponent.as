@@ -681,6 +681,31 @@ package poliroid.gui.lobby.modsSettings.components
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.HEIGHT_CHANGED, modLinkage));
 		}
 
+		public function updateImageAtlas(varName:String, atlasSrc:String, frameW:int, frameH:int, cols:int, count:int, fps:Number, loop:Boolean, w:int, h:int):Boolean
+		{
+			for (var i:Number = 0; i < components.length; i++)
+			{
+				var component:Object = components[i];
+
+				if (component.data.hasOwnProperty('varName') && component.data.varName == varName && component.data.type == 'Image')
+				{
+					var holder:MovieClip = component.componentObject as MovieClip;
+
+					if (holder != null)
+					{
+						var wasCollapsed:Boolean = holder['collapsed'] == true;
+						holder['imgW'] = w;
+						holder['imgH'] = h;
+						ComponentsFactory.playAtlasInto(holder, atlasSrc, frameW, frameH, cols, count, fps, loop);
+						if (wasCollapsed)
+							reflow();
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		public function updateImage(varName:String, source:String, w:int, h:int, removeImage:Boolean = false, label:String = null):Boolean
 		{
 			for (var i:Number = 0; i < components.length; i++)

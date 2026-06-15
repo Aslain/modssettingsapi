@@ -184,6 +184,15 @@ package poliroid.gui.lobby.modsSettings
 			}
 		}
 
+		public function as_updateImageAtlas(linkage:String, varName:String, atlasSrc:String, frameW:int, frameH:int, cols:int, count:int, fps:Number, loop:Boolean, width:int, height:int):void
+		{
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod.modLinkage == linkage)
+					mod.updateImageAtlas(varName, atlasSrc, frameW, frameH, cols, count, fps, loop, width, height);
+			}
+		}
+
 		public function as_reloadMod(linkage:String, template:Object):void
 		{
 			var newMod:ModsSettingsComponent = content.reloadMod(linkage, template);

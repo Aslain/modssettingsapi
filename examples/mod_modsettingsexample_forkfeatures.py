@@ -1,5 +1,6 @@
 """Example of the aslainMenu fork-only features:
 - createImage with a built-in label + live updateImage (incl. removeImage)
+- createImage(atlas=...) + updateImageAtlas: sprite-sheet animation (illustrative, at the bottom)
 - registerLiveSettingsChange with fullsettings=False (changed-only payload)
 - enableWhen (value-conditional grey-out)
 - createControlsGroup (sub-options greyed while the master is off)
@@ -108,3 +109,27 @@ if hasattr(g_modsSettingsApi, 'registerLiveSettingsChange'):
 	else:
 		# Older fork builds used the now-deprecated mode= argument for the same thing.
 		g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, mode='changedOnly')
+
+
+# --- Sprite-sheet animation (illustrative; supply your own sheet) -------------
+# Animate an Image slot from ONE sprite sheet - a grid of frames in a single PNG -
+# instead of swapping many separate frame files. Two calls, mirroring the static
+# createImage / updateImage pair (1.2.1+, feature-detect with hasattr):
+#
+#   # 1) initial animation - starts the moment the menu opens (it renders at build
+#   #    time, so no race with a post-open update). The positional source is unused
+#   #    when atlas= is given, so pass ''.
+#   if hasattr(templates, 'createImage'):
+#       column2.append(templates.createImage(
+#           '', 96, 96, varName='anim', align='center', valign='center',
+#           containerWidth=120, containerHeight=120,
+#           atlas={'source': 'mods/configs/mymod/spin_atlas.png',
+#                  'frameWidth': 64, 'frameHeight': 64,   # one cell's size
+#                  'columns': 8, 'count': 60,             # 8 cells per row, 60 frames, row-major
+#                  'fps': 30, 'loop': True}))             # loop=False plays once, holds last frame
+#
+#   # 2) switch the animation live, e.g. inside onLiveSettingsChange when a dropdown
+#   #    changes - same grid parameters, flat instead of a dict:
+#   if hasattr(g_modsSettingsApi, 'updateImageAtlas'):
+#       g_modsSettingsApi.updateImageAtlas(modLinkage, 'anim',
+#           'mods/configs/mymod/other_atlas.png', 64, 64, 8, 48, 24, True, 96, 96)

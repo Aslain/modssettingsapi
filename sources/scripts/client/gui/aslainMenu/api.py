@@ -44,6 +44,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onButtonClicked = Event.Event()
 		self.onSettingsChanged = Event.Event()
 		self.onImageUpdate = Event.Event()
+		self.onImageAtlasUpdate = Event.Event()
 		self.onReloadMod = Event.Event()
 
 		self.onWindowOpened += self._resetLiveSettingsBaseline
@@ -170,6 +171,12 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
 		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage), label)
+
+	def updateImageAtlas(self, linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None):
+		w = int(width) if width else 0
+		h = int(height) if height else 0
+		self.onImageAtlasUpdate(linkage, varName, atlasSource, int(frameWidth), int(frameHeight),
+								int(columns), int(count), float(fps), bool(loop), w, h)
 
 	def getVersion(self):
 		return VERSION

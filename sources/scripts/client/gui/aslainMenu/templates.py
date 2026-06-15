@@ -175,7 +175,7 @@ def createLabel(text, tooltip=None, tooltipIcon=None):
 
 def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None,
 				align=None, valign=None, containerWidth=None, containerHeight=None,
-				collapsed=False, label=None, labelAlign=None):
+				collapsed=False, label=None, labelAlign=None, atlas=None):
 	""" Helper to create Image component (displays an image in the menu body)
 
 	:param source: Image path readable by the game's image loader, e.g.
@@ -234,6 +234,8 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 		component['label'] = label
 	if labelAlign is not None:
 		component['labelAlign'] = labelAlign
+	if atlas is not None:
+		component['atlas'] = atlas
 	return component
 
 

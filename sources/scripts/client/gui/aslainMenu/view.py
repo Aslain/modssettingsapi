@@ -73,6 +73,10 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			self.flashObject.as_updateImage(linkage, varName, source, width, height, removeImage, label)
 
+	def as_updateImageAtlasS(self, linkage, varName, atlasSrc, frameW, frameH, cols, count, fps, loop, width, height):
+		if self._isDAAPIInited():
+			self.flashObject.as_updateImageAtlas(linkage, varName, atlasSrc, frameW, frameH, cols, count, fps, loop, width, height)
+
 	def as_reloadModS(self, linkage, template):
 		if self._isDAAPIInited():
 			self.flashObject.as_reloadMod(linkage, template)
@@ -92,6 +96,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		self.api.onHotkeysUpdated += self.__onHotkeysUpdated
 		if hasattr(self.api, 'onImageUpdate'):
 			self.api.onImageUpdate += self.__onImageUpdate
+		if hasattr(self.api, 'onImageAtlasUpdate'):
+			self.api.onImageAtlasUpdate += self.__onImageAtlasUpdate
 		if hasattr(self.api, 'onReloadMod'):
 			self.api.onReloadMod += self.__onReloadMod
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
@@ -103,6 +109,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		self.api.onHotkeysUpdated -= self.__onHotkeysUpdated
 		if hasattr(self.api, 'onImageUpdate'):
 			self.api.onImageUpdate -= self.__onImageUpdate
+		if hasattr(self.api, 'onImageAtlasUpdate'):
+			self.api.onImageAtlasUpdate -= self.__onImageAtlasUpdate
 		if hasattr(self.api, 'onReloadMod'):
 			self.api.onReloadMod -= self.__onReloadMod
 		self.api.onWindowClosed()
@@ -160,6 +168,9 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 
 	def __onImageUpdate(self, linkage, varName, source, width, height, removeImage, label):
 		self.as_updateImageS(linkage, varName, source, width, height, removeImage, label)
+
+	def __onImageAtlasUpdate(self, linkage, varName, atlasSrc, frameW, frameH, cols, count, fps, loop, width, height):
+		self.as_updateImageAtlasS(linkage, varName, atlasSrc, frameW, frameH, cols, count, fps, loop, width, height)
 
 	def __onReloadMod(self, linkage, template):
 		self.as_reloadModS(linkage, template)

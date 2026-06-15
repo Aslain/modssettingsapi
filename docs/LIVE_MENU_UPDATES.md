@@ -3,6 +3,7 @@
 These additive pieces let a mod:
 - show an **image directly in the settings menu body** (not only inside a tooltip),
 - update that image **live** while the window is open (`updateImage`),
+- **animate a sprite sheet** in that image slot, both on open and live (`createImage(atlas=...)` / `updateImageAtlas`),
 - react to **uncommitted** in-menu changes before Apply (`registerLiveSettingsChange`),
 - **re-render its whole component subtree in place** without closing the window
   (`reloadModTemplate`) — e.g. to switch the menu language instantly.
@@ -29,6 +30,7 @@ Creates a component that renders an image in the menu body.
 | `collapsed` | `True` starts the slot **collapsed** (zero height) instead of reserving the full box; expand it later with `updateImage(..., source)`. Default `False` keeps the reserved slot. |
 | `label` | Optional text label rendered **above the image, inside the component** — it collapses/expands together with the image (no orphaned caption over a collapsed preview) and can be live-updated via `updateImage(..., label=...)`. Same html markup as other menu labels (e.g. `<font color='#80D639'>`). Pass `''` to reserve an empty label slot; omitted = no label slot. |
 | `labelAlign` | `'left'` (default), `'center'` or `'right'` — horizontal alignment of the label within the container box, independent of the image's own `align`. |
+| `atlas` | Optional dict — makes this image a **looping sprite-sheet animation** that starts the moment the menu opens: `{source, frameWidth, frameHeight, columns, count, fps, loop}`. See the **Sprite-sheet animation** section below. Omit it for a normal static image (backward-compatible). |
 
 The image is fitted (aspect-correct, never upscaled) within `width`×`height` and
 placed inside the `containerWidth`×`containerHeight` box per `align`/`valign`. A
@@ -95,7 +97,40 @@ Returns nothing; safe to call whenever the window is open.
 
 ---
 
-## 3. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback, fullsettings=True)`
+## 3. Sprite-sheet animation — `createImage(atlas={...})` + `g_modsSettingsApi.updateImageAtlas(...)`
+
+Animate an `Image` slot from a **single sprite sheet** (a grid of frames in one image) instead of swapping hundreds of separate frame files. The sheet is loaded **once** and animated by blitting one grid cell per frame with `copyPixels` on a timer, so it stays light even at a high `fps`.
+
+The sheet is a **row-major grid**: `count` frames, `columns` per row, each cell `frameWidth`×`frameHeight`. Frame *i* sits at column `i % columns`, row `i // columns` (the last row may be partial). `width`/`height` scale the displayed frame to fit, never upscaled, exactly like a static image.
+
+Two entry points, mirroring the static `createImage` / `updateImage` pair:
+
+**`createImage(..., atlas={...})`** — the image **starts animating at build time**, so it plays the instant the menu opens. Use it for the animation that is current when the template is built. `atlas` is a dict: `source` (the sheet path, root-relative like any image source), `frameWidth`, `frameHeight`, `columns`, `count`, `fps`, `loop` (`True` loops; `False` plays once and holds the last frame). The component's own first positional `source` is unused when `atlas` is given — pass `''`.
+
+**`updateImageAtlas(linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None)`** — **switch the animation live** while the window is open (e.g. the user picked another animation in a dropdown), with no menu re-render. Same grid parameters, flat instead of a dict.
+
+> **Why both?** The window fires your open/live callbacks **before** the Flash components are built, so a lone `updateImageAtlas` on open targets a component that does not exist yet (the slot stays empty until the first live change). `createImage(atlas=...)` renders inside the build pass — just as a static `createImage(source=...)` shows its image on open — so the animation is there immediately. Use `createImage(atlas=...)` for the initial animation and `updateImageAtlas(...)` for later live switches.
+
+```python
+# initial animation — plays as soon as the menu opens (source='' is unused with atlas=)
+templates.createImage('', 96, 96, varName='preview',
+                      align='center', valign='center',
+                      containerWidth=120, containerHeight=120,
+                      atlas={'source': 'mods/configs/mymod/spin_atlas.png',
+                             'frameWidth': 64, 'frameHeight': 64,
+                             'columns': 8, 'count': 60, 'fps': 30, 'loop': True})
+
+# later, when the user selects a different animation in a dropdown (live, before Apply):
+g_modsSettingsApi.updateImageAtlas('MyMod', 'preview',
+                                   'mods/configs/mymod/other_atlas.png',
+                                   64, 64, 8, 48, 24, True, 96, 96)
+```
+
+Both are aslainMenu-only and backward-compatible — feature-detect with `hasattr(g_modsSettingsApi, 'updateImageAtlas')`; the `atlas` kwarg is silently ignored by older `createImage` builds, so guard the same way before relying on it.
+
+---
+
+## 4. `g_modsSettingsApi.registerLiveSettingsChange(linkage, callback, fullsettings=True)`
 
 Registers a callback fired on **every** in-menu value change (dropdown / slider /
 checkbox / …) **immediately, before the user presses Apply**. Use it to drive live
@@ -123,7 +158,7 @@ previews.
 
 ---
 
-## 4. `g_modsSettingsApi.reloadModTemplate(linkage, template)`
+## 5. `g_modsSettingsApi.reloadModTemplate(linkage, template)`
 
 Re-renders **one mod's component subtree in place** in the open window, from a
 fresh template — without closing/reopening it and without touching other mods. The

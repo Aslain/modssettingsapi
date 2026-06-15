@@ -11,8 +11,11 @@
 	import flash.display.BitmapData;
 	import flash.net.URLRequest;
 	import flash.events.IOErrorEvent;
+	import flash.events.TimerEvent;
 	import flash.geom.Rectangle;
+	import flash.geom.Point;
 	import flash.utils.Dictionary;
+	import flash.utils.Timer;
 	import scaleform.clik.controls.ButtonGroup;
 	import scaleform.clik.core.UIComponent;
 	import scaleform.clik.events.SliderEvent;
@@ -45,6 +48,7 @@
 	{
 		private static const SCROLL_ITEM_LIMIT:int = 9;
 		private static var _imageCache:Dictionary = new Dictionary();
+		private static const ATLAS_ORIGIN:Point = new Point(0, 0);
 
 		public function ComponentsFactory()
 		{
@@ -155,6 +159,12 @@
 			// default state); a later updateImage() with a path expands it. Otherwise load now.
 			if (componentConfig.hasOwnProperty("collapsed") && Boolean(componentConfig.collapsed))
 				collapseImage(result);
+			else if (componentConfig.hasOwnProperty("atlas") && componentConfig.atlas != null)
+			{
+				var a:Object = componentConfig.atlas;
+				playAtlasInto(result, String(a.source), int(a.frameWidth), int(a.frameHeight),
+					int(a.columns), int(a.count), Number(a.fps), (a.loop != false));
+			}
 			else
 				loadImageInto(result, src);
 			return result;
@@ -165,6 +175,7 @@
 		// image identically; the API never lets a too-big image overflow the container.
 		public static function loadImageInto(holder:MovieClip, src:String):void
 		{
+			stopAtlas(holder);
 			// Restore the full slot height in case the holder was collapsed by removeImage.
 			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["totalH"]));
 			holder["collapsed"] = false;
@@ -207,6 +218,7 @@
 		// controls below it upward. loadImageInto restores the box height when a source is set.
 		public static function collapseImage(holder:MovieClip):void
 		{
+			stopAtlas(holder);
 			var imgBox:MovieClip = MovieClip(holder["imgBox"]);
 			while (imgBox.numChildren > 0)
 				imgBox.removeChildAt(imgBox.numChildren - 1);
@@ -274,6 +286,129 @@
 			bmp.x = Math.round((halign == "center") ? (boxW - bmp.width) / 2 : (halign == "right") ? (boxW - bmp.width) : 0);
 			bmp.y = Math.round((valign == "center") ? (boxH - bmp.height) / 2 : (valign == "bottom") ? (boxH - bmp.height) : 0);
 			imgBox.addChild(bmp);
+		}
+
+		public static function playAtlasInto(holder:MovieClip, atlasSrc:String, frameW:int, frameH:int,
+			cols:int, count:int, fps:Number, loop:Boolean):void
+		{
+			stopAtlas(holder);
+			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["totalH"]));
+			holder["collapsed"] = false;
+			holder["atlasSrc"] = atlasSrc;
+			holder["atlasFrameW"] = (frameW > 0) ? frameW : 1;
+			holder["atlasFrameH"] = (frameH > 0) ? frameH : 1;
+			holder["atlasCols"] = (cols > 0) ? cols : 1;
+			holder["atlasCount"] = (count > 0) ? count : 1;
+			holder["atlasFps"] = (fps > 0) ? fps : 12;
+			holder["atlasLoop"] = loop;
+			holder["atlasFrame"] = 0;
+
+			if (atlasSrc == null || atlasSrc == "")
+				return;
+
+			if (_imageCache[atlasSrc] != null)
+			{
+				startAtlasAnim(holder, BitmapData(_imageCache[atlasSrc]));
+				return;
+			}
+			var url:String = (atlasSrc.indexOf("mods/") == 0 ? "../../../" : "../../") + atlasSrc;
+			var loader:Loader = new Loader();
+			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e:Event):void {
+				var bmp:Bitmap = loader.content as Bitmap;
+				if (bmp != null && bmp.bitmapData != null)
+				{
+					var bmd:BitmapData = bmp.bitmapData.clone();
+					_imageCache[atlasSrc] = bmd;
+					if (holder["atlasSrc"] == atlasSrc && holder.stage != null)
+						startAtlasAnim(holder, bmd);
+				}
+				try { loader.unload(); } catch (err:Error) {}
+			});
+			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void {});
+			try { loader.load(new URLRequest(url)); } catch (err:Error) {}
+		}
+
+		private static function startAtlasAnim(holder:MovieClip, atlasBmd:BitmapData):void
+		{
+			holder["atlasBmd"] = atlasBmd;
+			var fw:int = int(holder["atlasFrameW"]);
+			var fh:int = int(holder["atlasFrameH"]);
+			if (holder["atlasBuf"] is BitmapData)
+			{
+				try { BitmapData(holder["atlasBuf"]).dispose(); } catch (e:Error) {}
+			}
+			holder["atlasBuf"] = new BitmapData(fw, fh, true, 0x00000000);
+			renderAtlasFrame(holder);
+			if (int(holder["atlasCount"]) <= 1)
+				return;
+			var timer:Timer = new Timer(1000.0 / Number(holder["atlasFps"]));
+			timer.addEventListener(TimerEvent.TIMER, function(e:TimerEvent):void {
+				advanceAtlas(holder);
+			});
+			holder["atlasTimer"] = timer;
+			timer.start();
+		}
+
+		private static function advanceAtlas(holder:MovieClip):void
+		{
+			if (holder == null || holder.stage == null)
+			{
+				stopAtlas(holder);
+				return;
+			}
+			var idx:int = int(holder["atlasFrame"]) + 1;
+			var count:int = int(holder["atlasCount"]);
+			if (idx >= count)
+			{
+				if (Boolean(holder["atlasLoop"]))
+					idx = 0;
+				else
+				{
+					idx = count - 1;
+					stopAtlasTimer(holder);
+				}
+			}
+			holder["atlasFrame"] = idx;
+			renderAtlasFrame(holder);
+		}
+
+		private static function renderAtlasFrame(holder:MovieClip):void
+		{
+			var atlas:BitmapData = holder["atlasBmd"] as BitmapData;
+			var buf:BitmapData = holder["atlasBuf"] as BitmapData;
+			if (atlas == null || buf == null)
+				return;
+			var idx:int = int(holder["atlasFrame"]);
+			var cols:int = int(holder["atlasCols"]);
+			var fw:int = int(holder["atlasFrameW"]);
+			var fh:int = int(holder["atlasFrameH"]);
+			var col:int = idx % cols;
+			var row:int = idx / cols;
+			buf.copyPixels(atlas, new Rectangle(col * fw, row * fh, fw, fh), ATLAS_ORIGIN);
+			renderBitmapInto(holder, buf);
+		}
+
+		private static function stopAtlasTimer(holder:MovieClip):void
+		{
+			if (holder != null && holder["atlasTimer"] is Timer)
+			{
+				Timer(holder["atlasTimer"]).stop();
+				holder["atlasTimer"] = null;
+			}
+		}
+
+		public static function stopAtlas(holder:MovieClip):void
+		{
+			if (holder == null)
+				return;
+			stopAtlasTimer(holder);
+			holder["atlasBmd"] = null;
+			holder["atlasSrc"] = "";
+			if (holder["atlasBuf"] is BitmapData)
+			{
+				try { BitmapData(holder["atlasBuf"]).dispose(); } catch (e:Error) {}
+				holder["atlasBuf"] = null;
+			}
 		}
 
 		public static function createCheckBox(componentConfig:Object, modLinkage:String, text:String, value:Boolean, tooltip:String = '', tooltipIcon:String = ''):DisplayObject
