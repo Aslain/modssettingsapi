@@ -3,6 +3,7 @@ package poliroid.gui.lobby.modsSettings
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.ui.Keyboard;
+	import flash.utils.getQualifiedClassName;
 
 	import scaleform.clik.events.InputEvent;
 	import net.wg.infrastructure.base.AbstractView;
@@ -13,6 +14,7 @@ package poliroid.gui.lobby.modsSettings
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowContent;
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowFooter;
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowHeader;
+	import poliroid.gui.lobby.modsSettings.controls.ResetConfirmDialog;
 	import poliroid.gui.lobby.modsSettings.data.HotkeyControlVO;
 	import poliroid.gui.lobby.modsSettings.data.ModsSettingsLocalizationVO;
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
@@ -32,6 +34,7 @@ package poliroid.gui.lobby.modsSettings
 		public var buttonAction:Function;
 		public var hotkeyAction:Function;
 		public var setModCollapsed:Function;
+		public var requestModReset:Function;
 		public var closeView:Function;
 
 		private var modsArray:Array;
@@ -41,6 +44,13 @@ package poliroid.gui.lobby.modsSettings
 		private var _toolbar:ModsSettingsToolbar;
 		private var _lastJumpLetter:String = '';
 		private var _lastJumpIndex:int = 0;
+		private var _collapseSnapshot:Object = null;
+		private var _ctrlDown:Boolean = false;
+		private var _resetConfirm:ResetConfirmDialog;
+		private var _confirmLinkage:String = null;
+		private var _skipResetConfirm:Boolean = false;
+		private var _appW:Number = 0;
+		private var _appH:Number = 0;
 
 		public function ModsSettingsWindow():void
 		{
@@ -56,14 +66,19 @@ package poliroid.gui.lobby.modsSettings
 			super.onPopulate();
 
 			App.gameInputMgr.setKeyHandler(Keyboard.ESCAPE, KeyboardEvent.KEY_DOWN, onEscapeKeyDownHandler, true);
+			App.gameInputMgr.setKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_DOWN, onCtrlKeyDownHandler, true);
+			App.gameInputMgr.setKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_UP, onCtrlKeyUpHandler, true);
+			App.gameInputMgr.setKeyHandler(Keyboard.F, KeyboardEvent.KEY_DOWN, onFKeyDownHandler, true);
 
 			header.addEventListener(InteractiveEvent.CLOSE_BUTTON_CLICK, handleCloseButtonClick);
+			header.addEventListener(InteractiveEvent.SEARCH, handleSearch);
 
 			content.addEventListener(InteractiveEvent.SETTINGS_CHANGED, handleModSettingsChanged);
 			content.addEventListener(InteractiveEvent.BUTTON_CLICK, handleModSettingsButtonClick);
 			content.addEventListener(InteractiveEvent.HOTKEY_ACTION, handleModSettingsHotkeyAction);
 			content.addEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
 			content.addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
+			content.addEventListener(InteractiveEvent.RESET_REQUESTED, handleModResetRequested);
 
 			footer.addEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.addEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -75,21 +90,30 @@ package poliroid.gui.lobby.modsSettings
 			addChild(_toolbar);
 			positionToolbar();
 
+			_resetConfirm = new ResetConfirmDialog();
+			_resetConfirm.addEventListener(InteractiveEvent.RESET_CONFIRMED, onResetConfirmed);
+			addChild(_resetConfirm);
+
 			requestModsData();
 		}
 
 		override protected function onDispose():void
 		{
 			App.gameInputMgr.clearKeyHandler(Keyboard.ESCAPE, KeyboardEvent.KEY_DOWN, onEscapeKeyDownHandler);
+			App.gameInputMgr.clearKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_DOWN, onCtrlKeyDownHandler);
+			App.gameInputMgr.clearKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_UP, onCtrlKeyUpHandler);
+			App.gameInputMgr.clearKeyHandler(Keyboard.F, KeyboardEvent.KEY_DOWN, onFKeyDownHandler);
 			App.toolTipMgr.hide();
 
 			header.removeEventListener(InteractiveEvent.CLOSE_BUTTON_CLICK, handleCloseButtonClick);
+			header.removeEventListener(InteractiveEvent.SEARCH, handleSearch);
 
 			content.removeEventListener(InteractiveEvent.SETTINGS_CHANGED, handleModSettingsChanged);
 			content.removeEventListener(InteractiveEvent.BUTTON_CLICK, handleModSettingsButtonClick);
 			content.removeEventListener(InteractiveEvent.HOTKEY_ACTION, handleModSettingsHotkeyAction);
 			content.removeEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
 			content.removeEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
+			content.removeEventListener(InteractiveEvent.RESET_REQUESTED, handleModResetRequested);
 
 			footer.removeEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.removeEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -102,6 +126,13 @@ package poliroid.gui.lobby.modsSettings
 				_toolbar = null;
 			}
 
+			if (_resetConfirm != null)
+			{
+				_resetConfirm.removeEventListener(InteractiveEvent.RESET_CONFIRMED, onResetConfirmed);
+				_resetConfirm.dispose();
+				_resetConfirm = null;
+			}
+
 			header = null;
 			content = null;
 			footer = null;
@@ -112,12 +143,18 @@ package poliroid.gui.lobby.modsSettings
 
 		override public function updateStage(width:Number, height:Number):void
 		{
+			_appW = width;
+			_appH = height;
+
 			header.updateStage(width, height);
 			content.updateStage(width, height);
 			footer.updateStage(width, height);
 			background.updateStage(width, height);
 
 			positionToolbar();
+
+			if (_resetConfirm != null && _resetConfirm.visible)
+				_resetConfirm.resize(width, height);
 		}
 
 		private function positionToolbar():void
@@ -137,6 +174,8 @@ package poliroid.gui.lobby.modsSettings
 			header.setLocalization(vo);
 			footer.setLocalization(vo);
 			STRINGS.setLocalization(vo);
+
+			_skipResetConfirm = vo.resetSkipConfirm;
 		}
 
 		public function as_setData(data:Array):void
@@ -210,6 +249,18 @@ package poliroid.gui.lobby.modsSettings
 			}
 		}
 
+		public function as_resetMod(linkage:String, values:Object):void
+		{
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod.modLinkage == linkage)
+				{
+					mod.resetToValues(values);
+					return;
+				}
+			}
+		}
+
 		private function collectModsData():Object
 		{
 			var result:Object = new Object();
@@ -243,6 +294,13 @@ package poliroid.gui.lobby.modsSettings
 				configChangedLinkages.push(event.linkage);
 
 			notifyLiveChange(event.linkage);
+
+			if (stage != null && stage.focus != null)
+			{
+				var fc:String = getQualifiedClassName(stage.focus);
+				if (fc.indexOf('CheckBox') != -1 || fc.indexOf('Dropdown') != -1 || fc.indexOf('ModsSettingsComponent') != -1)
+					stage.focus = this;
+			}
 		}
 
 		private function notifyLiveChange(linkage:String):void
@@ -284,6 +342,39 @@ package poliroid.gui.lobby.modsSettings
 			content.reflowMods();
 		}
 
+		private function handleModResetRequested(event:InteractiveEvent):void
+		{
+			if (_skipResetConfirm || _resetConfirm == null)
+			{
+				if (requestModReset != null)
+					requestModReset(event.linkage);
+				return;
+			}
+
+			_confirmLinkage = event.linkage;
+
+			var modName:String = '';
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod.modLinkage == event.linkage)
+				{
+					if (mod.data != null && mod.data.modDisplayName != null)
+						modName = String(mod.data.modDisplayName).replace(/<[^>]*>/g, '').replace(/^\s+|\s+$/g, '');
+					break;
+				}
+			}
+
+			var w:Number = (_appW > 0) ? _appW : (stage != null ? stage.stageWidth : 1920);
+			var h:Number = (_appH > 0) ? _appH : (stage != null ? stage.stageHeight : 1080);
+			_resetConfirm.open(modName, STRINGS.RESET_CONFIRM_MESSAGE, STRINGS.RESET_CONFIRM_SUBMIT, STRINGS.BUTTON_CANCEL, w, h);
+		}
+
+		private function onResetConfirmed(event:InteractiveEvent):void
+		{
+			if (requestModReset != null && _confirmLinkage != null)
+				requestModReset(_confirmLinkage);
+		}
+
 		private function handleCollapseAll(event:InteractiveEvent):void
 		{
 			setAllCollapsed(Boolean(event.value));
@@ -307,6 +398,9 @@ package poliroid.gui.lobby.modsSettings
 
 		private function handleJumpToLetter(event:InteractiveEvent):void
 		{
+			if (_collapseSnapshot != null && header != null)
+				header.clearSearch();
+
 			var matches:Array = new Array();
 
 			for each (var mod:ModsSettingsComponent in modsArray)
@@ -432,9 +526,87 @@ package poliroid.gui.lobby.modsSettings
 			closeView();
 		}
 
+		private function handleSearch(event:InteractiveEvent):void
+		{
+			var query:String = (event.value == null) ? '' : String(event.value).toLowerCase();
+
+			if (query.length == 0)
+			{
+				for each (var m:ModsSettingsComponent in modsArray)
+				{
+					if (m == null)
+						continue;
+
+					m.visible = true;
+
+					if (_collapseSnapshot != null && _collapseSnapshot.hasOwnProperty(m.modLinkage))
+						m.setCollapsed(Boolean(_collapseSnapshot[m.modLinkage]));
+				}
+
+				_collapseSnapshot = null;
+
+				if (content != null)
+				{
+					content.reflowMods();
+					content.scrollToTop();
+				}
+
+				return;
+			}
+
+			if (_collapseSnapshot == null)
+			{
+				_collapseSnapshot = new Object();
+
+				for each (var s:ModsSettingsComponent in modsArray)
+					if (s != null)
+						_collapseSnapshot[s.modLinkage] = s.isCollapsed;
+			}
+
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod == null)
+					continue;
+
+				var name:String = (mod.data != null && mod.data.modDisplayName != null) ? String(mod.data.modDisplayName) : '';
+				name = name.replace(/<[^>]*>/g, '').toLowerCase();
+
+				var hit:Boolean = name.indexOf(query) != -1;
+				mod.visible = hit;
+
+				if (hit && mod.isCollapsed)
+					mod.setCollapsed(false);
+			}
+
+			if (content != null)
+			{
+				content.reflowMods();
+				content.scrollToTop();
+			}
+		}
+
 		private function onEscapeKeyDownHandler(event:InputEvent):void
 		{
-			closeView();
+			if (header != null && header.isSearchFocused())
+				header.blurSearch();
+			else
+				closeView();
+		}
+
+		private function onCtrlKeyDownHandler(event:InputEvent):void
+		{
+			_ctrlDown = true;
+		}
+
+		private function onCtrlKeyUpHandler(event:InputEvent):void
+		{
+			_ctrlDown = false;
+		}
+
+		private function onFKeyDownHandler(event:InputEvent):void
+		{
+			if (_ctrlDown && header != null)
+				header.focusSearch();
 		}
 	}
 }

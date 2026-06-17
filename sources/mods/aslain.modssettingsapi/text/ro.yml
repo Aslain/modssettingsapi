@@ -9,3 +9,8 @@ buttons/default: Implicit
 stateswitcher/tooltip/header: Activează / Dezactivează modul
 stateswitcher/tooltip/body: Indicator verde - mod activat\nIndicator roșu - mod dezactivat
 colorchoice/header: CULOARE
+search/placeholder: Caută moduri…
+reset/tooltip/header: Resetare setări
+reset/tooltip/body: Readuce opțiunile acestui mod la valorile implicite. Aplică / OK păstrează, Anulează renunță.
+reset/confirm/message: Resetați acest mod la setările implicite?
+reset/confirm/submit: Resetează

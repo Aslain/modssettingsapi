@@ -31,6 +31,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			'templates': {},
 			'storage': {},
 			'collapsed': {},
+			'defaults': {},
 		}
 		self.userSettings = {}
 		self._liveSettingsChangeCallbacks = {}
@@ -46,8 +47,10 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onImageUpdate = Event.Event()
 		self.onImageAtlasUpdate = Event.Event()
 		self.onReloadMod = Event.Event()
+		self.onResetMod = Event.Event()
 
 		self.onWindowOpened += self._resetLiveSettingsBaseline
+		self.onWindowClosed += self._stopHotkeyAcceptOnClose
 
 		self.loadSettings()
 		self.loadState()
@@ -82,6 +85,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state = jsonLoad(stateFile)
 				self.state.setdefault('storage', {})
 				self.state.setdefault('collapsed', {})
+				self.state.setdefault('defaults', {})
 				self.__migrateState()
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
@@ -114,15 +118,30 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			if linkage not in self.activeMods:
 				del self.state['templates'][linkage]
 				del self.state['settings'][linkage]
+				self.state.get('defaults', {}).pop(linkage, None)
 
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None):
 		try:
 			self.activeMods.add(linkage)
 			currentTemplate = self.state['templates'].get(linkage)
 			if not currentTemplate or self.compareTemplates(template, currentTemplate):
+				versionBump = (bool(currentTemplate)
+					and 'settingsVersion' in template and 'settingsVersion' in currentTemplate
+					and template.get('settingsVersion') > currentTemplate.get('settingsVersion'))
 				self.state['templates'][linkage] = template
 				self.state['settings'][linkage] = self.getSettingsFromTemplate(template)
+				if not currentTemplate or versionBump:
+					self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
 				self.saveState()
+			elif ('settingsVersion' in template and 'settingsVersion' in currentTemplate
+					and jsonDump(template, True) != jsonDump(currentTemplate, True)):
+				_logger.warning(
+					"[ModsSettings API] Template for '%s' changed but settingsVersion was not bumped "
+					"(stored %s, new %s) - keeping the stored template, so the new layout is NOT applied. "
+					"Bump settingsVersion to apply it (note: that resets the mod's saved values to defaults).",
+					linkage, currentTemplate.get('settingsVersion'), template.get('settingsVersion'))
+			if linkage not in self.state.setdefault('defaults', {}):
+				self.state['defaults'][linkage] = self.getSettingsFromTemplate(template)
 			self.onSettingsChanged += callback
 			if buttonHandler is not None:
 				self.onButtonClicked += buttonHandler
@@ -234,11 +253,58 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		The mod is responsible for filling the template with the values it wants
 		shown. Has no effect if the window is closed.
 		"""
+		try:
+			self.hotkeys.stopAccept()
+		except Exception:
+			_logger.exception("[ModsSettings API] stopAccept on reload of '%s' failed", linkage)
 		template = copy.deepcopy(template)
 		template['linkage'] = linkage
 		template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
+		template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
 		self._attachHotkeyDisplay(linkage, template)
 		self.onReloadMod(linkage, template)
+
+	def resetModToDefaults(self, linkage):
+		""" Reset one mod's controls to their factory defaults, live, in the open window. The
+		standard controls are set in place (no rebuild, so no flicker) and the change is
+		uncommitted - Apply / OK keeps it, Cancel reverts it. Hotkeys are reset too, through
+		their own channel (applied immediately, like any hotkey change). Has no effect on the
+		standard controls if the window is closed.
+		"""
+		template = self.state['templates'].get(linkage)
+		if not template:
+			return
+
+		defaults = self.state.get('defaults', {}).get(linkage)
+		if defaults is None:
+			defaults = self.getSettingsFromTemplate(template)
+
+		try:
+			self.hotkeys.stopAccept()
+		except Exception:
+			_logger.exception("[ModsSettings API] stopAccept failed during reset of '%s'", linkage)
+
+		hotkeyVars = []
+		for column in COLUMNS:
+			for component in template.get(column, ()):
+				if component.get('type') == COMPONENT_TYPE.HOTKEY and 'varName' in component:
+					hotkeyVars.append(component['varName'])
+		for varName in hotkeyVars:
+			try:
+				self.hotkeys.reset(linkage, varName)
+			except Exception:
+				_logger.exception("[ModsSettings API] Failed to reset hotkey '%s' of '%s'", varName, linkage)
+
+		_logger.debug("[ModsSettings API] Reset '%s' to defaults: %d control(s), %d hotkey(s)",
+			linkage, len(defaults), len(hotkeyVars))
+
+		self.onResetMod(linkage, dict(defaults))
+
+	def _stopHotkeyAcceptOnClose(self):
+		try:
+			self.hotkeys.stopAccept()
+		except Exception:
+			_logger.exception('[ModsSettings API] stopAccept on window close failed')
 
 	def checkKeyset(self, keys):
 		return self.hotkeys.checkKeyset(keys)
@@ -290,6 +356,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			settings = self.getModSettings(linkage, template)
 			template['linkage'] = linkage
 			template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
+			template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
 			if 'enabled' in template:
 				template['enabled'] = settings['enabled']
 			for column in COLUMNS:

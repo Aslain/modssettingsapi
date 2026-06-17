@@ -9,3 +9,8 @@ buttons/default: Výchozí
 stateswitcher/tooltip/header: Zapnout / Vypnout mod
 stateswitcher/tooltip/body: Zelený indikátor - mod zapnut\nČervený indikátor - mod vypnut
 colorchoice/header: BARVA
+search/placeholder: Hledat módy…
+reset/tooltip/header: Obnovení nastavení
+reset/tooltip/body: Vrátí volby tohoto modu na výchozí hodnoty. Použít / OK potvrdí, Zrušit zahodí.
+reset/confirm/message: Obnovit tento mod na výchozí nastavení?
+reset/confirm/submit: Obnovit

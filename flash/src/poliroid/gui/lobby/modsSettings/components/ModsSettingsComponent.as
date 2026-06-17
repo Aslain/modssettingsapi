@@ -1,6 +1,7 @@
 package poliroid.gui.lobby.modsSettings.components
 {
 	import flash.display.DisplayObject;
+	import flash.display.Graphics;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -16,6 +17,7 @@ package poliroid.gui.lobby.modsSettings.components
 	import poliroid.gui.lobby.modsSettings.controls.HotkeyControl;
 	import poliroid.gui.lobby.modsSettings.controls.StateSwitcher;
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
+	import poliroid.gui.lobby.modsSettings.lang.STRINGS;
 	import poliroid.gui.lobby.modsSettings.shared.ComponentsFactory;
 	import poliroid.gui.lobby.modsSettings.shared.Constants;
 	import poliroid.gui.lobby.modsSettings.shared.HoverBrightener;
@@ -31,6 +33,10 @@ package poliroid.gui.lobby.modsSettings.components
 		// margin is left to the right frame border.
 		private static const SWITCHER_RIGHT_OFFSET:Number = 41;
 		private static const GAP_BEFORE_SWITCHER:Number = 18;
+		private static const RESET_SIZE:Number = 14;
+		private static const RESET_STACK_GAP:Number = 8;
+		private static const RESET_DIM_ALPHA:Number = 0.4;
+		private static var _switcherWidthCache:Number = NaN;
 
 		public var modLinkage:String;
 		public var modEnabled:Boolean = true;
@@ -49,6 +55,9 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _nameHovered:Boolean = false;
 		private var _arrowBright:HoverBrightener;
 		private var _nameBright:HoverBrightener;
+		private var _resetButton:Sprite;
+		private var _resetColor:uint = 0xCCCCCC;
+		private var _resetting:Boolean = false;
 
 		public function ModsSettingsComponent(linkage:String)
 		{
@@ -86,6 +95,40 @@ package poliroid.gui.lobby.modsSettings.components
 			return result;
 		}
 
+		public function resetToValues(values:Object):void
+		{
+			if (values == null)
+				return;
+
+			_resetting = true;
+
+
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var entry:Object = components[i];
+
+				if (!('varName' in entry.data) || entry.data.type == 'HotKey')
+					continue;
+
+				var vn:String = entry.data.varName;
+				if (!values.hasOwnProperty(vn))
+					continue;
+
+				var co:Object = entry.componentObject;
+				if (co != null && co['setValue'] is Function)
+				{
+					try { co['setValue'](values[vn]); }
+					catch (err:Error) { DebugUtils.LOG_ERROR('[ModsSettings] reset setValue failed for var ' + vn); }
+				}
+			}
+
+			_resetting = false;
+
+			updateComponentsState();
+			dispatchEvent(new InteractiveEvent(InteractiveEvent.SETTINGS_CHANGED, modLinkage));
+			updateResetState();
+		}
+
 		override protected function draw():void
 		{
 			if (isInvalid(InvalidationType.DATA))
@@ -106,9 +149,7 @@ package poliroid.gui.lobby.modsSettings.components
 			// With an on/off switcher, stop short of it so the control clears the green button
 			// and keeps a clear margin to the right frame border; without one, use the normal
 			// right-edge gap.
-			var rightmostLimit:Number = data.hasOwnProperty('enabled')
-				? (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER)
-				: (Constants.MOD_COMPONENT_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+			var rightmostLimit:Number = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
 
 			if (column1)
 			{
@@ -158,6 +199,7 @@ package poliroid.gui.lobby.modsSettings.components
 			_fieldSet = fieldSet;
 			_fullHeight = fieldSet.height;
 			createCollapseArrow();
+			createResetButton();
 
 			// Collapsed height keeps a symmetric margin around the on/off switcher
 			// (top margin == bottom margin) so the green button doesn't touch the border
@@ -166,6 +208,7 @@ package poliroid.gui.lobby.modsSettings.components
 				_collapsedHeight = Math.max(_collapsedHeight, _stateSwitcher.y * 2 + _stateSwitcher.height);
 
 			updateComponentsState();
+			updateResetState();
 
 			addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleChildHeightChanged);
 
@@ -175,8 +218,12 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function handleComponentEvent(event:InteractiveEvent = null):void
 		{
+			if (_resetting)
+				return;
+
 			updateComponentsState();
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.SETTINGS_CHANGED, modLinkage));
+			updateResetState();
 		}
 
 		private function handleChildHeightChanged(event:InteractiveEvent):void
@@ -204,7 +251,7 @@ package poliroid.gui.lobby.modsSettings.components
 				if ('varName' in componentConfig)
 					_componentsByVar[componentConfig.varName] = entry;
 
-				component.x = (componentConfig.hasOwnProperty('masterVarName') && componentConfig.masterIndent != false) ? x + Constants.MOD_CHILD_INDENT : x;
+				component.x = ((componentConfig.hasOwnProperty('masterVarName') || componentConfig.hasOwnProperty('conditions')) && componentConfig.masterIndent != false) ? x + Constants.MOD_CHILD_INDENT : x;
 				component.y = lastPos + Constants.COMPONENT_MARGIN_BOTTOM;
 
 				// Right-align the row's control to the column boundary so neighbouring rows
@@ -225,6 +272,8 @@ package poliroid.gui.lobby.modsSettings.components
 			_stateSwitcher.x = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET;
 			_stateSwitcher.y = 16;
 			addChild(_stateSwitcher);
+			if (_stateSwitcher.width > 0)
+				_switcherWidthCache = _stateSwitcher.width;
 			_stateSwitcher.addEventListener(Event.SELECT, handleStateSwitcherClick);
 		}
 
@@ -241,20 +290,132 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function updateComponentsState():void
 		{
+			var visChanged:Boolean = false;
+
 			for (var i:Number = 0; i < components.length; i++)
 			{
 				var entry:Object = components[i];
 				var component:MovieClip = MovieClip(entry.componentObject);
-				var enabled:Boolean = modEnabled;
+				var enabled:Boolean = isEntryEnabled(entry, {});
 
-				if (enabled && entry.data.hasOwnProperty('masterVarName'))
-					enabled = entry.data.hasOwnProperty('masterValue') ? masterValueMatches(String(entry.data.masterVarName), entry.data.masterValue, (entry.data.hasOwnProperty('condition') ? String(entry.data.condition) : "==")) : isMasterOn(String(entry.data.masterVarName));
+				if (entry.data.gateHides == true)
+				{
+					var newHidden:Boolean = !enabled;
 
-				component.alpha = enabled ? 1 : 0.5;
-				component.mouseEnabled = enabled;
-				component.mouseChildren = enabled;
-				component.tabChildren = enabled;
+					if ((entry.gateHidden == true) != newHidden)
+					{
+						entry.gateHidden = newHidden;
+						visChanged = true;
+					}
+
+					component.alpha = 1;
+					component.mouseEnabled = true;
+					component.mouseChildren = true;
+					component.tabChildren = true;
+				}
+				else
+				{
+					component.alpha = enabled ? 1 : 0.5;
+					component.mouseEnabled = enabled;
+					component.mouseChildren = enabled;
+					component.tabChildren = enabled;
+				}
 			}
+
+			if (visChanged)
+			{
+				applyVisibility();
+				reflow();
+			}
+		}
+
+		private function isEntryEnabled(entry:Object, visiting:Object):Boolean
+		{
+			if (entry == null)
+				return true;
+
+			if (!modEnabled)
+				return false;
+
+			var d:Object = entry.data;
+
+			if (d.hasOwnProperty('conditions'))
+				return checkConditions(d.conditions, d.hasOwnProperty('conditionsLogic') ? String(d.conditionsLogic) : "AND", visiting);
+
+			if (!d.hasOwnProperty('masterVarName'))
+				return true;
+
+			return checkOneMaster(
+				String(d.masterVarName),
+				d.hasOwnProperty('masterValue'), d.masterValue,
+				d.hasOwnProperty('condition') ? String(d.condition) : "==",
+				visiting);
+		}
+
+		private function checkConditions(conditions:Object, logic:String, visiting:Object):Boolean
+		{
+			if (!(conditions is Array))
+				return true;
+
+			var arr:Array = conditions as Array;
+
+			if (arr.length == 0)
+				return true;
+
+			var isOr:Boolean = (logic == "OR");
+
+			for (var i:int = 0; i < arr.length; i++)
+			{
+				var c:Object = arr[i];
+
+				if (c == null || !c.hasOwnProperty('masterVarName'))
+					continue;
+
+				var ok:Boolean = checkOneMaster(
+					String(c.masterVarName),
+					c.hasOwnProperty('masterValue'), c.masterValue,
+					c.hasOwnProperty('condition') ? String(c.condition) : "==",
+					cloneVisiting(visiting));
+
+				if (isOr && ok)
+					return true;
+
+				if (!isOr && !ok)
+					return false;
+			}
+
+			return !isOr;
+		}
+
+		private function checkOneMaster(masterVar:String, hasValue:Boolean, value:Object, condition:String, visiting:Object):Boolean
+		{
+			var ownOk:Boolean = hasValue ? masterValueMatches(masterVar, value, condition) : isMasterOn(masterVar);
+
+			if (!ownOk)
+				return false;
+
+			var masterEntry:Object = _componentsByVar[masterVar];
+
+			if (masterEntry == null)
+				return true;
+
+			if (visiting[masterVar])
+				return true;
+			visiting[masterVar] = true;
+
+			var masterComp:MovieClip = MovieClip(masterEntry.componentObject);
+			if (masterComp != null && !masterComp.visible)
+				return false;
+
+			return isEntryEnabled(masterEntry, visiting);
+		}
+
+		private function cloneVisiting(visiting:Object):Object
+		{
+			var copy:Object = {};
+			for (var k:String in visiting)
+				copy[k] = true;
+			return copy;
 		}
 
 		private function isMasterOn(varName:String):Boolean
@@ -405,12 +566,160 @@ package poliroid.gui.lobby.modsSettings.components
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.COLLAPSE_CHANGED, modLinkage, '', _collapsed));
 		}
 
+		private function createResetButton():void
+		{
+			_resetButton = new Sprite();
+			_resetButton.buttonMode = true;
+			_resetButton.useHandCursor = true;
+
+			if (_stateSwitcher != null)
+			{
+				var sw:Number = (_stateSwitcher.width > 0) ? _stateSwitcher.width : RESET_SIZE;
+				var sh:Number = (_stateSwitcher.height > 0) ? _stateSwitcher.height : RESET_SIZE;
+				_resetButton.x = _stateSwitcher.x + (sw - RESET_SIZE) / 2;
+				_resetButton.y = _stateSwitcher.y + sh + RESET_STACK_GAP;
+			}
+			else
+			{
+				var slotW:Number = isNaN(_switcherWidthCache) ? SWITCHER_RIGHT_OFFSET : _switcherWidthCache;
+				_resetButton.x = (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET) + (slotW - RESET_SIZE) / 2;
+				_resetButton.y = 16;
+			}
+
+			if (_fieldSet != null)
+				_resetColor = _fieldSet.textField.textColor;
+
+			_resetButton.addEventListener(MouseEvent.CLICK, handleResetClick);
+			_resetButton.addEventListener(MouseEvent.ROLL_OVER, onResetOver);
+			_resetButton.addEventListener(MouseEvent.ROLL_OUT, onResetOut);
+
+			addChild(_resetButton);
+
+			drawResetIcon();
+		}
+
+		private function drawResetIcon():void
+		{
+			if (_resetButton == null)
+				return;
+
+			var g:Graphics = _resetButton.graphics;
+			g.clear();
+
+			g.beginFill(0, 0);
+			g.drawRect(-3, -3, RESET_SIZE + 6, RESET_SIZE + 6);
+			g.endFill();
+
+			var cx:Number = RESET_SIZE / 2;
+			var cy:Number = RESET_SIZE / 2;
+			var r:Number = RESET_SIZE / 2 - 1.5;
+
+			var startA:Number = -55 * Math.PI / 180;
+			var endA:Number = 215 * Math.PI / 180;
+			var steps:int = 28;
+			g.lineStyle(1.5, _resetColor, 1, true);
+			g.moveTo(cx + r * Math.cos(startA), cy + r * Math.sin(startA));
+			for (var i:int = 1; i <= steps; i++)
+			{
+				var a:Number = startA + (endA - startA) * i / steps;
+				g.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+			}
+			g.lineStyle();
+
+			var px:Number = cx + r * Math.cos(startA);
+			var py:Number = cy + r * Math.sin(startA);
+			var tx:Number = Math.sin(startA);
+			var ty:Number = -Math.cos(startA);
+			var nx:Number = Math.cos(startA);
+			var ny:Number = Math.sin(startA);
+			var head:Number = RESET_SIZE * 0.34;
+			var halfBase:Number = head * 0.7;
+			g.beginFill(_resetColor, 1);
+			g.moveTo(px + tx * head, py + ty * head);
+			g.lineTo(px + nx * halfBase, py + ny * halfBase);
+			g.lineTo(px - nx * halfBase, py - ny * halfBase);
+			g.endFill();
+		}
+
+		private function handleResetClick(event:MouseEvent):void
+		{
+			event.stopPropagation();
+			dispatchEvent(new InteractiveEvent(InteractiveEvent.RESET_REQUESTED, modLinkage));
+		}
+
+		private function onResetOver(event:MouseEvent):void
+		{
+			if (_resetButton != null && modEnabled)
+				_resetButton.alpha = 1.0;
+			try { App.toolTipMgr.showComplex(STRINGS.BUTTON_RESET_TOOLTIP); } catch (err:Error) {}
+		}
+
+		private function onResetOut(event:MouseEvent):void
+		{
+			updateResetState();
+			try { App.toolTipMgr.hide(); } catch (err:Error) {}
+		}
+
+		private function differsFromDefaults():Boolean
+		{
+			if (data == null || data.defaults == null)
+				return true;
+
+			var defaults:Object = data.defaults;
+			var current:Object = getConfigData();
+
+
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var entry:Object = components[i];
+
+				if (!('varName' in entry.data) || entry.data.type == 'HotKey')
+					continue;
+
+				var vn:String = entry.data.varName;
+				if (!defaults.hasOwnProperty(vn) || !current.hasOwnProperty(vn))
+					continue;
+				if (!valuesEqual(current[vn], defaults[vn]))
+					return true;
+			}
+
+			return false;
+		}
+
+		private function valuesEqual(a:*, b:*):Boolean
+		{
+			if ((a is Number) != (b is Number))
+				return int(a) == int(b);
+			return String(a) == String(b);
+		}
+
+		private function updateResetState():void
+		{
+			if (_resetButton == null)
+				return;
+			_resetButton.visible = !_collapsed;
+			_resetButton.mouseEnabled = modEnabled;
+			_resetButton.buttonMode = modEnabled;
+			_resetButton.useHandCursor = modEnabled;
+			_resetButton.alpha = (modEnabled && differsFromDefaults()) ? 1.0 : RESET_DIM_ALPHA;
+		}
+
+		private function applyVisibility():void
+		{
+			for (var i:Number = 0; i < components.length; i++)
+			{
+				var entry:Object = components[i];
+				MovieClip(entry.componentObject).visible = !_collapsed && !(entry.gateHidden == true);
+			}
+		}
+
 		private function applyCollapsed(value:Boolean):void
 		{
 			_collapsed = value;
 
-			for (var i:Number = 0; i < components.length; i++)
-				MovieClip(components[i].componentObject).visible = !_collapsed;
+			updateResetState();
+
+			applyVisibility();
 
 			var h:Number = _collapsed ? _collapsedHeight : _fullHeight;
 
@@ -520,7 +829,7 @@ package poliroid.gui.lobby.modsSettings.components
 						return false;
 					comp.addEventListener(InteractiveEvent.VALUE_CHANGED, handleComponentEvent);
 				}
-				comp.x = (cfg.hasOwnProperty('masterVarName') && cfg.masterIndent != false) ? colX + Constants.MOD_CHILD_INDENT : colX;
+				comp.x = ((cfg.hasOwnProperty('masterVarName') || cfg.hasOwnProperty('conditions')) && cfg.masterIndent != false) ? colX + Constants.MOD_CHILD_INDENT : colX;
 				comp.y = y + Constants.COMPONENT_MARGIN_BOTTOM;
 				applyControlRightLimit(comp, rightLimit);
 				if (comp.parent != this)
@@ -562,9 +871,7 @@ package poliroid.gui.lobby.modsSettings.components
 			var newComps:Array = [];
 			var newByVar:Object = {};
 
-			var rightmost:Number = newData.hasOwnProperty('enabled')
-				? (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER)
-				: (Constants.MOD_COMPONENT_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+			var rightmost:Number = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
 			var col2Exists:Boolean = (newData.column2 != null);
 
 			if (newData.column1)
@@ -609,7 +916,7 @@ package poliroid.gui.lobby.modsSettings.components
 			switch (componentConfig.type)
 			{
 				case 'Label':
-					return ComponentsFactory.createLabel(componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
+					return ComponentsFactory.createLabel(componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon, componentConfig.useHTML != false);
 				case 'Empty':
 					return ComponentsFactory.createEmpty(400, componentConfig.height);
 				case 'CheckBox':
@@ -652,6 +959,15 @@ package poliroid.gui.lobby.modsSettings.components
 			for (var i:int = 0; i < components.length; i++)
 			{
 				var comp:DisplayObject = DisplayObject(components[i].componentObject);
+
+				if (components[i].gateHidden == true)
+				{
+					comp.scaleY = 0;
+					comp.y = 0;
+					continue;
+				}
+
+				comp.scaleY = 1;
 
 				if (i < c1len)
 				{

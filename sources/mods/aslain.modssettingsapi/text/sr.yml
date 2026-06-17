@@ -9,3 +9,8 @@ buttons/default: Podrazumevano
 stateswitcher/tooltip/header: Omogući / Onemogući mod
 stateswitcher/tooltip/body: Zeleni indikator - mod omogućen\nCrveni indikator - mod onemogućen
 colorchoice/header: BOJA
+search/placeholder: Pretraga modova…
+reset/tooltip/header: Ресетовање подешавања
+reset/tooltip/body: Враћа опције овог мода на подразумеване вредности. Примени / OK задржава, Откажи одбацује.
+reset/confirm/message: Вратити овај мод на подразумевана подешавања?
+reset/confirm/submit: Врати

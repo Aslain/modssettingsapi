@@ -9,3 +9,8 @@ buttons/default: Standard
 stateswitcher/tooltip/header: Aktivera / Inaktivera mod
 stateswitcher/tooltip/body: Grön indikator - mod aktiverad\nRöd indikator - mod inaktiverad
 colorchoice/header: FÄRG
+search/placeholder: Sök mods…
+reset/tooltip/header: Återställ inställningar
+reset/tooltip/body: Återställer denna mods alternativ till standard. Verkställ / OK behåller, Avbryt ångrar.
+reset/confirm/message: Återställa denna mod till standardinställningarna?
+reset/confirm/submit: Återställ

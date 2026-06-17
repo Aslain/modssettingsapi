@@ -9,3 +9,8 @@ buttons/default: Προεπιλογή
 stateswitcher/tooltip/header: Ενεργοποίηση / Απενεργοποίηση mod
 stateswitcher/tooltip/body: Πράσινη ένδειξη - το mod είναι ενεργό\nΚόκκινη ένδειξη - το mod είναι ανενεργό
 colorchoice/header: ΧΡΩΜΑ
+search/placeholder: Αναζήτηση mods…
+reset/tooltip/header: Επαναφορά ρυθμίσεων
+reset/tooltip/body: Επαναφέρει τις επιλογές αυτού του mod στις προεπιλογές. Εφαρμογή / OK τις κρατά, Άκυρο τις απορρίπτει.
+reset/confirm/message: Επαναφορά αυτού του mod στις προεπιλεγμένες ρυθμίσεις;
+reset/confirm/submit: Επαναφορά

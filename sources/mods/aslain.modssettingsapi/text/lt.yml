@@ -9,3 +9,8 @@ buttons/default: Numatytasis
 stateswitcher/tooltip/header: Įjungti / Išjungti modą
 stateswitcher/tooltip/body: Žalias indikatorius - modas įjungtas\nRaudonas indikatorius - modas išjungtas
 colorchoice/header: SPALVA
+search/placeholder: Ieškoti modų…
+reset/tooltip/header: Nustatymų atstatymas
+reset/tooltip/body: Grąžina šio modo parinktis į numatytąsias reikšmes. Taikyti / OK išsaugo, Atšaukti atmeta.
+reset/confirm/message: Atstatyti šį modą į numatytuosius nustatymus?
+reset/confirm/submit: Atstatyti

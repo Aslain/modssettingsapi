@@ -6,11 +6,17 @@ package poliroid.gui.lobby.modsSettings.data
 	{
 		public var windowTitle:String = "";
 		public var stateTooltip:String = "";
+		public var resetTooltip:String = "";
+		public var resetConfirmTitle:String = "";
+		public var resetConfirmMessage:String = "";
+		public var resetConfirmSubmit:String = "";
+		public var resetSkipConfirm:Boolean = false;
 		public var popupColor:String = "";
 		public var buttonOK:String = "";
 		public var buttonCancel:String = "";
 		public var buttonApply:String = "";
 		public var buttonClose:String = "";
+		public var searchPlaceholder:String = "";
 
 		public function ModsSettingsLocalizationVO(data:Object)
 		{

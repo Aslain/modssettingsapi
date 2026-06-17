@@ -9,3 +9,8 @@ buttons/default: Перадвызначаны
 stateswitcher/tooltip/header: Уключыць / адключыць мод
 stateswitcher/tooltip/body: Зялёны індыкатар - мод уключаны\nЧырвоны індыкатар - мод адключаны
 colorchoice/header: КОЛЕР
+search/placeholder: Пошук модаў…
+reset/tooltip/header: Скід наладаў
+reset/tooltip/body: Вяртае налады гэтага мода да прадвызначаных значэнняў. Ужыць / OK захоўвае, Скасаваць адмяняе.
+reset/confirm/message: Скінуць налады гэтага мода да прадвызначаных?
+reset/confirm/submit: Скінуць

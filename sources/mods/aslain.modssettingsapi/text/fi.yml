@@ -9,3 +9,8 @@ buttons/default: Oletus
 stateswitcher/tooltip/header: Ota modi käyttöön / poista käytöstä
 stateswitcher/tooltip/body: Vihreä ilmaisin - modi käytössä\nPunainen ilmaisin - modi pois käytöstä
 colorchoice/header: VÄRI
+search/placeholder: Hae modeja…
+reset/tooltip/header: Palauta asetukset
+reset/tooltip/body: Palauttaa tämän modin asetukset oletusarvoihin. Käytä / OK säilyttää, Peruuta hylkää.
+reset/confirm/message: Palautetaanko tämä modi oletusasetuksiin?
+reset/confirm/submit: Palauta

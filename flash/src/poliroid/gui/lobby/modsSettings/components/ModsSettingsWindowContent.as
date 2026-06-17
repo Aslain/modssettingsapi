@@ -109,6 +109,9 @@ package poliroid.gui.lobby.modsSettings.components
 			if (oldRenderer.applyTemplate(template))
 				return oldRenderer;
 
+			var wasCollapsed:Boolean = oldRenderer.isCollapsed;
+			var wasVisible:Boolean = oldRenderer.visible;
+
 			var renderer:ModsSettingsComponent = new ModsSettingsComponent(linkage);
 
 			renderer.setData(template);
@@ -120,6 +123,9 @@ package poliroid.gui.lobby.modsSettings.components
 			// their true height the first time.
 			renderer.revalidateHotkeys();
 			renderer.validateNow();
+
+			renderer.setCollapsed(wasCollapsed);
+			renderer.visible = wasVisible;
 
 			reflowMods();
 
@@ -135,6 +141,17 @@ package poliroid.gui.lobby.modsSettings.components
 			scrollPane.smoothScrollPosition = pos;
 		}
 
+		public function scrollToTop():void
+		{
+			if (scrollPane != null)
+				scrollPane.smoothScrollPosition = 0;
+		}
+
+		public function getContentHeight():Number
+		{
+			return (container != null) ? container.height : NaN;
+		}
+
 		public function reflowMods():void
 		{
 			var pos:int = 0;
@@ -147,6 +164,14 @@ package poliroid.gui.lobby.modsSettings.components
 				if (child == null)
 					continue;
 
+				if (!child.visible)
+				{
+					child.y = 0;
+					child.scaleY = 0;
+					continue;
+				}
+
+				child.scaleY = 1;
 				child.y = pos;
 				lastBottom = child.y + child.height;
 				pos = lastBottom + Constants.MOD_MARGIN_BOTTOM;

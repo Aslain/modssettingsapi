@@ -9,3 +9,8 @@ buttons/default: Alapértelmezett
 stateswitcher/tooltip/header: Mod engedélyezése / letiltása
 stateswitcher/tooltip/body: Zöld jelzés - mod engedélyezve\nPiros jelzés - mod letiltva
 colorchoice/header: Szín
+search/placeholder: Modok keresése…
+reset/tooltip/header: Beállítások visszaállítása
+reset/tooltip/body: Visszaállítja ennek a modnak a beállításait alapértelmezettre. Alkalmaz / OK megtartja, Mégse elveti.
+reset/confirm/message: Visszaállítja ezt a modot az alapértelmezett beállításokra?
+reset/confirm/submit: Visszaállítás

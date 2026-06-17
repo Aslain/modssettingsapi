@@ -26,11 +26,17 @@ def generateLocalizationVO(userSettings):
 	return {
 		'windowTitle': userSettings.get('windowTitle') or l10n('name'),
 		'stateTooltip': userSettings.get('enableButtonTooltip') or makeTooltip(l10n('stateswitcher/tooltip/header'), l10n('stateswitcher/tooltip/body')),
+		'resetTooltip': userSettings.get('resetButtonTooltip') or makeTooltip(l10n('reset/tooltip/header'), l10n('reset/tooltip/body')),
+		'resetConfirmTitle': userSettings.get('resetConfirmTitle') or l10n('reset/tooltip/header'),
+		'resetConfirmMessage': userSettings.get('resetConfirmMessage') or l10n('reset/confirm/message'),
+		'resetConfirmSubmit': userSettings.get('resetConfirmSubmit') or l10n('reset/confirm/submit'),
+		'resetSkipConfirm': bool(userSettings.get('resetSkipConfirm', False)),
 		'popupColor': userSettings.get('popupColor') or l10n('colorchoice/header'),
 		'buttonOK': userSettings.get('buttonOK') or l10n('buttons/ok'),
 		'buttonCancel': userSettings.get('buttonCancel') or l10n('buttons/cancel'),
 		'buttonApply': userSettings.get('buttonApply') or l10n('buttons/apply'),
 		'buttonClose': userSettings.get('buttonClose') or l10n('buttons/close'),
+		'searchPlaceholder': userSettings.get('searchPlaceholder') or l10n('search/placeholder'),
 	}
 
 
@@ -53,6 +59,9 @@ class ModsSettingsApiWindowMeta(View):
 
 	def setModCollapsed(self, linkage, collapsed):
 		self._printOverrideError('setModCollapsed')
+
+	def requestModReset(self, linkage):
+		self._printOverrideError('requestModReset')
 
 	def closeView(self):
 		self._printOverrideError('closeView')
@@ -81,6 +90,10 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			self.flashObject.as_reloadMod(linkage, template)
 
+	def as_resetModS(self, linkage, values):
+		if self._isDAAPIInited():
+			self.flashObject.as_resetMod(linkage, values)
+
 	def onFocusIn(self, *args):
 		if self._isDAAPIInited():
 			return False
@@ -100,6 +113,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onImageAtlasUpdate += self.__onImageAtlasUpdate
 		if hasattr(self.api, 'onReloadMod'):
 			self.api.onReloadMod += self.__onReloadMod
+		if hasattr(self.api, 'onResetMod'):
+			self.api.onResetMod += self.__onResetMod
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
@@ -113,6 +128,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onImageAtlasUpdate -= self.__onImageAtlasUpdate
 		if hasattr(self.api, 'onReloadMod'):
 			self.api.onReloadMod -= self.__onReloadMod
+		if hasattr(self.api, 'onResetMod'):
+			self.api.onResetMod -= self.__onResetMod
 		self.api.onWindowClosed()
 		super(ModsSettingsApiWindow, self)._dispose()
 
@@ -158,6 +175,10 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		if hasattr(self.api, 'setModCollapsed'):
 			self.api.setModCollapsed(linkage, collapsed)
 
+	def requestModReset(self, linkage):
+		if hasattr(self.api, 'resetModToDefaults'):
+			self.api.resetModToDefaults(linkage)
+
 	def closeView(self):
 		self.api.saveState()
 		self.destroy()
@@ -174,6 +195,9 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 
 	def __onReloadMod(self, linkage, template):
 		self.as_reloadModS(linkage, template)
+
+	def __onResetMod(self, linkage, values):
+		self.as_resetModS(linkage, values)
 
 
 def getViewSettings():

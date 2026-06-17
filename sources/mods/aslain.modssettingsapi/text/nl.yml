@@ -9,3 +9,8 @@ buttons/default: Standaard
 stateswitcher/tooltip/header: Mod inschakelen / uitschakelen
 stateswitcher/tooltip/body: Groene indicator - mod ingeschakeld\nRode indicator - mod uitgeschakeld
 colorchoice/header: KLEUR
+search/placeholder: Mods zoeken…
+reset/tooltip/header: Instellingen herstellen
+reset/tooltip/body: Zet de opties van deze mod terug naar de standaardwaarden. Toepassen / OK behoudt het, Annuleren maakt het ongedaan.
+reset/confirm/message: Deze mod terugzetten naar de standaardinstellingen?
+reset/confirm/submit: Herstellen

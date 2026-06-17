@@ -9,3 +9,8 @@ buttons/default: Noklusējums
 stateswitcher/tooltip/header: Iespējot / Atspējot modu
 stateswitcher/tooltip/body: Zaļš indikators - mods iespējots\nSarkans indikators - mods atspējots
 colorchoice/header: KRĀSA
+search/placeholder: Meklēt modus…
+reset/tooltip/header: Iestatījumu atiestatīšana
+reset/tooltip/body: Atjauno šī moda iestatījumus uz noklusējumu. Lietot / OK saglabā, Atcelt atmet.
+reset/confirm/message: Atiestatīt šo modu uz noklusējuma iestatījumiem?
+reset/confirm/submit: Atiestatīt

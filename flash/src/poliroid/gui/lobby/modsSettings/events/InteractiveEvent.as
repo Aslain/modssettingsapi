@@ -15,7 +15,10 @@
 		public static const COLLAPSE_CHANGED:String = "collapseChanged";
 		public static const COLLAPSE_ALL:String = "collapseAll";
 		public static const JUMP_TO_LETTER:String = "jumpToLetter";
+		public static const SEARCH:String = "search";
 		public static const HEIGHT_CHANGED:String = "heightChanged";
+		public static const RESET_REQUESTED:String = "resetRequested";
+		public static const RESET_CONFIRMED:String = "resetConfirmed";
 
 		private var _modLinkage:String = "";
 		private var _varName:String = "";

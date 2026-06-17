@@ -7,6 +7,9 @@ These additive pieces let a mod:
 - react to **uncommitted** in-menu changes before Apply (`registerLiveSettingsChange`),
 - **re-render its whole component subtree in place** without closing the window
   (`reloadModTemplate`) — e.g. to switch the menu language instantly.
+- **keep conditionally-shown controls correct across reopens** (`visibleWhen` /
+  `createControlsGroup`), and react to the window opening / closing for lightweight tasks
+  (`onWindowOpened` / `onWindowClosed`).
 
 Everything is backward compatible: mods that don't use these are unaffected, and you
 can feature-detect with `hasattr(...)` so your mod still runs on older API builds.
@@ -173,12 +176,11 @@ labels and the current values, then call this.
   Cancel/Close still discards.
 - Other mods are untouched; the components below are re-flowed to the new height.
 - The re-render is **incremental**: only controls whose type, variable, label or value
-  changed are rebuilt — unchanged controls are reused in place, so the reload does not
-  flicker (an instant language switch, for example, rebuilds the labels but leaves the
-  controls whose values did not change).
-- Re-rendered **hotkey** controls are re-filled automatically (the API re-applies the
-  stored keysets after the reload), so a reload never wipes hotkeys.
-- No effect if the window is closed.
+  changed are rebuilt — unchanged controls are reused in place (an instant language switch,
+  for example, rebuilds the labels and keeps the controls whose values did not change).
+- Re-rendered **hotkey** controls are re-filled automatically — the API re-applies the
+  stored keysets after a reload.
+- No effect if the window is closed — it re-renders the open window only. For conditional structure that should **persist** across reopens, gate the controls with `visibleWhen` / `createControlsGroup` (section 6); `reloadModTemplate` is for transient re-renders of the open window.
 
 **Re-entrancy:** call it from a deferred callback (e.g. `BigWorld.callback(0, ...)`),
 not directly inside the `registerLiveSettingsChange` handler — the reload removes/recreates
@@ -196,6 +198,33 @@ def onLiveSettingsChange(self, linkage, settings):
         template = self._buildTemplate(values=state)       # new labels + current values
         BigWorld.callback(0.0, lambda: g_modsSettingsApi.reloadModTemplate(LINKAGE, template))
 ```
+
+---
+
+## 6. `g_modsSettingsApi.onWindowOpened` / `onWindowClosed`
+
+Two `Event` hooks fired when the settings window opens and closes. Subscribe with `+=` and a **no-argument** handler; `hasattr`-guard them for older builds:
+
+```python
+if hasattr(g_modsSettingsApi, 'onWindowOpened'):
+    g_modsSettingsApi.onWindowOpened += self._onWindowOpened   # def _onWindowOpened(self): ...
+```
+
+The two hooks are for **lightweight, non-UI reactions** — reset a live-preview baseline, log, start/stop a timer. Build and update components from the template and the live-update calls rather than from these hooks: they fire before the window's components are built.
+
+For **conditional structure that should persist across reopens**, keep the controls in the template and **gate** them with `visibleWhen` (hide + reflow) or `createControlsGroup` (grey out). The API restores the controlling value on open and re-evaluates the gate, so they show/hide correctly both live and on every reopen, with no extra code:
+
+```python
+column += [
+    templates.createCheckbox('Show extras', 'showExtras', False),
+    templates.visibleWhen(templates.createSlider('Extra A', 'extraA', 5, 1, 10, 1), 'showExtras', True),
+    templates.visibleWhen(templates.createSlider('Extra B', 'extraB', 5, 1, 10, 1), 'showExtras', True),
+]
+```
+
+On open the menu shows the template registered with `setModTemplate`, so gating is what makes conditional structure persist; `reloadModTemplate` is for transient re-renders of the open window (e.g. a language switch). For a genuinely variable count, bake the maximum set into the template and toggle each row's `visibleWhen`.
+
+`onWindowClosed` is the symmetric hook (e.g. to drop caches or stop a timer). Both are no-arg and backward-compatible.
 
 ---
 

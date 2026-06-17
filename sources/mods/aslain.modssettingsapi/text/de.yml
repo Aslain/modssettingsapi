@@ -9,3 +9,8 @@ buttons/clear: Zuweisung entfernen
 stateswitcher/tooltip/header: Mod aktivieren / deaktivieren
 stateswitcher/tooltip/body: Grüner Indikator - Mod ist aktiviert\nRoter Indikator - Mod ist deaktiviert
 colorchoice/header: FARBE
+search/placeholder: Mods suchen…
+reset/tooltip/header: Einstellungen zurücksetzen
+reset/tooltip/body: Setzt die Optionen dieses Mods auf die Standardwerte zurück. Übernehmen / OK behält sie, Abbrechen verwirft.
+reset/confirm/message: Diesen Mod auf die Standardeinstellungen zurücksetzen?
+reset/confirm/submit: Zurücksetzen

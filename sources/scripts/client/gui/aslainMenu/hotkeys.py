@@ -30,8 +30,10 @@ class HotkeysController(object):
 		self.stopAccept()
 
 	def reset(self, linkage, varName):
-		defaultSettings = self.api.getSettingsFromTemplate(self.api.state['templates'][linkage])
-		self.api.state['settings'][linkage][varName] = self._migrateKeys(defaultSettings[varName])
+		defaults = self.api.state.get('defaults', {}).get(linkage)
+		if defaults is None:
+			defaults = self.api.getSettingsFromTemplate(self.api.state['templates'][linkage])
+		self.api.state['settings'][linkage][varName] = self._migrateKeys(defaults.get(varName, []))
 		self.stopAccept()
 
 	def isKeyDown(self, key):

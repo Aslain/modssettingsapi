@@ -70,13 +70,20 @@
 			return mc;
 		}
 
-		public static function createLabel(text:String, tooltip:String = '', tooltipIcon:String = ''):DisplayObject
+		public static function escapeHTML(text:String):String
+		{
+			if (text == null)
+				return text;
+			return text.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;');
+		}
+
+		public static function createLabel(text:String, tooltip:String = '', tooltipIcon:String = '', useHTML:Boolean = true):DisplayObject
 		{
 			var ui:UIComponent = new UIComponent();
 			var label:LabelControl = LabelControl(App.utils.classFactory.getComponent('LabelControl', LabelControl));
 
 			label.width = 800;
-			label.htmlText = text;
+			label.htmlText = useHTML ? text : escapeHTML(text);
 
 			if (tooltip)
 			{
@@ -127,7 +134,7 @@
 			{
 				var labelField:LabelControl = LabelControl(App.utils.classFactory.getComponent('LabelControl', LabelControl));
 				labelField.width = boxW;
-				labelField.htmlText = String(componentConfig.label);
+				labelField.htmlText = (componentConfig.useHTML != false) ? String(componentConfig.label) : escapeHTML(String(componentConfig.label));
 				labelField.validateNow();
 				result.addChild(labelField);
 				result["labelField"] = labelField;
@@ -135,6 +142,7 @@
 				labelH = Constants.COMPONENT_HEADER_MARGIN;
 			}
 			result["labelH"] = labelH;
+			result["useHTML"] = componentConfig.useHTML != false;
 
 			// The bitmaps live in their own sub-container so frame swaps never touch the label.
 			var imgBox:MovieClip = new MovieClip();
@@ -234,7 +242,7 @@
 			var labelField:LabelControl = holder["labelField"] as LabelControl;
 			if (labelField == null)
 				return;
-			labelField.htmlText = text;
+			labelField.htmlText = (holder["useHTML"] != false) ? text : escapeHTML(text);
 			labelField.validateNow();
 			positionImageLabel(holder);
 		}
@@ -416,7 +424,7 @@
 			var ui:UIComponent = new UIComponent();
 			var checkbox:CheckBox = CheckBox(App.utils.classFactory.getComponent('CheckBox', CheckBox));
 
-			checkbox.label = text;
+			checkbox.label = (componentConfig.useHTML != false) ? text : escapeHTML(text);
 			checkbox.selected = value;
 			if (tooltip)
 			{
@@ -456,6 +464,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(checkbox, 'selected');
+			result['setValue'] = function(v:*):void { checkbox.selected = Boolean(v); };
 
 			return result;
 		}
@@ -467,7 +476,7 @@
 
 			if (text)
 			{
-				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.x = label.y = 0;
 				ui.addChild(label);
@@ -520,6 +529,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(buttonGroup, 'selectedIndex');
+			result['setValue'] = function(v:*):void { buttonGroup.setSelectedButtonByIndex(int(v)); };
 
 			return result;
 		}
@@ -531,7 +541,7 @@
 
 			if (text)
 			{
-				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.x = label.y = 0;
 				ui.addChild(label);
@@ -594,6 +604,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(dropdown, 'selectedIndex');
+			result['setValue'] = function(v:*):void { dropdown.selectedIndex = int(v); dropdown.validateNow(); };
 
 			return result;
 		}
@@ -605,7 +616,7 @@
 
 			if (text)
 			{
-				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.x = label.y = 0;
 				ui.addChild(label);
@@ -666,6 +677,11 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(slider, 'value');
+			result['setValue'] = function(v:*):void {
+				slider.value = Number(v);
+				if (format && valueLabel != null)
+					valueLabel['label'].htmlText = Utilities.getFormattedSliderValue(format, slider.value.toString());
+			};
 
 			return result;
 		}
@@ -677,7 +693,7 @@
 
 			if (text)
 			{
-				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.x = label.y = 0;
 				ui.addChild(label);
@@ -734,6 +750,11 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(stepSlider, 'value');
+			result['setValue'] = function(v:*):void {
+				stepSlider.value = int(v);
+				var lbl:String = stepSlider['getItemLabel'](stepSlider.dataProvider.requestItemAt(stepSlider.value));
+				valueLabel['label'].htmlText = Utilities.getFormattedSliderValue(format, lbl);
+			};
 
 			return result;
 		}
@@ -745,7 +766,7 @@
 
 			if (text)
 			{
-				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.x = label.y = 0;
 
@@ -767,6 +788,7 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(textInput, 'text');
+			result['setValue'] = function(v:*):void { textInput.text = String(v); textInput.validateNow(); };
 
 			return result;
 		}
@@ -777,7 +799,7 @@
 
 			if (text)
 			{
-				var label = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+				var label = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 				label.y = 4;
 				ui.addChild(label);
@@ -803,6 +825,7 @@
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(numericStepper, 'value');
 			result['control'] = numericStepper;
+			result['setValue'] = function(v:*):void { numericStepper.value = Number(v); numericStepper.validateNow(); };
 
 			return result;
 		}
@@ -810,7 +833,7 @@
 		public static function createHotKey(componentConfig:Object, modLinkage:String, value:Array, text:String = '', tooltip:String = '', tooltipIcon:String = ''):DisplayObject
 		{
 			var ui:UIComponent = new UIComponent();
-			var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+			var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 			label.x = 0;
 			label.y = 4;
@@ -835,6 +858,7 @@
 
 			var labelCtrl:LabelControl = label['label'] as LabelControl;
 			var fullText:String = text;
+			var useHTML:Boolean = componentConfig.useHTML != false;
 
 			// Optional CSS-like float for the keys: 'right' lets a long label wrap around them
 			// (narrow beside the keys on top, full row width underneath); 'none' (default) keeps
@@ -880,7 +904,7 @@
 				if (floatMode == 'right' && fullText.indexOf('<') == -1)
 				{
 					tf.width = maxW;
-					tf.htmlText = fullText;
+					if (useHTML) tf.htmlText = fullText; else tf.text = fullText;
 					var lineH:Number = (tf.numLines > 0) ? tf.getLineMetrics(0).height : 18;
 					var comboBottom:Number = hotkeyCtrl.getBounds(ui).bottom;
 					var beside:int = Math.max(1, Math.floor((comboBottom - tf.getBounds(ui).top) / lineH));
@@ -905,7 +929,7 @@
 				if (!didWrap)
 				{
 					tf.width = maxW;
-					tf.htmlText = fullText;
+					if (useHTML) tf.htmlText = fullText; else tf.text = fullText;
 					tf.height = tf.textHeight + 4;
 					// Keep the empty field out of the display list so it adds no row height.
 					if (tfBelow.parent == ui)
@@ -939,7 +963,7 @@
 		public static function createColorChoice(componentConfig:Object, modLinkage:String, value:String, text:String = '', tooltip:String = '', tooltipIcon:String = ''):DisplayObject
 		{
 			var ui:UIComponent = new UIComponent();
-			var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon);
+			var label:DisplayObject = ComponentsFactory.createLabel(text, tooltip, tooltipIcon, componentConfig.useHTML != false);
 
 			label.x = 0;
 			label.y = 4;
@@ -958,6 +982,7 @@
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(colorChoice, 'color');
 			result['control'] = colorChoice;
+			result['setValue'] = function(v:*):void { colorChoice.color = String(v); };
 
 			return result;
 		}
@@ -965,7 +990,7 @@
 		public static function createRangeSlider(componentConfig:Object, modLinkage:String):DisplayObject
 		{
 			var ui:UIComponent = new UIComponent();
-			var label:DisplayObject = ComponentsFactory.createLabel(componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
+			var label:DisplayObject = ComponentsFactory.createLabel(componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon, componentConfig.useHTML != false);
 
 			label.y = -7;
 			label.x = 0;
@@ -1012,6 +1037,14 @@
 
 			result.addChild(ui);
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(rangeSlider, 'valueProxyValue');
+			result['setValue'] = function(v:*):void {
+				if (v is Array && (v as Array).length >= 2) {
+					rangeSlider.leftValue = Number(v[0]);
+					rangeSlider.rightValue = Number(v[1]);
+					rangeSlider['valueProxyValue'] = [rangeSlider.leftValue, rangeSlider.rightValue];
+					valueLabel['label'].htmlText = rangeSlider.leftValue + ' / ' + rangeSlider.rightValue;
+				}
+			};
 
 			return result;
 		}

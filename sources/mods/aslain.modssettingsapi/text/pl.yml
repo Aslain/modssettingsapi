@@ -9,3 +9,8 @@ buttons/default: Domyślnie
 stateswitcher/tooltip/header: Włącz / Wyłącz moda
 stateswitcher/tooltip/body: Zielony wskaźnik - mod włączony\nCzerwony wskaźnik - mod wyłączony
 colorchoice/header: KOLOR
+search/placeholder: Szukaj modów…
+reset/tooltip/header: Reset ustawień
+reset/tooltip/body: Przywraca opcje tego moda do wartości domyślnych. Zastosuj / OK zatwierdza, Anuluj cofa.
+reset/confirm/message: Przywrócić ustawienia domyślne tego moda?
+reset/confirm/submit: Przywróć

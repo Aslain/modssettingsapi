@@ -1,7 +1,7 @@
 from ._constants import COMPONENT_TYPE, CONDITION
 
 
-def createBase(type, text, tooltip=None, tooltipIcon=None):
+def createBase(type, text, tooltip=None, tooltipIcon=None, useHTML=True):
 	""" Helper to create base component
 
 	:param type: Component type, MUST be one of COMPONENT_TYPE
@@ -12,6 +12,8 @@ def createBase(type, text, tooltip=None, tooltipIcon=None):
 	:return: Base component
 	"""
 	base = {'type': type, 'text': text}
+	if not useHTML:
+		base['useHTML'] = False
 	if tooltip is not None:
 		base['tooltip'] = tooltip
 	if tooltipIcon is not None:
@@ -19,7 +21,7 @@ def createBase(type, text, tooltip=None, tooltipIcon=None):
 	return base
 
 
-def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, button=None):
+def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create control component
 
 	:param type: Component type, MUST be one of COMPONENT_TYPE
@@ -32,7 +34,7 @@ def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, bu
 	
 	:return: Control component
 	"""
-	control = createBase(type, text, tooltip, tooltipIcon)
+	control = createBase(type, text, tooltip, tooltipIcon, useHTML)
 	control.update({'varName': varName, 'value': value})
 	if button is not None:
 		control['button'] = button
@@ -69,7 +71,7 @@ def generateOptions(entries):
 	return options
 
 
-def createOptionsControl(type, text, varName, options, value, tooltip=None, tooltipIcon=None, button=None):
+def createOptionsControl(type, text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create control with options component
 
 	:param type: Component type, MUST be one of COMPONENT_TYPE
@@ -84,12 +86,12 @@ def createOptionsControl(type, text, varName, options, value, tooltip=None, tool
 	
 	:return: Control component with options
 	"""
-	control = createControl(type, text, varName, value, tooltip, tooltipIcon, button)
+	control = createControl(type, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	control['options'] = generateOptions(options)
 	return control
 
 
-def createStepper(type, text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None):
+def createStepper(type, text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create stepper component (Slider, NumericStepper and RangeSlider)
 
 	:param type: Component type, MUST be one of COMPONENT_TYPE
@@ -108,7 +110,7 @@ def createStepper(type, text, varName, value, min, max, interval, tooltip=None, 
 	
 	:return: Stepper component
 	"""
-	stepper = createControl(type, text, varName, value, tooltip, tooltipIcon, button)
+	stepper = createControl(type, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	stepper.update({'minimum': min, 'maximum': max, 'snapInterval': interval})
 	return stepper
 
@@ -161,7 +163,7 @@ def createEmpty(height=None):
 	return component
 
 
-def createLabel(text, tooltip=None, tooltipIcon=None):
+def createLabel(text, tooltip=None, tooltipIcon=None, useHTML=True):
 	""" Helper to create Label component
 
 	:param text: Component text
@@ -170,12 +172,12 @@ def createLabel(text, tooltip=None, tooltipIcon=None):
 
 	:return: Label component
 	"""
-	return createBase(COMPONENT_TYPE.LABEL, text, tooltip, tooltipIcon)
+	return createBase(COMPONENT_TYPE.LABEL, text, tooltip, tooltipIcon, useHTML)
 
 
 def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None,
 				align=None, valign=None, containerWidth=None, containerHeight=None,
-				collapsed=False, label=None, labelAlign=None, atlas=None):
+				collapsed=False, label=None, labelAlign=None, atlas=None, useHTML=True):
 	""" Helper to create Image component (displays an image in the menu body)
 
 	:param source: Image path readable by the game's image loader, e.g.
@@ -212,7 +214,7 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 
 	:return: Image component
 	"""
-	component = createBase(COMPONENT_TYPE.IMAGE, '', tooltip, tooltipIcon)
+	component = createBase(COMPONENT_TYPE.IMAGE, '', tooltip, tooltipIcon, useHTML)
 	component['source'] = source
 	if width is not None:
 		component['width'] = width
@@ -239,7 +241,7 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 	return component
 
 
-def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=None):
+def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create Checkbox component
 
 	:param text: Component text
@@ -252,10 +254,10 @@ def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=
 
 	:return: Checkbox component
 	"""
-	return createControl(COMPONENT_TYPE.CHECKBOX, text, varName, value, tooltip, tooltipIcon, button)
+	return createControl(COMPONENT_TYPE.CHECKBOX, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 
 
-def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None):
+def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create RadioButtonGroup component
 
 	:param text: Component text
@@ -268,10 +270,10 @@ def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipI
 
 	:return: RadioButtonGroup component
 	"""
-	return createOptionsControl(COMPONENT_TYPE.RADIO_BUTTON_GROUP, text, varName, options, value, tooltip, tooltipIcon, button)
+	return createOptionsControl(COMPONENT_TYPE.RADIO_BUTTON_GROUP, text, varName, options, value, tooltip, tooltipIcon, button, useHTML)
 
 
-def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, width=None):
+def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Dropdown component
 
 	:param text: Component text
@@ -288,13 +290,13 @@ def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None
 	:return: Dropdown component
 	"""
 	control = createOptionsControl(
-		COMPONENT_TYPE.DROPDOWN, text, varName, options, value, tooltip, tooltipIcon, button)
+		COMPONENT_TYPE.DROPDOWN, text, varName, options, value, tooltip, tooltipIcon, button, useHTML)
 	if width is not None:
 		control['width'] = width
 	return control
 
 
-def createSlider(text, varName, value, min, max, interval, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None):
+def createSlider(text, varName, value, min, max, interval, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Slider component
 
 	:param text: Component text
@@ -316,14 +318,14 @@ def createSlider(text, varName, value, min, max, interval, format='{{value}}', t
 	:return: Slider component
 	"""
 	stepper = createStepper(COMPONENT_TYPE.SLIDER, text,
-							varName, value, min, max, interval, tooltip, tooltipIcon, button)
+							varName, value, min, max, interval, tooltip, tooltipIcon, button, useHTML)
 	stepper['format'] = format
 	if width is not None:
 		stepper['width'] = width
 	return stepper
 
 
-def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None):
+def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create StepSlider component
 
 	:param text: Component text
@@ -340,14 +342,14 @@ def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=
 	:return: StepSlider component
 	"""
 	stepper = createOptionsControl(COMPONENT_TYPE.STEP_SLIDER, text, 
-								varName, options, value, tooltip, tooltipIcon, button)
+								varName, options, value, tooltip, tooltipIcon, button, useHTML)
 	stepper['format'] = format
 	if width is not None:
 		stepper['width'] = width
 	return stepper
 
 
-def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=None, width=None):
+def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Input component
 
 	:param text: Component text
@@ -362,13 +364,13 @@ def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=Non
 	:return: Input component
 	"""
 	control = createControl(COMPONENT_TYPE.TEXT_INPUT, text,
-							varName, value, tooltip, tooltipIcon, button)
+							varName, value, tooltip, tooltipIcon, button, useHTML)
 	if width is not None:
 		control['width'] = width
 	return control
 
 
-def createNumericStepper(text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, manual=False):
+def createNumericStepper(text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, manual=False, useHTML=True):
 	""" Helper to create NumericStepper component
 
 	:param text: Component text
@@ -389,12 +391,12 @@ def createNumericStepper(text, varName, value, min, max, interval, tooltip=None,
 	:return: NumericStepper component
 	"""
 	stepper = createStepper(COMPONENT_TYPE.NUMERIC_STEPPER,
-							text, varName, value, min, max, interval, tooltip, tooltipIcon, button)
+							text, varName, value, min, max, interval, tooltip, tooltipIcon, button, useHTML)
 	stepper['canManualInput'] = manual
 	return stepper
 
 
-def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=None, float='none'):
+def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=None, float='none', useHTML=True):
 	""" Helper to create Hotkey component
 
 	:param text: Component text
@@ -411,12 +413,12 @@ def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=No
 
 	:return: Hotkey component
 	"""
-	control = createControl(COMPONENT_TYPE.HOTKEY, text, varName, value, tooltip, tooltipIcon, button)
+	control = createControl(COMPONENT_TYPE.HOTKEY, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	control['float'] = float
 	return control
 
 
-def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None):
+def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create Hotkey component
 
 	:param text: Component text
@@ -431,10 +433,10 @@ def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, butt
 	"""
 	if value.startswith('#'):
 		value = value.lstrip('#')
-	return createControl(COMPONENT_TYPE.COLOR_CHOICE, text, varName, value, tooltip, tooltipIcon, button)
+	return createControl(COMPONENT_TYPE.COLOR_CHOICE, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 
 
-def createRangeSlider(text, varName, value, min, max, interval, step, minRange, labelStep, labelPostfix, tooltip=None, tooltipIcon=None, button=None):
+def createRangeSlider(text, varName, value, min, max, interval, step, minRange, labelStep, labelPostfix, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create RangeSlider component
 
 	:param text: Component text
@@ -461,7 +463,7 @@ def createRangeSlider(text, varName, value, min, max, interval, step, minRange, 
 	:return: RangeSlider component
 	"""
 	stepper = createStepper(COMPONENT_TYPE.RANGE_SLIDER, text,
-							varName, value, min, max, interval, tooltip, tooltipIcon, button)
+							varName, value, min, max, interval, tooltip, tooltipIcon, button, useHTML)
 	stepper.update({
 		'divisionStep': step,
 		'minRangeDistance': minRange,
@@ -471,7 +473,7 @@ def createRangeSlider(text, varName, value, min, max, interval, step, minRange, 
 	return stepper
 
 
-def createControlsGroup(master, children):
+def createControlsGroup(master, children, indent=True):
 	""" Bind a group of sub-option components to a master control
 
 	While the master control's (boolean) value is False, every child is shown
@@ -482,6 +484,9 @@ def createControlsGroup(master, children):
 
 	:param master: Master control component (e.g. createCheckbox(...)), must have a 'varName'
 	:param children: List of sub-option components bound to the master
+	:param indent: When False the children are not indented (kept at the master's x),
+		handy to avoid crowding the second column. Defaults to True. Maps to the
+		'masterIndent' key, which you can also set on a child by hand.
 
 	:return: Flat list [master, child1, ...] ready to splice into a column
 
@@ -492,6 +497,8 @@ def createControlsGroup(master, children):
 	group = [master]
 	for child in children:
 		child['masterVarName'] = masterVarName
+		if not indent:
+			child['masterIndent'] = False
 		group.append(child)
 	return group
 
@@ -540,3 +547,109 @@ def enableWhen(control, masterVarName, value, indent=False, condition=CONDITION.
 	control['masterIndent'] = indent
 	control['condition'] = condition
 	return control
+
+
+def visibleWhen(control, masterVarName, value, indent=False, condition=CONDITION.EQUAL):
+	""" Show a control only while a master control's value satisfies a condition
+
+	Sibling of enableWhen with the same gating logic, but when the condition fails the
+	control is HIDDEN and the mod reflows so the controls below close the gap, instead of
+	being greyed out in place. Use it for options that make no sense in a given mode (e.g.
+	a shape-specific field that only applies to one dropdown choice).
+
+	Parameters are identical to enableWhen (masterVarName, value, indent, condition).
+
+	Backward compatible: the binding is the same keys as enableWhen plus a 'gateHides'
+	flag. On API builds that predate visibleWhen the flag is ignored, so the control
+	degrades to enableWhen behaviour (greyed instead of hidden). Feature-detect with
+	hasattr(templates, 'visibleWhen').
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	control['masterVarName'] = masterVarName
+	control['masterValue'] = value
+	control['masterIndent'] = indent
+	control['condition'] = condition
+	control['gateHides'] = True
+	return control
+
+
+def enableWhenAll(control, conditions, indent=False):
+	""" Enable a control only while ALL of several conditions match (logical AND)
+
+	Where enableWhen gates on a single master, this gates on more than one - e.g. enabled
+	only when A >= 0 AND B is True. `conditions` is a list of dicts, one per master:
+	  {'varName': <master varName>, 'value': <compared value>, 'condition': <operator>}
+	'condition' defaults to '==' (the CONDITION constants are the same aliases as
+	enableWhen); omit 'value' to test that a boolean master is On. The control is enabled
+	when every condition holds and greyed-out otherwise, updating live as any master
+	changes.
+
+	Backward compatible: the binding is a single 'conditions' key (plus 'conditionsLogic'
+	and 'masterIndent'). On API builds that predate multi-conditions the keys are ignored
+	and the control stays always-enabled, so feature-detect with
+	hasattr(templates, 'enableWhenAll').
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	return _setConditions(control, conditions, 'AND', False, indent)
+
+
+def enableWhenAny(control, conditions, indent=False):
+	""" Enable a control while ANY of several conditions match (logical OR)
+
+	Same as enableWhenAll but the control is enabled when at least one condition holds.
+	See enableWhenAll for the `conditions` format and backward-compatibility notes.
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	return _setConditions(control, conditions, 'OR', False, indent)
+
+
+def visibleWhenAll(control, conditions, indent=False):
+	""" Show a control only while ALL conditions match (AND); hide + reflow otherwise
+
+	Multi-condition sibling of visibleWhen: same as enableWhenAll but the control is
+	hidden (and the mod reflows) when the AND of the conditions is false, instead of
+	being greyed. See enableWhenAll for the `conditions` format and visibleWhen for the
+	hide-vs-grey behaviour.
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	return _setConditions(control, conditions, 'AND', True, indent)
+
+
+def visibleWhenAny(control, conditions, indent=False):
+	""" Show a control while ANY condition matches (OR); hide + reflow otherwise
+
+	Multi-condition sibling of visibleWhen with OR logic. See enableWhenAll for the
+	`conditions` format and visibleWhen for the hide-vs-grey behaviour.
+
+	:return: The same control, so it can be used inline inside a column
+	"""
+	return _setConditions(control, conditions, 'OR', True, indent)
+
+
+def _setConditions(control, conditions, logic, hide, indent):
+	normalized = []
+	for c in conditions:
+		entry = {'masterVarName': c['varName'], 'condition': c.get('condition', CONDITION.EQUAL)}
+		if 'value' in c:
+			entry['masterValue'] = c['value']
+		normalized.append(entry)
+	control['conditions'] = normalized
+	control['conditionsLogic'] = logic
+	control['masterIndent'] = indent
+	if hide:
+		control['gateHides'] = True
+	return control
+
+
+def escape(text):
+	"""Escape &, < and > so literal text renders verbatim in an HTML menu label.
+
+	Labels render as HTML, so a literal '<' (and to be safe '>' and '&') in label text is
+	parsed as markup and the rest of the label is lost (e.g. 'master <= 5' shows as just
+	'master'). Wrap literal text: templates.createSlider(escape('master <= 5'), ...).
+	"""
+	return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')

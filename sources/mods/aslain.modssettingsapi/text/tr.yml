@@ -9,3 +9,8 @@ buttons/default: Varsayılan
 stateswitcher/tooltip/header: Modu etkinleştir / devre dışı bırak
 stateswitcher/tooltip/body: Yeşil gösterge - mod etkin\nKırmızı gösterge - mod devre dışı
 colorchoice/header: RENK
+search/placeholder: Mod ara…
+reset/tooltip/header: Ayarları sıfırla
+reset/tooltip/body: Bu modun seçeneklerini varsayılana döndürür. Uygula / OK korur, İptal iptal eder.
+reset/confirm/message: Bu mod varsayılan ayarlara sıfırlansın mı?
+reset/confirm/submit: Sıfırla

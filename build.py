@@ -320,11 +320,17 @@ if __name__ == '__main__':
 	else:
 		packageName = '%s.wotmod' % CONFIG['meta']['id']
 
-	if os.path.exists('bin'):
-		shutil.rmtree('bin')
-
 	if not os.path.exists('bin'):
 		os.makedirs('bin')
+
+	# Overwrite only the target package instead of wiping the whole bin folder. Wiping fails when a
+	# file manager (e.g. Total Commander) holds the folder open, and it also deletes other builds.
+	_target = os.path.join('bin', packageName)
+	if os.path.exists(_target):
+		try:
+			os.remove(_target)
+		except OSError:
+			pass
 
 	pathLine = '<Path mode="recursive" mask="*.wotmod" root="res">' + os.path.abspath('bin').replace('\\', '/') + '</Path>'
 

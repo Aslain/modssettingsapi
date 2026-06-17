@@ -9,3 +9,8 @@ buttons/default: Predeterminado
 stateswitcher/tooltip/header: Activar / Desactivar mod
 stateswitcher/tooltip/body: Indicador verde - mod activado\nIndicador rojo - mod desactivado
 colorchoice/header: COLOR
+search/placeholder: Buscar mods…
+reset/tooltip/header: Restablecer ajustes
+reset/tooltip/body: Devuelve las opciones de este mod a sus valores predeterminados. Aplicar / OK lo mantiene, Cancelar lo descarta.
+reset/confirm/message: ¿Restablecer este mod a sus ajustes predeterminados?
+reset/confirm/submit: Restablecer
