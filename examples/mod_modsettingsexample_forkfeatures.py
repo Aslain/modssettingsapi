@@ -2,8 +2,10 @@
 - createImage with a built-in label + live updateImage (incl. removeImage)
 - createImage(atlas=...) + updateImageAtlas: sprite-sheet animation (illustrative, at the bottom)
 - registerLiveSettingsChange with fullsettings=False (changed-only payload)
-- enableWhen (value-conditional grey-out)
-- createControlsGroup (sub-options greyed while the master is off)
+- enableWhen (value-conditional grey-out) + enableWhenAll (gate on several masters)
+- visibleWhen (hide + reflow instead of greying)
+- createControlsGroup (sub-options greyed while the master is off; indent=False keeps them flush)
+- useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every fork-only call is feature-detected with hasattr(), so this mod still
 loads (without the extras) on the plain izeberg menu.
@@ -27,6 +29,9 @@ settings = {
 	'alertVolume': 5,
 	'previewMode': 0,
 	'iconSize': 50,
+	'iconOpacity': 100,
+	'iconPulse': False,
+	'hpWarn': True,
 }
 
 
@@ -38,9 +43,18 @@ def buildTemplate():
 	master = templates.createCheckbox('Enable alerts', 'alertsOn', settings['alertsOn'])
 	children = [templates.createSlider('Alert volume', 'alertVolume', settings['alertVolume'], 1, 10, 1)]
 	if hasattr(templates, 'createControlsGroup'):
+		# Pass indent=False to keep the children flush with the master instead of
+		# indented - handy for a wide group that would crowd the second column.
 		column1 += templates.createControlsGroup(master, children)
 	else:
 		column1 += [master] + children
+
+	# Literal text in a label (useHTML=False, 1.3.0): the '<' shows verbatim instead of
+	# being parsed as HTML markup; templates.escape(text) does the same for a fragment.
+	try:
+		column1.append(templates.createCheckbox('Warn when HP < 25%', 'hpWarn', settings['hpWarn'], useHTML=False))
+	except TypeError:
+		column1.append(templates.createCheckbox('Warn when HP below 25%', 'hpWarn', settings['hpWarn']))
 
 	column2 = [
 		templates.createRadioButtonGroup('Preview', 'previewMode', ['Icon', 'No image'], settings['previewMode']),
@@ -52,6 +66,21 @@ def buildTemplate():
 	if hasattr(templates, 'enableWhen'):
 		templates.enableWhen(sizeSlider, 'previewMode', 0)
 	column2.append(sizeSlider)
+
+	# Hide instead of grey (visibleWhen, 1.3.0): the opacity slider only shows while
+	# 'previewMode' is on 'Icon' (value 0); the rows below close the gap when it hides.
+	if hasattr(templates, 'visibleWhen'):
+		opacity = templates.createSlider('Icon opacity', 'iconOpacity', settings['iconOpacity'], 0, 100, 5)
+		templates.visibleWhen(opacity, 'previewMode', 0)
+		column2.append(opacity)
+
+	# Gate on several masters at once (enableWhenAll = AND; enableWhenAny = OR, 1.3.0):
+	# editable only while alerts are on AND the preview shows the icon.
+	if hasattr(templates, 'enableWhenAll'):
+		pulse = templates.createCheckbox('Pulse the icon when spotted', 'iconPulse', settings['iconPulse'])
+		templates.enableWhenAll(pulse, [{'varName': 'alertsOn', 'value': True},
+										{'varName': 'previewMode', 'value': 0}])
+		column2.append(pulse)
 
 	# Image with a built-in label: the caption collapses/expands together with
 	# the image and can be live-updated via updateImage(label=...).
@@ -72,8 +101,9 @@ def buildTemplate():
 
 
 def onLiveSettingsChange(linkage, changed):
-	# fullsettings=False: 'changed' holds only the keys whose value changed
-	# since the previous live event (uncommitted - Cancel discards them).
+	# fullsettings=False: 'changed' holds only the keys the user just changed
+	# (not the whole settings dict), so you refresh only those. It fires live
+	# while the menu is open - use it to update previews as the user edits.
 	if linkage != modLinkage:
 		return
 	if 'previewMode' in changed:
