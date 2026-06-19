@@ -31,6 +31,9 @@ def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, bu
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	
 	:return: Control component
 	"""
@@ -83,6 +86,9 @@ def createOptionsControl(type, text, varName, options, value, tooltip=None, tool
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	
 	:return: Control component with options
 	"""
@@ -107,6 +113,9 @@ def createStepper(type, text, varName, value, min, max, interval, tooltip=None, 
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	
 	:return: Stepper component
 	"""
@@ -169,6 +178,9 @@ def createLabel(text, tooltip=None, tooltipIcon=None, useHTML=True):
 	:param text: Component text
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
 	:return: Label component
 	"""
@@ -211,6 +223,16 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 	:param labelAlign: 'left' (default), 'center' or 'right' - horizontal
 		alignment of the label within the container box, independent of the
 		image's own align.
+	:param atlas: Optional dict to start the image already animating a sprite
+		sheet at build time (plays the moment the menu opens). Keys: 'source'
+		(the sheet image), 'frameWidth', 'frameHeight', 'columns' (cells per
+		row), 'count' (total cells), 'fps', and optional 'loop' (default True;
+		False plays once and holds the last frame). Pair with
+		g_modsSettingsApi.updateImageAtlas() to switch the animation live.
+		Default None keeps a static image from 'source'.
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
 	:return: Image component
 	"""
@@ -251,6 +273,9 @@ def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
 	:return: Checkbox component
 	"""
@@ -267,6 +292,9 @@ def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipI
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
 	:return: RadioButtonGroup component
 	"""
@@ -285,6 +313,9 @@ def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param width: Component width, optional
 
 	:return: Dropdown component
@@ -313,6 +344,9 @@ def createSlider(text, varName, value, min, max, interval, format='{{value}}', t
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param width: Component width, optional
 
 	:return: Slider component
@@ -337,6 +371,9 @@ def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param width: Component width, optional
 	
 	:return: StepSlider component
@@ -359,6 +396,9 @@ def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=Non
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param width: Component width, optional
 
 	:return: Input component
@@ -386,6 +426,9 @@ def createNumericStepper(text, varName, value, min, max, interval, tooltip=None,
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param manual: Defines if user can manually type value, optional
 
 	:return: NumericStepper component
@@ -406,6 +449,9 @@ def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=No
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 	:param float: CSS-like float for the keys when the label is long. 'none' (default) keeps
 		the label in the narrow column left of the keys. 'right' floats the keys to the right
 		and wraps the label around them - narrow beside them on top, full row width underneath.
@@ -419,7 +465,7 @@ def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=No
 
 
 def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
-	""" Helper to create Hotkey component
+	""" Helper to create ColorChoice component
 
 	:param text: Component text
 	:param varName: Variable name bound to this component that will store component's value in onModSettingsChanged callback
@@ -428,8 +474,11 @@ def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, butt
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
-	:return: Hotkey component
+	:return: ColorChoice component
 	"""
 	if value.startswith('#'):
 		value = value.lstrip('#')
@@ -451,14 +500,17 @@ def createRangeSlider(text, varName, value, min, max, interval, step, minRange, 
 	:type interval: int
 	:param step: Step
 	:param minRange: Minimal range of values
-	:param minRange: int
+	:type minRange: int
 	:param labelStep: Steps of component labels
-	:param labelStep: int
+	:type labelStep: int
 	:param labelPostfix: Postfix of component labels
-	:param labelPostfix: str
+	:type labelPostfix: str
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes
+		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
+		labels (icons, <font>, <b>).
 
 	:return: RangeSlider component
 	"""

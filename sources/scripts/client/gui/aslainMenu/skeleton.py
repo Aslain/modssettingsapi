@@ -45,3 +45,11 @@ class IModsSettingsApi(object):
 		:return: bool
 		"""
 		pass
+
+	def registerModTranslation(self, linkage, mapping):
+		""" Register a display-only label translation for one mod (Aslain Menu only)
+		:param linkage: Settings identifier of the mod to translate
+		:param mapping: dict {original string: replacement string}, applied to the copy
+			shown in the window only, so it never resets the mod's saved values
+		"""
+		pass

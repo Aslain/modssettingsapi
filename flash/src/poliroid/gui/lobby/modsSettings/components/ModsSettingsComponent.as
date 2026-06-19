@@ -754,6 +754,11 @@ package poliroid.gui.lobby.modsSettings.components
 			return _collapsed;
 		}
 
+		public function get layoutHeight():Number
+		{
+			return _collapsed ? _collapsedHeight : _fullHeight;
+		}
+
 		// Re-lay every hotkey row now that this component is on stage, so each wrapped
 		// label measures its true (on-stage) height before the list reflows - otherwise the
 		// mod builds ~one text line too short and snaps back a frame later (flicker).

@@ -37,6 +37,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self._liveSettingsChangeCallbacks = {}
 		self._lastLiveSettings = {}
 		self._warnedLegacyLiveMode = set()
+		self._modTranslations = {}
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
@@ -119,6 +120,63 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				del self.state['templates'][linkage]
 				del self.state['settings'][linkage]
 				self.state.get('defaults', {}).pop(linkage, None)
+
+	def registerModTranslation(self, linkage, mapping):
+		""" Register a display-only label translation for one mod, applied to the copy
+		shown in the settings window. Keys are the mod's original strings, values the
+		replacements. The stored template and saved values are never touched, so this
+		causes no settings reset. Repeated calls for the same linkage merge. Intended for
+		optional community localisation mods - the API itself ships no translations.
+		"""
+		if not mapping:
+			return
+		try:
+			table = self._modTranslations.setdefault(linkage, {})
+			for source, target in mapping.items():
+				if isinstance(source, str):
+					try:
+						source = source.decode('utf-8')
+					except Exception:
+						continue
+				table[source] = target
+		except Exception:
+			_logger.exception("[ModsSettings API] registerModTranslation failed for '%s'", linkage)
+
+	def _applyTranslations(self, linkage, template):
+		mapping = self._modTranslations.get(linkage)
+		if not mapping:
+			return
+		def translate(value):
+			if isinstance(value, str):
+				try:
+					key = value.decode('utf-8')
+				except Exception:
+					return None
+			else:
+				key = value
+			return mapping.get(key)
+		def walk(node):
+			if isinstance(node, dict):
+				for key, value in node.items():
+					if isinstance(value, basestring):
+						replacement = translate(value)
+						if replacement is not None:
+							node[key] = replacement
+					else:
+						walk(value)
+			elif isinstance(node, list):
+				for index in range(len(node)):
+					value = node[index]
+					if isinstance(value, basestring):
+						replacement = translate(value)
+						if replacement is not None:
+							node[index] = replacement
+					else:
+						walk(value)
+		try:
+			walk(template)
+		except Exception:
+			_logger.exception("[ModsSettings API] Translation pass failed for '%s'", linkage)
 
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None):
 		try:
@@ -262,6 +320,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
 		template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
 		self._attachHotkeyDisplay(linkage, template)
+		self._applyTranslations(linkage, template)
 		self.onReloadMod(linkage, template)
 
 	def resetModToDefaults(self, linkage):
@@ -336,9 +395,24 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def _modSortKey(self, linkage):
 		name = self.state['templates'][linkage].get('modDisplayName') or linkage
-		name = re.sub('<[^>]*>', '', name)
-		name = re.sub('^[^0-9A-Za-z]+', '', name)
-		return (name or linkage).lower()
+		mapping = self._modTranslations.get(linkage)
+		if mapping:
+			key = name
+			if isinstance(key, str):
+				try:
+					key = key.decode('utf-8')
+				except Exception:
+					key = None
+			if key is not None and key in mapping:
+				name = mapping[key]
+		if isinstance(name, str):
+			name = name.decode('utf-8', 'ignore')
+		name = re.sub(u'<[^>]*>', u'', name)
+		name = re.sub(u'^[\\W_]+', u'', name, flags=re.UNICODE)
+		sortname = (name or unicode(linkage)).lower()
+		first = sortname[:1]
+		is_latin = (u'a' <= first <= u'z') or (u'0' <= first <= u'9')
+		return (0 if is_latin else 1, sortname)
 
 	def _attachHotkeyDisplay(self, linkage, template):
 		for column in COLUMNS:
@@ -365,6 +439,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 						if 'varName' in component and component['varName'] in settings:
 							component['value'] = settings[component['varName']]
 			self._attachHotkeyDisplay(linkage, template)
+			self._applyTranslations(linkage, template)
 			templates.append(template)
 		return templates
 

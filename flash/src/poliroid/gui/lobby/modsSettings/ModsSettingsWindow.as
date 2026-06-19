@@ -189,6 +189,8 @@ package poliroid.gui.lobby.modsSettings
 				modsArray.push(mod);
 			}
 
+			content.reflowMods();
+
 			updateToolbarState();
 		}
 

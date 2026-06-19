@@ -1,12 +1,12 @@
 # coding: utf-8
 
 __author__ = 'Renat Iliev (izeberg)'
-__copyright__ = 'Original work Copyright Renat Iliev; fork enhancements Copyright 2026 Aslain'
+__copyright__ = 'Original work Copyright Renat Iliev; Aslain Menu enhancements Copyright 2026 Aslain'
 __credits__ = ['Renat Iliev (izeberg) - original author',
 	'Andrii Andrushchyshyn (poliroid) - original contributor',
 	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 __maintainer__ = 'Aslain'
 __doc__ = 'https://github.com/Aslain/modssettingsapi'
 
@@ -101,7 +101,7 @@ class _ModsSettingsApi(IModsSettingsApi):
 		return self.__instance.updateImage(linkage, varName, source, width, height, removeImage, label)
 
 	def updateImageAtlas(self, linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None):
-		""" Live-update of an Image component as a looping sprite-sheet animation (fork-only).
+		""" Live-update of an Image component as a looping sprite-sheet animation (Aslain Menu only).
 		Plays the atlas at atlasSource - a grid of `columns` cells, each frameWidth x
 		frameHeight, `count` frames total, row-major - at `fps`, scaled to width/height like
 		updateImage. The sheet is loaded once and animated with copyPixels, so it stays light.

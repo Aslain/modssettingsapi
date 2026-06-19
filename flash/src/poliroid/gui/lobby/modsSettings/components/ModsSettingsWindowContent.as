@@ -71,7 +71,7 @@ package poliroid.gui.lobby.modsSettings.components
 			for (var i:int = 0; i < container.numChildren; i++)
 			{
 				var child:ModsSettingsComponent = container.getChildAt(i) as ModsSettingsComponent;
-				var nextRendererPosition:int = child.y + child.height + Constants.MOD_MARGIN_BOTTOM;
+				var nextRendererPosition:int = child.y + child.layoutHeight + Constants.MOD_MARGIN_BOTTOM;
 
 				targetPosition = Math.max(targetPosition, nextRendererPosition);
 			}
@@ -173,7 +173,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 				child.scaleY = 1;
 				child.y = pos;
-				lastBottom = child.y + child.height;
+				lastBottom = child.y + child.layoutHeight;
 				pos = lastBottom + Constants.MOD_MARGIN_BOTTOM;
 			}
 

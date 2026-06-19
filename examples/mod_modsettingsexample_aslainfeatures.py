@@ -1,4 +1,4 @@
-"""Example of the aslainMenu fork-only features:
+"""Example of the Aslain Menu only features:
 - createImage with a built-in label + live updateImage (incl. removeImage)
 - createImage(atlas=...) + updateImageAtlas: sprite-sheet animation (illustrative, at the bottom)
 - registerLiveSettingsChange with fullsettings=False (changed-only payload)
@@ -7,7 +7,7 @@
 - createControlsGroup (sub-options greyed while the master is off; indent=False keeps them flush)
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
-Every fork-only call is feature-detected with hasattr(), so this mod still
+Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
 loads (without the extras) on the plain izeberg menu.
 """
 import BigWorld
@@ -17,7 +17,7 @@ try:
 except ImportError:
 	from gui.modsSettingsApi import g_modsSettingsApi, templates
 
-modLinkage = 'test_forkfeatures'
+modLinkage = 'test_aslainfeatures'
 
 # Shipped with this API, so the example works out of the box. Image sources are
 # plain root-relative paths (gui/maps/... or mods/configs/...) - no img://, no ../
@@ -93,7 +93,7 @@ def buildTemplate():
 			collapsed=(settings['previewMode'] == 1)))
 
 	return {
-		'modDisplayName': 'Fork Features Example',
+		'modDisplayName': 'Aslain Menu Features Example',
 		'enabled': settings['enabled'],
 		'column1': column1,
 		'column2': column2,
@@ -137,7 +137,7 @@ if hasattr(g_modsSettingsApi, 'registerLiveSettingsChange'):
 		# 1.2.0+: choose the payload with the fullsettings flag (False = changed-only keys).
 		g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, fullsettings=False)
 	else:
-		# Older fork builds used the now-deprecated mode= argument for the same thing.
+		# Older API builds used the now-deprecated mode= argument for the same thing.
 		g_modsSettingsApi.registerLiveSettingsChange(modLinkage, onLiveSettingsChange, mode='changedOnly')
 
 

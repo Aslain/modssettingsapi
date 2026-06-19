@@ -1,6 +1,6 @@
 # Aslain's ModsSettings API
 
-An enhanced fork of [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi), the in-garage settings menu for World of Tanks mods. It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
+Aslain's ModsSettings API (Aslain Menu) — the in-garage settings menu for World of Tanks mods, based on [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi). It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
 
 It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features. In the hangar's mods list the menu appears as **"Mods settings+"** (localized), with a "+" badge on its icon.
 
@@ -10,7 +10,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
 - **Mod search**: a search box in the window header filters the mod list by name as you type — magnifier, an "×" clear button and a "Search mods" placeholder. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded) and the list scrolls to them, and clearing it restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps.
 - **Per-mod reset**: a rotate icon below each mod's on/off switch (shown while the mod is expanded) restores that mod's options **and hotkeys** to their defaults. Dimmed when nothing differs from the defaults (or the mod is off), bright once something changes. Clicking it asks to confirm — a small dialog with the mod's name and **Reset** / **Cancel**, drawn on top inside the menu (localized in all 25 languages; skippable via the `resetSkipConfirm` user setting). On confirm the control reset is live (**Apply / OK** keeps it, **Cancel** reverts); hotkeys reset immediately; the mod's on/off state is never touched. Works automatically for every mod (no API call needed).
-- Mods list **sorted by display name** (case-insensitive), ignoring a leading badge or symbol before the name.
+- Mods list **sorted by the shown name** (case-insensitive), ignoring a leading badge or symbol; a registered translation orders the mod under its translated name, and names not in the Latin alphabet (e.g. Cyrillic) sort after the Latin-named ones.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on. Pass `indent=False` to keep the children un-indented (so a wide group doesn't crowd the second column).
 - **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value, condition='==')`: grey a control unless another control's value satisfies a condition — equality / list membership by default, or a comparison (`'!='`, `'>'`, `'>='`, `'<'`, `'<='`, e.g. master `>= 0`; also available as `CONDITION.*` aliases). Updates live as the master changes — extends the master/child idea beyond a boolean On/Off.
 - **Hide instead of grey** via `templates.visibleWhen(...)`: the sibling of `enableWhen` with the same arguments, but it hides the control and reflows the mod (rows below close the gap) when the condition fails, instead of greying it in place — for options that make no sense in the current mode.
@@ -21,6 +21,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) — the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
 - **Plain-text labels**: pass `useHTML=False` to any `create*` control to render its label verbatim (so a literal `<` / `>` / `&` shows instead of being parsed as HTML markup), or `templates.escape(text)` to escape just a fragment of an otherwise-HTML label. Default `useHTML=True` keeps HTML labels (icons, `<font>`, `<b>`).
 - **API version** for feature-gating: `g_modsSettingsApi.getVersion()` (string, e.g. `'1.2.0'`) and `getVersionTuple()` (e.g. `(1, 2, 0)` — compare this, not the string), plus the importable `VERSION` / `VERSION_TUPLE` constants, so a mod can adapt to the running API version (`if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`).
+- **Translate another mod's menu** via `g_modsSettingsApi.registerModTranslation(linkage, mapping)`: supply a `{original string: replacement string}` dict and the API swaps those labels on the **copy** shown in the window — the target mod's stored template, saved values and code stay untouched (no settings reset). The API ships no translations itself; it is the hook an optional, separate localization mod uses to translate a mod whose menu is offered in only one language.
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
 
@@ -36,7 +37,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPD
 
 ## Using it in your mod
 
-Import the fork first, with a fallback to izeberg, so your mod also runs where only the original is installed. Importing `gui.aslainMenu` first means it wins when both are present:
+Import Aslain's API first, with a fallback to izeberg, so your mod also runs where only the original is installed. Importing `gui.aslainMenu` first means it wins when both are present:
 
 ```python
 g_modsSettingsApi = None
@@ -56,7 +57,7 @@ The extra features (image previews, instant language switch, controls grouping) 
 
 ### Cookbook (common recipes)
 
-Compact copy-paste patterns; the sections below explain each in full. `CONDITION` is imported from `gui.aslainMenu`; feature-detect fork-only calls with `hasattr(templates, ...)`.
+Compact copy-paste patterns; the sections below explain each in full. `CONDITION` is imported from `gui.aslainMenu`; feature-detect Aslain Menu-only calls with `hasattr(templates, ...)`.
 
 ```python
 # Master checkbox with greyed-out children (returns a flat list to splice into a column)
@@ -70,6 +71,9 @@ templates.enableWhen(templates.createSlider('Fine tune', 'fine', 5, 1, 10, 1),
 
 # Hide + reflow instead of greying (shown only when mode == 1)
 templates.visibleWhen(templates.createSlider('Advanced', 'adv', 5, 1, 10, 1), 'mode', 1)
+
+# Dynamic spacer: blank vertical space that shows/hides with a master (no image needed)
+templates.visibleWhen(templates.createEmpty(40), 'mode', 1)
 
 # Gate on several masters at once: *All = AND, *Any = OR
 conds = [{'varName': 'level', 'condition': CONDITION.GREATER_EQUAL, 'value': 5},
@@ -157,6 +161,8 @@ column = [
 ```
 
 Guard it with `hasattr(templates, 'visibleWhen')`. On older API builds it falls back to greying (the hide flag is ignored), so the control still gates correctly.
+
+`visibleWhen` works on any component, including `templates.createEmpty(height)` — a gated empty is a **dynamic spacer** (blank vertical space that appears/disappears and reflows the column), with no image needed. `createEmpty()` defaults to a 20px gap; pass any height.
 
 ### Gating on several masters (`enableWhenAll` / `enableWhenAny`)
 
@@ -257,7 +263,7 @@ if apiVersion >= (1, 2):
 **aslainMenu-only - guard before use:**
 
 - `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`
-- `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`
+- `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`
 
 ## Dependencies
 
@@ -272,7 +278,7 @@ See [`build.py`](./build.py) and [`build.json`](./build.json); build requirement
 
 - Original **ModsSettings API** by **izeberg (Renat Iliev)**, [izeberg/modssettingsapi](https://github.com/izeberg/modssettingsapi). All original credit and copyright remain with the author.
 - **ModsList API** dependency by **poliroid**, [wot-public-mods/mods-list](https://gitlab.com/wot-public-mods/mods-list).
-- This enhanced fork is maintained by **Aslain** ([aslain.com](https://aslain.com)). It adds the features listed above on top of izeberg's API, and does not remove or replace the original work.
+- Aslain's ModsSettings API is maintained by **Aslain** ([aslain.com](https://aslain.com)). It adds the features listed above on top of izeberg's API, and does not remove or replace the original work.
 
 See [`AUTHORS.md`](./AUTHORS.md).
 

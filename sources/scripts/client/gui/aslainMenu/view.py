@@ -1,4 +1,5 @@
 import json
+import logging
 
 from gui.Scaleform.framework import ScopeTemplates, ViewSettings, g_entitiesFactories
 from gui.Scaleform.framework.entities.View import View
@@ -13,6 +14,8 @@ from ._constants import *
 from .l10n import l10n
 from .skeleton import IModsSettingsApiInternal
 from .utils import byteify, getParentWindow
+
+_logger = logging.getLogger(__name__)
 
 __all__ = ('loadView', )
 
@@ -118,6 +121,7 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
+		_logger.info("[ModsSettings API] settings window teardown: start")
 		if self._blur is not None:
 			self._blur.fini()
 			self._blur = None
@@ -131,7 +135,9 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		if hasattr(self.api, 'onResetMod'):
 			self.api.onResetMod -= self.__onResetMod
 		self.api.onWindowClosed()
+		_logger.info("[ModsSettings API] settings window teardown: disposing UI (Scaleform)")
 		super(ModsSettingsApiWindow, self)._dispose()
+		_logger.info("[ModsSettings API] settings window teardown: complete")
 
 	def requestModsData(self):
 		self.api.clearState()

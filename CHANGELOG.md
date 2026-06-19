@@ -1,5 +1,16 @@
 # CHANGELOG
 
+### 1.3.1
+
+**New for mod authors**
+- `g_modsSettingsApi.registerModTranslation(linkage, mapping)` — register a display-only label translation for another mod's settings page. `mapping` is a dict of `{original string: replacement string}`; the API applies it to the **copy** of the template shown in the settings window, so the target mod's stored template and saved values are never touched (no settings reset) and the mod's own code is not modified. Keys may be `str` (UTF-8) or `unicode`, and repeated calls for the same `linkage` merge. The API ships no translations of its own — it is the hook an optional, separate localization mod uses to translate a mod whose menu is only offered in one language. Feature-detect with `hasattr(g_modsSettingsApi, 'registerModTranslation')`.
+
+**Improved**
+- The mod list now sorts by the **shown** name. When a translation is registered for a mod (see `registerModTranslation`), the list orders it under its translated name instead of its original one. Mod names not written in the Latin alphabet (e.g. Cyrillic) now sort after the Latin-named mods, keeping their own order, instead of falling back to the mod's internal id.
+
+**Fixed**
+- Mod frames could overlap when the settings window was reopened with a saved mix of collapsed and expanded mods: the list positioned each mod by its momentary rendered height — unreliable while the window is still off-screen — instead of its laid-out height. It now uses the laid-out height, so mods stack correctly the first time the window opens. (Long-standing, present since per-mod collapse was added.)
+
 ### 1.3.0
 
 **New in the settings window**
@@ -31,8 +42,8 @@
 - `registerLiveSettingsChange(linkage, callback, fullsettings=True)` — choose the live-callback payload with a plain flag: keep `True` (default) to receive the full settings dict on every uncommitted change, or pass `fullsettings=False` to receive only the keys that changed since the last live event. The previous `mode='changedOnly'` argument and the `LIVE_SETTINGS_MODE` class still work but are now deprecated and will be removed in a future version.
 - `g_modsSettingsApi.getVersion()` / `getVersionTuple()` (and the importable `VERSION` / `VERSION_TUPLE` constants) — read the running API version so a mod can adapt to it, e.g. `if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`. Use the tuple form for comparisons; the string form (`'1.2.0'`) is for display. Guard the call with `hasattr(g_modsSettingsApi, 'getVersionTuple')` since older API builds don't provide it.
 - Fixed: the mods-list scrollbar thumb could drift after an in-place re-render (toggling a mod on/off, or an in-menu language switch) — the scroll range is now pinned to the laid-out list height instead of the momentary rendering bounds, so the thumb stays exactly where it was.
-- Fixed a bug in a scrollable dropdown, the highlight on the selected row was drawn over the scrollbar (from forked API)
-- Fixed a bug: a long key name or modifier combination on a hotkey was clipped by the fixed-width key box; the box now grows to fit its contents and right-aligns to the column edge like the other controls. (from forked API)
+- Fixed a bug in a scrollable dropdown, the highlight on the selected row was drawn over the scrollbar
+- Fixed a bug: a long key name or modifier combination on a hotkey was clipped by the fixed-width key box; the box now grows to fit its contents and right-aligns to the column edge like the other controls.
 
 ### 1.1.2
 - Fixed: the mods-list scrollbar could permanently stop responding to thumb dragging and arrow clicks (only the mouse wheel kept working) when the list height changed - e.g. a mod was collapsed - while a smooth wheel-scroll animation was still running
@@ -52,7 +63,7 @@
 - `Image` now loads via `flash.display.Loader`; sources are plain root-relative paths (`gui/maps/...`, `mods/configs/...`) resolved from the WoT root
 
 ### 1.0.0
-- Renamed to `aslain.modssettingsapi` (fork of `izeberg.modssettingsapi` 1.7.x), now under its own package `gui.aslainMenu` with its own `aslainmenu.dat`. Runs independently of izeberg and never modifies izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to `gui.modsSettingsApi`) to use this menu
+- Renamed to `aslain.modssettingsapi` (based on `izeberg.modssettingsapi` 1.7.x), now under its own package `gui.aslainMenu` with its own `aslainmenu.dat`. Runs independently of izeberg and never modifies izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to `gui.modsSettingsApi`) to use this menu
 - Added new component: `Image` — render an image in the menu body, positioned inside a box via `align` (left/center/right), `valign` (top/center/bottom), `containerWidth` and `containerHeight`. A fixed `containerHeight` keeps a constant layout slot so live updates don't shift the components below
 - Added `g_modsSettingsApi.updateImage(linkage, varName, source, width, height)` — update a displayed `Image` in place, without re-rendering the menu (scroll/focus preserved)
 - Added `g_modsSettingsApi.registerLiveSettingsChange` / `unregisterLiveSettingsChange(linkage, callback)` (and `notifyLiveSettingsChange`) — per-linkage callback fired on every uncommitted in-menu value change (before Apply), for live previews. Callbacks are kept in a protected (single-underscore) attribute so mods that subclass the API to override behaviour can still interoperate
