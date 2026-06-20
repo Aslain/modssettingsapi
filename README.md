@@ -35,6 +35,8 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPD
 
 ![Sub-options grouped under a master toggle - they grey out while it is off](./assets/aslainMenu_4.png)
 
+![Mod search box in the window header - filter the list as you type, or press Ctrl+F](./assets/search_feature.png)
+
 ## Using it in your mod
 
 Import Aslain's API first, with a fallback to izeberg, so your mod also runs where only the original is installed. Importing `gui.aslainMenu` first means it wins when both are present:
