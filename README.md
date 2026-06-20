@@ -102,13 +102,14 @@ def buildTemplate():
     }
 ```
 
-**Whenever you change your template and want the change to take effect, increase `settingsVersion`.** The API only adopts a changed template — and only then resets that mod's saved values to the new defaults — when `settingsVersion` goes up. If you don't bump it, the API keeps the template it stored last time and your change (a new control, a reordered list, even an edited label) never shows up. The rules:
+**Bump `settingsVersion` for any structural change** — adding, removing, reordering or retyping a control, or changing a dropdown's options. A structural change is only adopted — and that mod's saved values reset to the new defaults — when `settingsVersion` goes up; if you don't bump it, the stored template is kept and the change doesn't show. **Cosmetic changes (an edited label or tooltip) no longer need a bump** — they refresh in place, with the user's saved values preserved. The rules:
 
-- **Same `settingsVersion` as the stored one** → the stored template and the user's values are both kept, and **any** change in your new template (structural or cosmetic) is ignored. Leave it unchanged only when you deliberately don't want to apply a change (and don't want a reset).
-- **Higher `settingsVersion`** → the new template is adopted and that mod's saved values are reset to the new defaults. Bump it for any change you want to take effect — and always for a structural one (add/remove/reorder controls, changed dropdown options).
+- **Same `settingsVersion`, cosmetic change** (label or tooltip text only) → the new template is adopted so the text refreshes, and the user's values are kept. No reset, no warning.
+- **Same `settingsVersion`, structural change** (controls added/removed/retyped, changed options) → the stored template and the user's values are both kept and the change is ignored. Bump to apply it.
+- **Higher `settingsVersion`** → the new template is adopted and that mod's saved values are reset to the new defaults. Use it for a structural change you want to take effect.
 - **No `settingsVersion` key at all** → the template is adopted (and values reset) whenever it differs in any way. Adding `settingsVersion` lets you control *when* a reset happens, instead of on every edit.
 
-If you change the template but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development.
+If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic-only changes don't warn — they just refresh.
 
 ### Grouping sub-options
 

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+### 1.3.2
+
+**Improved**
+- `setModTemplate` now tells cosmetic template changes apart from structural ones. A cosmetic-only change — an edited label or tooltip, or a label that embeds the live API version — refreshes in place with the user's saved values preserved, with no `settingsVersion` bump and no warning. Only structural changes (controls added/removed or retyped, changed dropdown options) still need a bump.
+
+**Fixed**
+- Opening the settings window could crash (`AttributeError` on `_modTranslations`) when a mod-label translation had been registered via `registerModTranslation` but the active API instance had no translation table. The translation lookups are now defensive, so the window opens regardless of how the instance was resolved.
+
 ### 1.3.1
 
 **New for mod authors**

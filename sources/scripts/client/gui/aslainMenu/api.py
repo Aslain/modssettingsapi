@@ -130,6 +130,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		"""
 		if not mapping:
 			return
+		if not hasattr(self, '_modTranslations'):
+			self._modTranslations = {}
 		try:
 			table = self._modTranslations.setdefault(linkage, {})
 			for source, target in mapping.items():
@@ -143,7 +145,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			_logger.exception("[ModsSettings API] registerModTranslation failed for '%s'", linkage)
 
 	def _applyTranslations(self, linkage, template):
-		mapping = self._modTranslations.get(linkage)
+		translations = getattr(self, '_modTranslations', None)
+		mapping = translations.get(linkage) if translations else None
 		if not mapping:
 			return
 		def translate(value):
@@ -190,6 +193,11 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state['settings'][linkage] = self.getSettingsFromTemplate(template)
 				if not currentTemplate or versionBump:
 					self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
+				self.saveState()
+			elif ('settingsVersion' in template and 'settingsVersion' in currentTemplate
+					and self._settingsStructure(template) == self._settingsStructure(currentTemplate)
+					and jsonDump(template, True) != jsonDump(currentTemplate, True)):
+				self.state['templates'][linkage] = template
 				self.saveState()
 			elif ('settingsVersion' in template and 'settingsVersion' in currentTemplate
 					and jsonDump(template, True) != jsonDump(currentTemplate, True)):
@@ -393,9 +401,20 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				result[component['varName']] = component['value']
 		return result
 
+	def _settingsStructure(self, template):
+		structure = []
+		if 'enabled' in template:
+			structure.append(('', 'enabled'))
+		for column in COLUMNS:
+			for component in template.get(column, []):
+				if isinstance(component, dict) and 'varName' in component:
+					structure.append((component['varName'], component.get('type')))
+		return sorted(structure)
+
 	def _modSortKey(self, linkage):
 		name = self.state['templates'][linkage].get('modDisplayName') or linkage
-		mapping = self._modTranslations.get(linkage)
+		translations = getattr(self, '_modTranslations', None)
+		mapping = translations.get(linkage) if translations else None
 		if mapping:
 			key = name
 			if isinstance(key, str):
