@@ -102,14 +102,15 @@ def buildTemplate():
     }
 ```
 
-**Bump `settingsVersion` for any structural change** — adding, removing, reordering or retyping a control, or changing a dropdown's options. A structural change is only adopted — and that mod's saved values reset to the new defaults — when `settingsVersion` goes up; if you don't bump it, the stored template is kept and the change doesn't show. **Cosmetic changes (an edited label or tooltip) no longer need a bump** — they refresh in place, with the user's saved values preserved. The rules:
+**Bump `settingsVersion` for any structural change** — adding, removing or retyping a control, changing a dropdown / radio / step-slider's set of options, or changing a slider / stepper's min / max / interval. A structural change is only adopted — and that mod's saved values reset to the new defaults — when `settingsVersion` goes up; if you don't bump it, the stored template is kept and the change doesn't show. **Cosmetic changes (an edited label or tooltip, a changed default value, or reordered controls) no longer need a bump** — they refresh in place, with the user's saved values preserved. The rules:
 
-- **Same `settingsVersion`, cosmetic change** (label or tooltip text only) → the new template is adopted so the text refreshes, and the user's values are kept. No reset, no warning.
-- **Same `settingsVersion`, structural change** (controls added/removed/retyped, changed options) → the stored template and the user's values are both kept and the change is ignored. Bump to apply it.
-- **Higher `settingsVersion`** → the new template is adopted and that mod's saved values are reset to the new defaults. Use it for a structural change you want to take effect.
-- **No `settingsVersion` key at all** → the template is adopted (and values reset) whenever it differs in any way. Adding `settingsVersion` lets you control *when* a reset happens, instead of on every edit.
+The rule is the same whether or not your template carries a `settingsVersion`:
 
-If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic-only changes don't warn — they just refresh.
+- **Cosmetic change** (structure unchanged — label/tooltip text, a default value, or the order of controls differs) → the new template is adopted so it refreshes, and the user's saved values are **kept** (values are keyed by control name, so reordering controls is safe). No reset, no warning. This holds for any mod, including one with no `settingsVersion` and one adopting `settingsVersion` for the first time.
+- **Structural change** (a control added, removed or retyped, a dropdown / radio / step-slider's options changed, or a slider / stepper's range changed) → it needs a bump. With `settingsVersion` present and **bumped**, the new template is adopted and the mod's saved values reset to the new defaults. With `settingsVersion` present but **not bumped**, the stored template and the user's values are kept and the change is ignored (and a warning is logged). A mod with **no `settingsVersion`** adopts a structural change and resets — the legacy behaviour.
+- **First install** → the template is adopted and its defaults recorded.
+
+If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template structure for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic changes never warn — they just refresh.
 
 ### Grouping sub-options
 

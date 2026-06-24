@@ -1,5 +1,14 @@
 # CHANGELOG
 
+### 1.3.3
+
+**Improved**
+- A template change that doesn't alter the structure now keeps the user's saved values for **every** mod — including mods with no `settingsVersion` (which previously reset on any edit) and a mod adopting `settingsVersion` for the first time. The new template is still applied so labels and tooltips refresh; only a `settingsVersion` bump, a first install, or a structural change resets values. Reordering controls counts as cosmetic (values are keyed by control name), so it no longer needs a bump.
+- "Structural" now also covers changes that can invalidate a saved value: a dropdown / radio / step-slider's set of options, and a slider / numeric-stepper's min / max / interval. Changing those without a `settingsVersion` bump is no longer mistaken for cosmetic, so a stale or out-of-range saved value is never silently kept.
+
+**Fixed**
+- The per-mod "reset to defaults" button now targets the current template's defaults. Previously, after a control was added on an unversioned update or a shipped default value was changed, the reset button could restore an outdated default.
+
 ### 1.3.2
 
 **Improved**

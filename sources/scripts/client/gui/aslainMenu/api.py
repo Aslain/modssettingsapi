@@ -186,24 +186,19 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			self.activeMods.add(linkage)
 			currentTemplate = self.state['templates'].get(linkage)
 			if not currentTemplate or self.compareTemplates(template, currentTemplate):
-				versionBump = (bool(currentTemplate)
-					and 'settingsVersion' in template and 'settingsVersion' in currentTemplate
-					and template.get('settingsVersion') > currentTemplate.get('settingsVersion'))
 				self.state['templates'][linkage] = template
 				self.state['settings'][linkage] = self.getSettingsFromTemplate(template)
-				if not currentTemplate or versionBump:
+				self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
+				self.saveState()
+			elif self._settingsStructure(template) == self._settingsStructure(currentTemplate):
+				if jsonDump(template, True) != jsonDump(currentTemplate, True):
+					self.state['templates'][linkage] = template
 					self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
-				self.saveState()
-			elif ('settingsVersion' in template and 'settingsVersion' in currentTemplate
-					and self._settingsStructure(template) == self._settingsStructure(currentTemplate)
-					and jsonDump(template, True) != jsonDump(currentTemplate, True)):
-				self.state['templates'][linkage] = template
-				self.saveState()
-			elif ('settingsVersion' in template and 'settingsVersion' in currentTemplate
-					and jsonDump(template, True) != jsonDump(currentTemplate, True)):
+					self.saveState()
+			else:
 				_logger.warning(
-					"[ModsSettings API] Template for '%s' changed but settingsVersion was not bumped "
-					"(stored %s, new %s) - keeping the stored template, so the new layout is NOT applied. "
+					"[ModsSettings API] Template structure for '%s' changed but settingsVersion was not bumped "
+					"(stored %s, new %s) - keeping the stored template, so the change is NOT applied. "
 					"Bump settingsVersion to apply it (note: that resets the mod's saved values to defaults).",
 					linkage, currentTemplate.get('settingsVersion'), template.get('settingsVersion'))
 			if linkage not in self.state.setdefault('defaults', {}):
@@ -381,9 +376,12 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		return self.checkKeyset(keys)
 
 	def compareTemplates(self, newTemplate, oldTemplate):
+		if self._settingsStructure(newTemplate) == self._settingsStructure(oldTemplate):
+			return ('settingsVersion' in newTemplate and 'settingsVersion' in oldTemplate
+				and newTemplate['settingsVersion'] > oldTemplate['settingsVersion'])
 		if 'settingsVersion' in newTemplate and 'settingsVersion' in oldTemplate:
 			return newTemplate['settingsVersion'] > oldTemplate['settingsVersion']
-		return jsonDump(newTemplate, True) != jsonDump(oldTemplate, True)
+		return True
 
 	def getSettingsFromTemplate(self, template):
 		result = dict()
@@ -404,11 +402,19 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def _settingsStructure(self, template):
 		structure = []
 		if 'enabled' in template:
-			structure.append(('', 'enabled'))
+			structure.append(('', 'enabled', ()))
 		for column in COLUMNS:
 			for component in template.get(column, []):
 				if isinstance(component, dict) and 'varName' in component:
-					structure.append((component['varName'], component.get('type')))
+					domain = ()
+					if 'options' in component:
+						domain = tuple(
+							option.get('label') if isinstance(option, dict) else option
+							for option in (component.get('options') or [])
+						)
+					elif 'minimum' in component or 'maximum' in component or 'snapInterval' in component:
+						domain = (component.get('minimum'), component.get('maximum'), component.get('snapInterval'))
+					structure.append((component['varName'], component.get('type'), domain))
 		return sorted(structure)
 
 	def _modSortKey(self, linkage):
