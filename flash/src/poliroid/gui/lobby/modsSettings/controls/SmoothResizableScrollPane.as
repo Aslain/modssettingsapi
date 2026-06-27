@@ -8,10 +8,6 @@ package poliroid.gui.lobby.modsSettings.controls
 	import net.wg.gui.components.controls.events.ScrollPaneEvent;
 	import net.wg.gui.components.controls.ResizableScrollPane;
 
-	/**
-	 * Class SmoothResizableScrollPane.
-	 * Smooth Scroll target animation in ScrollPane control
-	 */
 	public class SmoothResizableScrollPane extends ResizableScrollPane
 	{
 		private var _smoothScrollPosition:Number = 0;
@@ -30,9 +26,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			addEventListener(ScrollPaneEvent.POSITION_CHANGED, onScrollPanePositionChange);
 		}
 
-		/**
-		 * Subscribe for scrollbar ON_END_DRAG event
-		 */
 		override protected function draw():void
 		{
 			super.draw();
@@ -43,7 +36,6 @@ package poliroid.gui.lobby.modsSettings.controls
 
 		override protected function onDispose():void
 		{
-			// prevent [Scaleform] invoking component '[object SmoothResizableScrollPaneUI]' after dispose! errors
 			App.utils.scheduler.cancelTask(normalizeTargetPosition);
 			scrollBar.removeEventListener(ScrollBarEvent.ON_END_DRAG, onScrollBarEndDrag);
 			removeEventListener(ScrollPaneEvent.POSITION_CHANGED, onScrollPanePositionChange);
@@ -52,9 +44,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			super.onDispose();
 		}
 
-		/**
-		 * Update scrollStep for scrollbar track click
-		 */
 		override protected function applyScrollBarUpdating():void
 		{
 			super.applyScrollBarUpdating();
@@ -62,10 +51,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			scrollBar.setScrollProperties(scrollPageSize, 0, maxScroll, _smoothScrollStepFactor);
 		}
 
-		/**
-		 * Change scroll position to max bottom
-		 * if it was previous state of scroll
-		 */
 		override protected function applyTargetChanges():void
 		{
 			super.applyTargetChanges();
@@ -82,14 +67,10 @@ package poliroid.gui.lobby.modsSettings.controls
 			_cachedMaxScroll = maxScroll;
 		}
 
-		/**
-		 * handle Mouse Wheel event
-		 */
 		override public function doMouseWheel(value:int):void
 		{
 			if (!_isScrolling)
 				_smoothScrollPosition = scrollPosition;
-			// calculate target scroll position
 			var moveDelta = value > 0 ? _smoothScrollStepFactor : -_smoothScrollStepFactor;
 			_smoothScrollPosition = Math.min(maxScroll, Math.max(0, smoothScrollPosition - moveDelta));
 			_smoothScrollStart();
@@ -117,10 +98,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			}
 		}
 
-		/**
-		 * Smooth scroll animation logic
-		 * animated with inverted easing out cubic
-		 */
 		private function _smoothScrollAnimation():void
 		{
 			if (_smoothScrollPosition > maxScroll)
@@ -194,9 +171,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			App.utils.scheduler.scheduleOnNextFrame(normalizeTargetPosition);
 		}
 
-		/**
-		 * Update _smoothScrollPosition on manual scroll by scrollbar
-		 */
 		private function onScrollBarEndDrag(event:ScrollBarEvent):void
 		{
 			if (scrollBar)

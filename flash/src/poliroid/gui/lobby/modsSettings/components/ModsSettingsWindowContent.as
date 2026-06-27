@@ -102,10 +102,6 @@ package poliroid.gui.lobby.modsSettings.components
 			if (oldRenderer == null)
 				return null;
 
-			// In-place first: keep the component + reuse unchanged controls, swap only the
-			// rows that changed. Avoids destroying/recreating the whole mod (the re-render
-			// flash). applyTemplate runs its own reflow via HEIGHT_CHANGED. Falls through to
-			// a full rebuild only for structural changes it can't reconcile.
 			if (oldRenderer.applyTemplate(template))
 				return oldRenderer;
 
@@ -119,8 +115,6 @@ package poliroid.gui.lobby.modsSettings.components
 			container.removeChild(oldRenderer);
 			container.addChildAt(renderer, idx);
 
-			// On stage now: re-measure hotkey labels before the reflow so wrapped labels get
-			// their true height the first time.
 			renderer.revalidateHotkeys();
 			renderer.validateNow();
 

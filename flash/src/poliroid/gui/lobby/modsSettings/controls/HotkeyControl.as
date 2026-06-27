@@ -66,9 +66,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			scaleY = 1;
 			preventAutosizing = true;
 			focusable = false;
-			// Own hit area instead of the static .fla hitAreaA: the box is now right-aligned
-			// at a dynamic x, so the clickable/hover region has to follow it. Rebuilt to the
-			// live combo bounds in updateHitArea() on every layout pass.
 			_hitSprite = new Sprite();
 			_hitSprite.mouseEnabled = false;
 			_hitSprite.mouseChildren = false;
@@ -79,21 +76,13 @@ package poliroid.gui.lobby.modsSettings.controls
 			_modOrigX = modifiersMC.x;
 			valueTF.autoSize = TextFieldAutoSize.RIGHT;
 
-			// Box band is constant: the chip/box PNGs are a 25 px canvas with the solid
-			// gold body at rows 3..21 (19 px). Hardcode it - measuring here was flaky
-			// (the chip bitmap isn't always ready, getBounds returned 0, and some boxes
-			// fell back to a wrong 25 px height that flickered on reload).
 			_boxTop = 3;
 			_boxH = 19;
-			// Clear the .fla placeholder ("F1") so nothing flashes before real data.
 			valueTF.text = '';
 
 			addEventListener(MouseEvent.ROLL_OVER, onRollOver);
 			addEventListener(MouseEvent.ROLL_OUT, onRollOut);
 
-			// The key-box frame is unnamed static artwork at the symbol root (not a
-			// statesMC frame), so collect every child that is not the text / chips /
-			// hit area and toggle it per display state.
 			_decor = [];
 			_decorOrigX = [];
 			for (var i:int = 0; i < numChildren; i++)
@@ -122,14 +111,6 @@ package poliroid.gui.lobby.modsSettings.controls
 
 		private function drawFrame():void
 		{
-			// Reproduce the original izeberg key-box artwork (buttonNormal.png / buttonHovered.png)
-			// in code, so the right-aligned dynamic-width box keeps the bevel of the static .fla
-			// slot. Built from concentric rounded-rect FILLS, not a gradient stroke: Scaleform
-			// shades a gradient line along the path length, which dropped the highlight on the
-			// right edge. A gradient FILL is spatial, so both vertical sides read identically.
-			// Outer 1 px ring = vertical 3-stop gradient (medium top -> brightest mid-height ->
-			// dimmest bottom); then a 1 px dark inner line; then the dark translucent body.
-			// Colors sampled straight from the PNGs.
 			var topC:uint = _hover ? 0x47473E : 0x333328;
 			var midC:uint = _hover ? 0x5C5C4E : 0x4A4A3A;
 			var botC:uint = _hover ? 0x3A3A34 : 0x24241D;
@@ -145,21 +126,16 @@ package poliroid.gui.lobby.modsSettings.controls
 			g.clear();
 			g.lineStyle();
 
-			// Outer highlight ring: a vertical 3-stop gradient fill over the whole box, left as a
-			// 1 px ring once the inner rings cover it. createGradientBox span is keyed to the box
-			// HEIGHT (first arg = h) so the gradient maps top->bottom regardless of box width.
 			var m:Matrix = new Matrix();
 			m.createGradientBox(h, h, Math.PI / 2, x, y);
 			g.beginGradientFill(GradientType.LINEAR, [topC, midC, botC], [1, 1, 1], [0, 128, 255], m);
 			g.drawRoundRect(x, y, w, h, 4, 4);
 			g.endFill();
 
-			// Inner dark line (1 px) just inside the highlight.
 			g.beginFill(innerC, 1);
 			g.drawRoundRect(x + 1, y + 1, w - 2, h - 2, 3, 3);
 			g.endFill();
 
-			// Dark translucent body.
 			g.beginFill(fillC, 0.81);
 			g.drawRoundRect(x + 2, y + 2, w - 4, h - 4, 2, 2);
 			g.endFill();
@@ -187,9 +163,6 @@ package poliroid.gui.lobby.modsSettings.controls
 				DisplayObject(_decor[i]).visible = value;
 		}
 
-		// Empty / accepting states draw the static .fla box + statesMC indicator, which sit
-		// at the original left slot. Slide them (and the placeholder chips) right by the same
-		// delta the normal box moved, so the box stays put when you click to rebind a key.
 		private function applyStateShift():void
 		{
 			if (_decor == null || _decorOrigX == null)
@@ -249,25 +222,14 @@ package poliroid.gui.lobby.modsSettings.controls
 				valueTF.text = _model.text;
 			}
 
-			// Center the REAL glyph rectangle in the box. textHeight reserves descender
-			// space that all-caps key names never use, which left the caps sitting too
-			// high; getCharBoundaries gives the actual drawn glyph extent.
 			var gb:Rectangle = (valueTF.length > 0) ? valueTF.getCharBoundaries(0) : null;
 			if (gb != null)
-				// Centre the real glyph box, snapped to a whole pixel and nudged up 1 px: the
-				// sub-pixel centre rendered visually a touch low.
 				valueTF.y = Math.round(_boxTop + (_boxH - gb.height) / 2 - gb.y) - 1;
 			else
 				valueTF.y = Math.round(_boxTop + (_boxH - valueTF.textHeight) / 2 - 2);
 
 			if (_frame != null && _model != null && !_model.isEmpty && !_model.isAccepting)
 			{
-				// Box grows left only for long keys, right edge pinned to a fixed anchor so
-				// the whole combo is right-aligned. The layout (createComponents) feeds the
-				// real anchor via maxRightLocal - the rightmost x usable before the next
-				// column or the on/off switcher - so combos use the full free width instead
-				// of stopping at the original narrow .fla slot. Falls back to the .fla slot
-				// (_tfRight) when no layout anchor was supplied.
 				var rightAnchor:Number = isNaN(_maxRightLocal) ? _tfRight : _maxRightLocal;
 				_boxDrawW = Math.max(BOX_MIN_W, valueTF.width + PAD_H * 2);
 				_boxLeft = rightAnchor - _boxDrawW;
@@ -276,8 +238,6 @@ package poliroid.gui.lobby.modsSettings.controls
 				_frame.visible = true;
 				if (modifiersMC.visible)
 				{
-					// Pin the chips' right edge a fixed gap left of the box, from real
-					// bounds so spacing stays constant at any box width.
 					var b:Rectangle = modifiersMC.getBounds(this);
 					modifiersMC.x += (_boxLeft - CHIP_GAP) - b.right;
 					_comboLeft = modifiersMC.getBounds(this).left;
@@ -295,18 +255,10 @@ package poliroid.gui.lobby.modsSettings.controls
 
 			updateHitArea();
 
-			// Don't notify the label until the box is actually laid out. setData can
-			// arrive before configUI (no _frame yet) - that early pass leaves comboLeft=0,
-			// which would wrap the label full-width and reveal it, then re-wrap narrow a
-			// moment later (the flicker). configUI re-runs setData once _frame exists.
 			if (_model.isEmpty || _model.isAccepting || _frame != null)
 				dispatchEvent(new Event(DISPLAY_CHANGED));
 		}
 
-		// Rebuild the hit region to cover whatever the control currently shows: the key box
-		// + chips in the normal state, or the placeholder / accepting indicator otherwise.
-		// Drawn with a 0-alpha fill (geometry still counts for hit testing) and a few px of
-		// padding so hover feels the same as the old static area.
 		private function updateHitArea():void
 		{
 			if (_hitSprite == null)
@@ -319,7 +271,6 @@ package poliroid.gui.lobby.modsSettings.controls
 
 			if (_model != null && (_model.isEmpty || _model.isAccepting))
 			{
-				// The visible box artwork + statesMC indicator (both in _decor, now shifted).
 				if (_decor != null)
 					for (var di:int = 0; di < _decor.length; di++)
 					{
@@ -360,8 +311,6 @@ package poliroid.gui.lobby.modsSettings.controls
 			return _comboLeft;
 		}
 
-		// Control-local x of the box right edge, fed by the layout from the column /
-		// switcher boundary. Re-runs the layout if data is already present (reload).
 		public function set maxRightLocal(value:Number):void
 		{
 			_maxRightLocal = value;
@@ -369,10 +318,6 @@ package poliroid.gui.lobby.modsSettings.controls
 				setData(_model);
 		}
 
-		// Re-run the layout against the CURRENT data. Used after the control is put on
-		// stage: off-stage the wrapped label's textHeight is short by ~one line, so the
-		// row (and the whole mod) builds too short and snaps to its true height a frame
-		// later. Re-laying on stage measures the label correctly the first time.
 		public function relayout():void
 		{
 			if (_model != null && _frame != null)

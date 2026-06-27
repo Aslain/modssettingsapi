@@ -24,13 +24,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 	public class ModsSettingsComponent extends UIComponent
 	{
-		// Right-edge breathing room before the centre line (column 1) and before the mod's
-		// right edge (rightmost / single column on a mod with no on/off switcher).
 		private static const HOTKEY_GAP_BEFORE_COL2:Number = 20;
-		// The on/off switcher sits at the mod's top-right; its left edge = WIDTH - SWITCHER_RIGHT_OFFSET.
-		// On a mod that has the switcher, right-aligned controls in the rightmost column stop
-		// GAP_BEFORE_SWITCHER short of it, so nothing slides under the green button and a clear
-		// margin is left to the right frame border.
 		private static const SWITCHER_RIGHT_OFFSET:Number = 41;
 		private static const GAP_BEFORE_SWITCHER:Number = 18;
 		private static const RESET_SIZE:Number = 14;
@@ -145,10 +139,6 @@ package poliroid.gui.lobby.modsSettings.components
 			var paddingTop:Number = Constants.MOD_PADDING_TOP;
 			var lastPos:Number = 0;
 
-			// Right edge a right-aligned control in the rightmost (or only) column may reach.
-			// With an on/off switcher, stop short of it so the control clears the green button
-			// and keeps a clear margin to the right frame border; without one, use the normal
-			// right-edge gap.
 			var rightmostLimit:Number = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
 
 			if (column1)
@@ -161,8 +151,6 @@ package poliroid.gui.lobby.modsSettings.components
 
 			if (column2)
 			{
-				// Second column right-aligns to the same rightmost limit: short of the on/off
-				// switcher when the mod has one, otherwise the mod's right edge.
 				var lastPosTemp:Number = createComponents(this, column2, Constants.MOD_COMPONENT_WIDTH / 2, paddingTop, rightmostLimit);
 				if (lastPosTemp > lastPos)
 					lastPos = lastPosTemp;
@@ -187,9 +175,6 @@ package poliroid.gui.lobby.modsSettings.components
 
 			textFormat.bold = true;
 			textFormat.size = 15;
-			// Fixed pixel indent to clear the collapse arrow, instead of a leading run of
-			// spaces: space width is font/scale dependent, so the gap before the title
-			// drifted between clients. leftMargin is a real, constant distance.
 			textFormat.leftMargin = 32;
 			fieldSet.textField.setTextFormat(textFormat);
 
@@ -201,8 +186,6 @@ package poliroid.gui.lobby.modsSettings.components
 			createCollapseArrow();
 			createResetButton();
 
-			// Collapsed height keeps a symmetric margin around the on/off switcher
-			// (top margin == bottom margin) so the green button doesn't touch the border
 			_collapsedHeight = Constants.MOD_COLLAPSED_HEIGHT;
 			if (_stateSwitcher != null && _stateSwitcher.height > 0)
 				_collapsedHeight = Math.max(_collapsedHeight, _stateSwitcher.y * 2 + _stateSwitcher.height);
@@ -254,8 +237,6 @@ package poliroid.gui.lobby.modsSettings.components
 				component.x = ((componentConfig.hasOwnProperty('masterVarName') || componentConfig.hasOwnProperty('conditions')) && componentConfig.masterIndent != false) ? x + Constants.MOD_CHILD_INDENT : x;
 				component.y = lastPos + Constants.COMPONENT_MARGIN_BOTTOM;
 
-				// Right-align the row's control to the column boundary so neighbouring rows
-				// line up (the rightmost column's boundary already clears the on/off switcher).
 				applyControlRightLimit(component, rightLimit);
 
 				lastPos = component.y + component.height;
@@ -430,7 +411,20 @@ package poliroid.gui.lobby.modsSettings.components
 			if (returnValue == null)
 				return true;
 
-			return Boolean(returnValue.value);
+			return Boolean(gateScalar(returnValue.value));
+		}
+
+		private function isCompound(v:*):Boolean
+		{
+			if (v == null || v is Boolean || v is Number || v is int || v is uint || v is String || v is Array)
+				return false;
+
+			return v.hasOwnProperty('enabled') && v.hasOwnProperty('color');
+		}
+
+		private function gateScalar(v:*):*
+		{
+			return isCompound(v) ? v.enabled : v;
 		}
 
 		private function getMasterValue(varName:String):Object
@@ -442,7 +436,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 			var returnValue:Object = entry.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY];
 
-			return returnValue == null ? null : returnValue.value;
+			return returnValue == null ? null : gateScalar(returnValue.value);
 		}
 
 		private function masterValueMatches(varName:String, allowed:Object, condition:String):Boolean
@@ -481,12 +475,10 @@ package poliroid.gui.lobby.modsSettings.components
 
 			if (_fieldSet != null)
 			{
-				// Inherit the mod title's text colour so the arrow matches the menu text
 				_arrowColor = _fieldSet.textField.textColor;
 				_collapseArrow.x = _fieldSet.textField.x + 3;
 				_collapseArrow.y = _fieldSet.textField.y + (_fieldSet.textField.height - Constants.MOD_COLLAPSE_ARROW_SIZE) / 2;
 
-				// Make the mod name itself toggle collapse (in addition to the arrow)
 				_fieldSet.textField.selectable = false;
 				_fieldSet.textField.mouseEnabled = true;
 				_fieldSet.textField.addEventListener(MouseEvent.CLICK, handleCollapseClick);
@@ -688,6 +680,9 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function valuesEqual(a:*, b:*):Boolean
 		{
+			if (isCompound(a) && isCompound(b))
+				return String(a.enabled) == String(b.enabled) && String(a.color) == String(b.color);
+
 			if ((a is Number) != (b is Number))
 				return int(a) == int(b);
 			return String(a) == String(b);
@@ -726,16 +721,12 @@ package poliroid.gui.lobby.modsSettings.components
 			if (_fieldSet != null)
 			{
 				_fieldSet.height = h;
-				// FieldSet.draw() does not resize its background box, so resize the
-				// 9-slice bg sprite directly to keep the border wrapping the content
 				if (_fieldSet.bg != null)
 					_fieldSet.bg.height = h;
 			}
 
 			height = h;
 
-			// Clip a collapsed mod to its header height so its hidden controls don't
-			// inflate the scroll content bounds (which would leave an empty scroll gap)
 			if (_collapsed)
 				scrollRect = new Rectangle(0, 0, Constants.MOD_COMPONENT_WIDTH, h);
 			else
@@ -759,9 +750,6 @@ package poliroid.gui.lobby.modsSettings.components
 			return _collapsed ? _collapsedHeight : _fullHeight;
 		}
 
-		// Re-lay every hotkey row now that this component is on stage, so each wrapped
-		// label measures its true (on-stage) height before the list reflows - otherwise the
-		// mod builds ~one text line too short and snaps back a frame later (flicker).
 		public function revalidateHotkeys():void
 		{
 			for (var i:int = 0; i < components.length; i++)
@@ -783,9 +771,6 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 			else if (ctrl is ColorChoiceButton || ctrl is NumericStepper)
 			{
-				// Fixed-width controls (colour swatch, numeric stepper): move the whole
-				// control so its right edge sits on the boundary. Real bounds, so the inner
-				// hit areas / arrows follow.
 				var fixed:DisplayObject = DisplayObject(ctrl);
 				var bnds:Rectangle = fixed.getBounds(fixed.parent);
 				if (bnds.width > 0)
@@ -793,10 +778,6 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
-		// Reuse identity for a component config: only rows whose type + varName + label
-		// text + value are all unchanged may be reused as-is. A changed value, changed
-		// label (e.g. new language) or new row gets a fresh control, everything else stays
-		// untouched - so a reload re-renders only what actually changed, not the whole mod.
 		private function reuseKey(cfg:Object):String
 		{
 			if (cfg == null)
@@ -811,6 +792,9 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function valStr(v:*):String
 		{
+			if (isCompound(v))
+				return String(v.enabled) + ":" + String(v.color);
+
 			return (v == null) ? "" : String(v);
 		}
 
@@ -848,11 +832,6 @@ package poliroid.gui.lobby.modsSettings.components
 			return true;
 		}
 
-		// In-place reload: keep this component (and its FieldSet, scrollRect, collapsed
-		// state) and reuse every unchanged control, swapping only the rows that actually
-		// changed. Avoids destroying + recreating the whole mod each reload, which
-		// re-rendered every control = the flicker. Returns false for structural changes the
-		// reconciler does not handle, so the caller falls back to a full rebuild.
 		public function applyTemplate(newData:Object):Boolean
 		{
 			if (data == null || newData == null)
@@ -893,7 +872,6 @@ package poliroid.gui.lobby.modsSettings.components
 					return false;
 			}
 
-			// Drop controls no longer present.
 			for (i = 0; i < components.length; i++)
 			{
 				e = components[i];
@@ -942,6 +920,8 @@ package poliroid.gui.lobby.modsSettings.components
 					return ComponentsFactory.createNumericStepper(componentConfig, modLinkage, componentConfig.minimum, componentConfig.maximum, componentConfig.snapInterval, componentConfig.value, componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
 				case 'ColorChoice':
 					return ComponentsFactory.createColorChoice(componentConfig, modLinkage, componentConfig.value, componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
+				case 'CheckBoxColor':
+					return ComponentsFactory.createCheckboxColor(componentConfig, modLinkage, componentConfig.value, componentConfig.text, componentConfig.tooltip, componentConfig.tooltipIcon);
 				case 'RangeSlider':
 					return ComponentsFactory.createRangeSlider(componentConfig, modLinkage);
 				case 'Image':
@@ -952,9 +932,6 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
-		// Re-stack both columns by their current heights and recompute the mod height, then ask the
-		// window to reflow the list. Used after an Image collapses/expands (removeImage) so the
-		// controls below it - and the mods below this one - move up to fit.
 		private function reflow():void
 		{
 			var c1len:int = (data && data.column1) ? data.column1.length : 0;

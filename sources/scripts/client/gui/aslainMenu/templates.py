@@ -485,6 +485,37 @@ def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, butt
 	return createControl(COMPONENT_TYPE.COLOR_CHOICE, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 
 
+def createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
+	""" Helper to create a Checkbox paired with a ColorChoice on a single row
+
+	The checkbox and the colour picker share one line: the checkbox (box + label) sits on the
+	left, the colour swatch on the right. A long label wraps onto extra lines under the
+	checkbox and never runs under the swatch; the box, the first line and the tooltip icon stay
+	on the real checkbox, so the native click sound is preserved.
+
+	:param text: Component text (the checkbox label)
+	:param varName: Variable name bound to this component. Its stored value is a dict
+		{'enabled': <bool>, 'color': <hex str>} holding both the checkbox state and the colour,
+		so read settings[varName]['enabled'] and settings[varName]['color'] in the callback.
+	:param value: Initial checkbox state
+	:type value: bool
+	:param color: Initial colour, hex code with or without leading hash
+	:type color: str
+	:param tooltip: Component tooltip, optional
+	:param tooltipIcon: Component tooltip icon, optional
+	:param button: Component button, optional
+	:param useHTML: When False, the label renders as plain text (the API escapes <, > and &)
+		instead of HTML. Default True keeps HTML labels (icons, <font>, <b>).
+
+	:return: CheckBoxColor component
+	"""
+	if color.startswith('#'):
+		color = color.lstrip('#')
+	compound = {'enabled': bool(value), 'color': color}
+	control = createControl(COMPONENT_TYPE.CHECKBOX_COLOR, text, varName, compound, tooltip, tooltipIcon, button, useHTML)
+	return control
+
+
 def createRangeSlider(text, varName, value, min, max, interval, step, minRange, labelStep, labelPostfix, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create RangeSlider component
 

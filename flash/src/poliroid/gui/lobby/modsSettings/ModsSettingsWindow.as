@@ -162,7 +162,6 @@ package poliroid.gui.lobby.modsSettings
 			if (_toolbar == null || content == null)
 				return;
 
-			// Top strip, horizontally aligned with the centred mods column, above the title
 			_toolbar.x = content.x;
 			_toolbar.y = 10;
 		}
@@ -307,8 +306,6 @@ package poliroid.gui.lobby.modsSettings
 
 		private function notifyLiveChange(linkage:String):void
 		{
-			// Push the changed mod's current (uncommitted) values to Python so
-			// it can update live previews immediately, before Apply is pressed.
 			if (componentChanged == null)
 				return;
 
@@ -414,8 +411,6 @@ package poliroid.gui.lobby.modsSettings
 			if (matches.length == 0)
 				return;
 
-			// Repeated clicks on the same letter cycle through its mods (wrapping);
-			// a different letter restarts at its first mod.
 			if (event.varName == _lastJumpLetter)
 				_lastJumpIndex = (_lastJumpIndex + 1) % matches.length;
 			else

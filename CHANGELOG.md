@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 1.4.0
+
+**New for mod authors**
+- `templates.createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True)`: a checkbox paired with a colour picker on one row, the tick box and its label on the left and the colour swatch on the right. The stored value is a dict `{'enabled': <bool>, 'color': <hex str>}`, so read `settings[varName]['enabled']` and `settings[varName]['color']` in your callback. A long label wraps onto extra lines under the checkbox without ever running under the swatch. It works with `enableWhen` / `visibleWhen` (both as a gated control and as a master, where it gates on its `enabled` flag) and inside `createControlsGroup`, supports `tooltip` and `useHTML` like the other controls, and the per-mod reset button responds to its changes. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
+
 ### 1.3.3
 
 **Improved**

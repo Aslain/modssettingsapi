@@ -11,8 +11,6 @@ package poliroid.gui.lobby.modsSettings.components
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
 	import poliroid.gui.lobby.modsSettings.shared.Constants;
 
-	// Toolbar shown above the mods list: a single collapse/expand-all icon button
-	// (a rectangle with two chevrons) plus a horizontal A-Z quick-jump bar.
 	public class ModsSettingsToolbar extends Sprite
 	{
 		private static const LETTERS:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -64,7 +62,6 @@ package poliroid.gui.lobby.modsSettings.components
 			var ch:Number = 4;
 
 			_collapseBtn.graphics.clear();
-			// transparent hit area
 			_collapseBtn.graphics.beginFill(0, 0);
 			_collapseBtn.graphics.drawRect(0, 0, s, s);
 			_collapseBtn.graphics.endFill();
@@ -72,13 +69,11 @@ package poliroid.gui.lobby.modsSettings.components
 
 			if (_allCollapsed)
 			{
-				// expand: chevrons point away from centre (top up, bottom down)
 				_collapseBtn.graphics.moveTo(cx - hw, 8); _collapseBtn.graphics.lineTo(cx + hw, 8); _collapseBtn.graphics.lineTo(cx, 4);
 				_collapseBtn.graphics.moveTo(cx - hw, s - 8); _collapseBtn.graphics.lineTo(cx + hw, s - 8); _collapseBtn.graphics.lineTo(cx, s - 4);
 			}
 			else
 			{
-				// collapse: chevrons point toward the centre (top down, bottom up)
 				_collapseBtn.graphics.moveTo(cx - hw, 4); _collapseBtn.graphics.lineTo(cx + hw, 4); _collapseBtn.graphics.lineTo(cx, 4 + ch);
 				_collapseBtn.graphics.moveTo(cx - hw, s - 4); _collapseBtn.graphics.lineTo(cx + hw, s - 4); _collapseBtn.graphics.lineTo(cx, s - 4 - ch);
 			}
@@ -129,7 +124,6 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
-		// Highlight only the letters that have at least one mod; grey out the rest
 		public function setAvailableLetters(available:Object):void
 		{
 			for (var letter:String in _letters)
@@ -154,7 +148,6 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function onCollapseClick(event:MouseEvent):void
 		{
-			// value = target collapsed state for every mod
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.COLLAPSE_ALL, '', '', !_allCollapsed));
 		}
 
@@ -181,7 +174,6 @@ package poliroid.gui.lobby.modsSettings.components
 			var holder:MovieClip = MovieClip(event.currentTarget);
 			TextField(holder["tf"]).textColor = COLOR_HOVER;
 
-			// Scale up around the letter's centre so it pops out on hover
 			var s:Number = 1.4;
 			var slot:Number = Number(holder["slot"]);
 			holder.scaleX = holder.scaleY = s;

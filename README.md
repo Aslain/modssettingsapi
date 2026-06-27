@@ -17,6 +17,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **Multiple conditions (AND / OR)** via `templates.enableWhenAll` / `enableWhenAny` (plus `visibleWhenAll` / `visibleWhenAny`): gate a control on more than one master at once — `*All` requires every condition (AND), `*Any` requires at least one (OR).
 - **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, collapse its slot with `updateImage(..., removeImage=True)`, or start it collapsed via `createImage(..., collapsed=True)`. An optional built-in `label` (with `labelAlign`) renders above the image, collapses together with it and can be live-updated too. Image sources are plain root-relative paths resolved from the WoT root.
 - **Sprite-sheet animation** in an `Image` slot: `createImage(atlas={...})` plays a looping animation from a single sheet the moment the menu opens, and `updateImageAtlas(...)` switches it live — one image blitted frame-by-frame (`copyPixels` on a timer) instead of hundreds of frame files, light even at a high `fps`.
+- **Checkbox + colour picker on one row** via `templates.createCheckboxColor(text, varName, value, color, ...)`: a tick box with its label on the left and a colour swatch on the right, storing a `{'enabled': <bool>, 'color': <hex>}` pair under one name. A long label wraps onto extra lines under the checkbox without running under the swatch, and it slots into `enableWhen` / `visibleWhen` / `createControlsGroup` like any other control.
 - **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage; pass `fullsettings=False` to receive only the changed keys instead of the full dict — the old `mode='changedOnly'` form is deprecated) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window — only the controls that actually changed are rebuilt, the rest reused in place.
 - **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) — the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
 - **Plain-text labels**: pass `useHTML=False` to any `create*` control to render its label verbatim (so a literal `<` / `>` / `&` shows instead of being parsed as HTML markup), or `templates.escape(text)` to escape just a fragment of an otherwise-HTML label. Default `useHTML=True` keeps HTML labels (icons, `<font>`, `<b>`).
@@ -66,6 +67,10 @@ Compact copy-paste patterns; the sections below explain each in full. `CONDITION
 column += templates.createControlsGroup(
     templates.createCheckbox('Enable group', 'grp', True),
     [templates.createSlider('Volume', 'vol', 5, 0, 10, 1)])
+
+# Checkbox + colour picker on one row; stored value is {'enabled': bool, 'color': hex}
+templates.createCheckboxColor('Damage numbers', 'dmg', True, 'F23030')
+#   read in onModSettingsChanged: settings['dmg']['enabled'], settings['dmg']['color']
 
 # Grey a control unless another control's value passes a test
 templates.enableWhen(templates.createSlider('Fine tune', 'fine', 5, 1, 10, 1),
@@ -185,6 +190,24 @@ templates.enableWhenAny(templates.createCheckbox('Shortcut', 'shortcut', False),
 
 `visibleWhenAll` / `visibleWhenAny` work the same way but hide the control (like `visibleWhen`) instead of greying it. Feature-detect with `hasattr(templates, 'enableWhenAll')`; older builds leave the control always-enabled.
 
+### Checkbox with a colour picker (`createCheckboxColor`)
+
+`createCheckboxColor` puts a checkbox and a colour picker on one row: the tick box and its label on the left, the colour swatch on the right. It stores both halves under one `varName` as a dict, so a single setting carries an on/off flag and a colour together:
+
+```python
+templates.createCheckboxColor('Damage numbers', 'dccDmg', True, 'F23030', tooltip=tip)
+```
+
+The stored value is `{'enabled': <bool>, 'color': <hex str>}` (colour without the leading `#`), so read it like this:
+
+```python
+def onModSettingsChanged(self, linkage, settings):
+    on = settings['dccDmg']['enabled']
+    colour = settings['dccDmg']['color']
+```
+
+A long label wraps onto extra lines under the checkbox without ever running under the swatch (the box, the first line and the tooltip icon stay on a real checkbox, so clicking toggles with the usual sound). It works as both a gated control and a gating master in `enableWhen` / `visibleWhen` (as a master it gates on its `enabled` flag), and inside `createControlsGroup`. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
+
 ### Wrapping a long hotkey label
 
 A long hotkey label wraps into the narrow column to the left of the keys by default. Pass `float='right'` to wrap it *around* the keys instead (CSS-`float` style) - the keys stay on the right and the overflow lines run the full row width underneath, so a long description reads naturally:
@@ -266,7 +289,7 @@ if apiVersion >= (1, 2):
 
 **aslainMenu-only - guard before use:**
 
-- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`
+- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`
 - `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`
 
 ## Dependencies

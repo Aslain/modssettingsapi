@@ -7,8 +7,8 @@ from external_strings_utils import unicode_from_utf8
 MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 
-VERSION = '1.3.3'
-VERSION_TUPLE = (1, 3, 3)
+VERSION = '1.4.0'
+VERSION_TUPLE = (1, 4, 0)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
@@ -46,6 +46,7 @@ class COMPONENT_TYPE:
 	NUMERIC_STEPPER = 'NumericStepper'
 	HOTKEY = 'HotKey'
 	COLOR_CHOICE = 'ColorChoice'
+	CHECKBOX_COLOR = 'CheckBoxColor'
 	RANGE_SLIDER = 'RangeSlider'
 	IMAGE = 'Image'
 

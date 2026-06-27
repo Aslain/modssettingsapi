@@ -61,6 +61,12 @@ if hasattr(templates, 'enableWhen'):
 	template['column2'].append(templates.enableWhen(templates.createSlider('Minimap blink count', 'blinkCount', 3, 1, 10, 1), 'spotMode', 0))
 	template['column2'].append(templates.enableWhen(templates.createDropdown('Chat phrase', 'chatPhrase', ['Help!', 'SOS', 'Spotted'], 0), 'spotMode', 1))
 
+# createCheckboxColor (aslainMenu-only): a checkbox paired with a colour picker on one row. The
+# stored value is a dict, read as settings['checkboxColor']['enabled'] and ['color'].
+if hasattr(templates, 'createCheckboxColor'):
+	template['column2'].append(templates.createCheckboxColor('CheckBoxColor test', 'checkboxColor', True, 'FFCC00',
+								tooltip='{HEADER}CheckBoxColor tooltip header{/HEADER}{BODY}A checkbox and a colour picker on one row; the value is a dict with enabled and color{/BODY}'))
+
 
 settings = {
 	'sixthSenseSound' : 0,
@@ -72,6 +78,7 @@ settings = {
 	'aliveCounter' : 5,
 	'numStepperTest' : 5,
 	'colorChoice' : 'FFFFFF',
+	'checkboxColor' : {'enabled': True, 'color': 'FFCC00'},
 	'rangeSlider' : [20, 50],
 	'stepSliderTest': 0
 }

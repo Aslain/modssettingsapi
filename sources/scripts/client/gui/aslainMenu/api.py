@@ -247,15 +247,24 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.state.setdefault('collapsed', {})[linkage] = bool(collapsed)
 		self.saveState()
 
+	def _fireEvent(self, name, *args):
+		"""Fire an aslainMenu-added Event defensively. The live instance can be a superseded or older
+		fork build whose __init__ never created this Event (the view guards the matching subscriptions
+		with hasattr for the same reason), so a missing event is skipped rather than raising
+		AttributeError."""
+		event = getattr(self, name, None)
+		if event is not None:
+			event(*args)
+
 	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False, label=None):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
-		self.onImageUpdate(linkage, varName, source, w, h, bool(removeImage), label)
+		self._fireEvent('onImageUpdate', linkage, varName, source, w, h, bool(removeImage), label)
 
 	def updateImageAtlas(self, linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
-		self.onImageAtlasUpdate(linkage, varName, atlasSource, int(frameWidth), int(frameHeight),
+		self._fireEvent('onImageAtlasUpdate', linkage, varName, atlasSource, int(frameWidth), int(frameHeight),
 								int(columns), int(count), float(fps), bool(loop), w, h)
 
 	def getVersion(self):
@@ -324,7 +333,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
 		self._attachHotkeyDisplay(linkage, template)
 		self._applyTranslations(linkage, template)
-		self.onReloadMod(linkage, template)
+		self._fireEvent('onReloadMod', linkage, template)
 
 	def resetModToDefaults(self, linkage):
 		""" Reset one mod's controls to their factory defaults, live, in the open window. The
@@ -360,7 +369,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		_logger.debug("[ModsSettings API] Reset '%s' to defaults: %d control(s), %d hotkey(s)",
 			linkage, len(defaults), len(hotkeyVars))
 
-		self.onResetMod(linkage, dict(defaults))
+		self._fireEvent('onResetMod', linkage, dict(defaults))
 
 	def _stopHotkeyAcceptOnClose(self):
 		try:

@@ -94,7 +94,6 @@
 			ui.addChild(label);
 			label.validateNow();
 
-			// Add pointer cursor to tooltip icon if available
 			var infoIcon:InfoIcon = label['_infoIco'];
 
 			if (infoIcon)
@@ -108,15 +107,10 @@
 			return result;
 		}
 
-		// Default breathing room added around the image when no explicit container
-		// size is given (boxW/boxH default to the image size plus this margin).
 		public static const IMAGE_PAD:int = 8;
 
 		public static function createImage(componentConfig:Object):DisplayObject
 		{
-			// Load the image with a plain Loader and render it as a Bitmap, scaled to fit the
-			// container while keeping aspect ratio. A transparent rect fixes the layout slot and
-			// scrollRect clips the content, so a too-big image can never overflow the container.
 			var w:int = componentConfig.hasOwnProperty("width") ? int(componentConfig.width) : 0;
 			var h:int = componentConfig.hasOwnProperty("height") ? int(componentConfig.height) : 0;
 			var src:String = String(componentConfig.source);
@@ -127,8 +121,6 @@
 
 			var result:MovieClip = new MovieClip();
 
-			// Optional label above the image, part of the component: it collapses/expands with
-			// the image (unlike a separate createLabel) and can be live-updated via updateImage.
 			var labelH:int = 0;
 			if (componentConfig.hasOwnProperty("label"))
 			{
@@ -144,7 +136,6 @@
 			result["labelH"] = labelH;
 			result["useHTML"] = componentConfig.useHTML != false;
 
-			// The bitmaps live in their own sub-container so frame swaps never touch the label.
 			var imgBox:MovieClip = new MovieClip();
 			imgBox.y = labelH;
 			result.addChild(imgBox);
@@ -163,8 +154,6 @@
 			result["valign"] = valign;
 			positionImageLabel(result);
 
-			// collapsed=true starts the slot at zero height (no full empty container at the
-			// default state); a later updateImage() with a path expands it. Otherwise load now.
 			if (componentConfig.hasOwnProperty("collapsed") && Boolean(componentConfig.collapsed))
 				collapseImage(result);
 			else if (componentConfig.hasOwnProperty("atlas") && componentConfig.atlas != null)
@@ -178,13 +167,9 @@
 			return result;
 		}
 
-		// Loads `src` and renders it scaled-to-fit into `holder` (clipped to its box, ratio kept),
-		// caching decoded images by source. Shared by createImage and updateImage so both size the
-		// image identically; the API never lets a too-big image overflow the container.
 		public static function loadImageInto(holder:MovieClip, src:String):void
 		{
 			stopAtlas(holder);
-			// Restore the full slot height in case the holder was collapsed by removeImage.
 			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), int(holder["totalH"]));
 			holder["collapsed"] = false;
 			holder["src"] = src;
@@ -202,9 +187,6 @@
 				return;
 			}
 
-			// The SWF lives in gui/flash/, so a root-relative source has to climb out first:
-			// resource paths (gui/..., scaleform/...) sit at the res root (2 up), on-disk
-			// mods/ paths one level higher at the game root (3 up). Mods pass clean paths.
 			var url:String = (src.indexOf("mods/") == 0 ? "../../../" : "../../") + src;
 			var loader:Loader = new Loader();
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e:Event):void {
@@ -222,8 +204,6 @@
 			try { loader.load(new URLRequest(url)); } catch (err:Error) {}
 		}
 
-		// Collapse the image holder to zero height (removeImage) so the layout reflows the
-		// controls below it upward. loadImageInto restores the box height when a source is set.
 		public static function collapseImage(holder:MovieClip):void
 		{
 			stopAtlas(holder);
@@ -235,8 +215,6 @@
 			holder.scrollRect = new Rectangle(0, 0, int(holder["boxW"]), 0);
 		}
 
-		// Replace the text of the label slot created by createImage(label=...); a holder
-		// without a label slot ignores the call (the slot height is fixed at creation).
 		public static function setImageLabel(holder:MovieClip, text:String):void
 		{
 			var labelField:LabelControl = holder["labelField"] as LabelControl;
@@ -262,9 +240,6 @@
 
 		private static function renderBitmapInto(holder:MovieClip, bmd:BitmapData):void
 		{
-			// Clear the old bitmap and add the new one together, so loadImageInto can keep the
-			// previous frame on screen while the next one loads - the holder never blanks
-			// mid-load, which is what made fast frame-by-frame animation flicker on first play.
 			var imgBox:MovieClip = MovieClip(holder["imgBox"]);
 			while (imgBox.numChildren > 0)
 				imgBox.removeChildAt(imgBox.numChildren - 1);
@@ -280,7 +255,6 @@
 			var scale:Number = (w > 0 && h > 0)
 				? Math.min(w / bmd.width, h / bmd.height)
 				: Math.min(boxW / bmd.width, boxH / bmd.height);
-			// Never upscale: keep natural size when the image fits, only shrink when oversize.
 			if (scale > 1)
 				scale = 1;
 			if (scale > 0)
@@ -288,8 +262,6 @@
 				bmp.scaleX = scale;
 				bmp.scaleY = scale;
 			}
-			// Smooth only when shrinking; at natural size keep it pixel-sharp (no blur). Round the
-			// position so a centered image lands on whole pixels, not a blurry half-pixel offset.
 			bmp.smoothing = scale < 1;
 			bmp.x = Math.round((halign == "center") ? (boxW - bmp.width) / 2 : (halign == "right") ? (boxW - bmp.width) : 0);
 			bmp.y = Math.round((valign == "center") ? (boxH - bmp.height) / 2 : (valign == "bottom") ? (boxH - bmp.height) : 0);
@@ -435,7 +407,6 @@
 			ui.addChild(checkbox);
 			checkbox.validateNow();
 
-			// Add pointer cursor to tooltip icon if available
 			var infoIcon:InfoIcon = checkbox['_infoIco'];
 
 			if (infoIcon)
@@ -578,11 +549,6 @@
 			dropdown.addEventListener(ListEvent.INDEX_CHANGE, handleComponentEvent);
 			dropdown['componentInspectorSetting'] = true;
 			dropdown.inspectableMenuOffset = {'top': -5, 'right': -6, 'bottom': 0, 'left': 3};
-			// When a scrollbar is shown, inset the popup rows on the right so the selected-row
-			// highlight clears the scrollbar. The clik ScrollingList reserves the bar's width
-			// for item layout (availableWidth), but the highlight skin still overshoots a few
-			// px; menuPadding.right shrinks each row renderer (drawLayout: renderer.width =
-			// availableWidth - padding.horizontal) without moving the row's left edge.
 			if (options.length > SCROLL_ITEM_LIMIT)
 				dropdown.inspectableMenuPadding = {'top': 0, 'right': 6, 'bottom': 0, 'left': 0};
 			dropdown['componentInspectorSetting'] = false;
@@ -837,9 +803,6 @@
 
 			label.x = 0;
 			label.y = 4;
-			// Hidden until the first real layout pass (when the hotkey VO arrives): the
-			// creation pass doesn't know the combo width yet, so revealing it then would
-			// flash the label full-width under the keys before it re-wraps.
 			label.visible = false;
 			ui.addChild(label);
 
@@ -860,13 +823,7 @@
 			var fullText:String = text;
 			var useHTML:Boolean = componentConfig.useHTML != false;
 
-			// Optional CSS-like float for the keys: 'right' lets a long label wrap around them
-			// (narrow beside the keys on top, full row width underneath); 'none' (default) keeps
-			// the label in the narrow column. tfBelow carries the under-the-keys lines.
 			var floatMode:String = componentConfig.hasOwnProperty('float') ? String(componentConfig.float) : 'none';
-			// Created but NOT added yet: an empty TextField defaults to 100x100 and would
-			// inflate every hotkey row's height even while invisible. It's added to ui only
-			// when a label actually wraps under the keys, and removed otherwise.
 			var tfBelow:TextField = new TextField();
 			tfBelow.autoSize = TextFieldAutoSize.NONE;
 			tfBelow.multiline = true;
@@ -883,23 +840,12 @@
 				if (tf == null)
 					return;
 				var prevH:Number = result.height;
-				// Real left edge of the combo (negative when a long combo grows leftwards);
-				// the label runs from x=0 up to a small gap before it.
 				var maxW:Number = Math.max(80, (hotkeyCtrl.x + hotkeyCtrl.comboLeft) - 10);
 
-				// Multi-line wrap to show the WHOLE label (no ellipsis). This used to flicker
-				// because a reload rebuilt the hotkey and the wrap fought the vanilla
-				// LabelControl (its validateNow resets wordWrap); with IN-PLACE reload the
-				// hotkey is reused (not rebuilt), so the wrap is set once and holds - no
-				// per-reload re-wrap, no oscillation.
 				tf.autoSize = TextFieldAutoSize.NONE;
 				tf.multiline = true;
 				tf.wordWrap = true;
 
-				// float='right': once the label is taller than the keys, the lines past the keys
-				// run the full row width underneath them (wrap-around), instead of staying in the
-				// narrow column. Plain text only - splitting by displayed-line offset would cut
-				// HTML tags, so a label with markup keeps the narrow layout.
 				var didWrap:Boolean = false;
 				if (floatMode == 'right' && fullText.indexOf('<') == -1)
 				{
@@ -931,7 +877,6 @@
 					tf.width = maxW;
 					if (useHTML) tf.htmlText = fullText; else tf.text = fullText;
 					tf.height = tf.textHeight + 4;
-					// Keep the empty field out of the display list so it adds no row height.
 					if (tfBelow.parent == ui)
 						ui.removeChild(tfBelow);
 				}
@@ -946,12 +891,6 @@
 
 			hotkeyCtrl.addEventListener(HotkeyControl.DISPLAY_CHANGED, layoutHotkeyRow);
 
-			// Render the hotkey from the template's display data at BUILD time, so the box,
-			// chips and key name exist on the first frame and the label wraps to the real
-			// combo width immediately. The separate as_setHotkeys seed (which can arrive a
-			// frame later) then changes nothing visible - eliminating the whole-mod blink
-			// (label hide->reveal) and the narrow->wide label re-wrap seen on reload. Falls
-			// back to the deferred reveal on the seed when no display data is supplied.
 			if (componentConfig.hotkey != null)
 				hotkeyCtrl.setData(new HotkeyControlVO(componentConfig.hotkey));
 			else
@@ -983,6 +922,116 @@
 			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new ValueProxy(colorChoice, 'color');
 			result['control'] = colorChoice;
 			result['setValue'] = function(v:*):void { colorChoice.color = String(v); };
+
+			return result;
+		}
+
+		public static function createCheckboxColor(componentConfig:Object, modLinkage:String, value:Object, text:String = '', tooltip:String = '', tooltipIcon:String = ''):DisplayObject
+		{
+			var ui:UIComponent = new UIComponent();
+
+			var enabled:Boolean = (value != null) && Boolean(value.enabled);
+			var colorValue:String = (value != null && value.color != null) ? String(value.color) : '000000';
+
+			var swatchX:Number = 315;
+			var labelX:Number = 20;
+
+			var maxW:Number = Math.max(60, swatchX - labelX - 10);
+			var useHTML:Boolean = componentConfig.useHTML != false;
+			var isPlain:Boolean = text.indexOf('<') < 0;
+
+			var firstLine:String = text;
+			var overflow:String = '';
+			var lineH:Number = 16;
+
+			var label:DisplayObject = ComponentsFactory.createLabel(text, '', '', useHTML);
+			var labelCtrl:LabelControl = label['label'] as LabelControl;
+			var tf:TextField = labelCtrl ? (labelCtrl['textField'] as TextField) : null;
+			if (tf != null)
+			{
+				tf.autoSize = TextFieldAutoSize.NONE;
+				tf.multiline = true;
+				tf.wordWrap = true;
+				tf.width = maxW;
+				if (useHTML) tf.htmlText = text; else tf.text = text;
+				lineH = tf.getLineMetrics(0).height;
+				if (isPlain && tf.numLines > 1)
+				{
+					var off:int = tf.getLineOffset(1);
+					firstLine = text.substring(0, off);
+					overflow = text.substring(off);
+				}
+			}
+
+			var checkbox:CheckBox = CheckBox(App.utils.classFactory.getComponent('CheckBox', CheckBox));
+
+			checkbox.label = useHTML ? firstLine : escapeHTML(firstLine);
+			checkbox.selected = enabled;
+			if (tooltip)
+			{
+				checkbox.toolTip = tooltip;
+				checkbox.infoIcoType = tooltipIcon ? tooltipIcon : InfoIcon.TYPE_INFO;
+			}
+			checkbox.x = 0;
+			checkbox.y = 0;
+			checkbox.width = swatchX - 6;
+			ui.addChild(checkbox);
+			checkbox.validateNow();
+
+			var infoIcon:InfoIcon = checkbox['_infoIco'];
+			if (infoIcon)
+				infoIcon.buttonMode = true;
+
+			checkbox.addEventListener(Event.SELECT, handleComponentEvent);
+
+			var colorChoice:ColorChoiceButton = App.utils.classFactory.getComponent('ColorChoiceButtonUI', ColorChoiceButton);
+
+			colorChoice.x = swatchX;
+			colorChoice.y = 0;
+			colorChoice.color = colorValue;
+			ui.addChild(colorChoice);
+			colorChoice.validateNow();
+
+			if (overflow != '' && tf != null)
+			{
+				var belowY:Number = (checkbox.textField != null ? checkbox.textField.y : 2) + lineH;
+
+				if (useHTML) tf.htmlText = overflow; else tf.text = overflow;
+				tf.height = tf.textHeight + 4;
+				label.x = labelX;
+				label.y = belowY;
+				(label as MovieClip).mouseEnabled = false;
+				(label as MovieClip).mouseChildren = false;
+
+				var lowerHit:MovieClip = new MovieClip();
+				lowerHit.graphics.beginFill(0, 0);
+				lowerHit.graphics.drawRect(0, 0, swatchX - 6, tf.height);
+				lowerHit.graphics.endFill();
+				lowerHit.x = 0;
+				lowerHit.y = belowY;
+				ui.addChild(lowerHit);
+				lowerHit.addEventListener(MouseEvent.CLICK, function(e:MouseEvent):void {
+					checkbox.selected = !checkbox.selected;
+					lowerHit.dispatchEvent(new InteractiveEvent(InteractiveEvent.VALUE_CHANGED));
+				});
+
+				ui.addChild(label);
+			}
+
+			var result:MovieClip = new MovieClip();
+
+			result.addChild(ui);
+
+			result[Constants.COMPONENT_RETURN_VALUE_KEY] = new CheckboxColorProxy(checkbox, colorChoice);
+			result['control'] = colorChoice;
+			result['setValue'] = function(v:*):void {
+				if (v != null)
+				{
+					checkbox.selected = Boolean(v.enabled);
+					if (v.color != null)
+						colorChoice.color = String(v.color);
+				}
+			};
 
 			return result;
 		}

@@ -121,7 +121,6 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
-		_logger.info("[ModsSettings API] settings window teardown: start")
 		if self._blur is not None:
 			self._blur.fini()
 			self._blur = None
@@ -135,9 +134,7 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		if hasattr(self.api, 'onResetMod'):
 			self.api.onResetMod -= self.__onResetMod
 		self.api.onWindowClosed()
-		_logger.info("[ModsSettings API] settings window teardown: disposing UI (Scaleform)")
 		super(ModsSettingsApiWindow, self)._dispose()
-		_logger.info("[ModsSettings API] settings window teardown: complete")
 
 	def requestModsData(self):
 		self.api.clearState()

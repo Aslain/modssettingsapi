@@ -5,6 +5,7 @@
 - enableWhen (value-conditional grey-out) + enableWhenAll (gate on several masters)
 - visibleWhen (hide + reflow instead of greying)
 - createControlsGroup (sub-options greyed while the master is off; indent=False keeps them flush)
+- createCheckboxColor (1.4.0): a checkbox + colour picker on one row, here doubling as a gating master
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
@@ -32,6 +33,8 @@ settings = {
 	'iconOpacity': 100,
 	'iconPulse': False,
 	'hpWarn': True,
+	'dmgNumbers': {'enabled': True, 'color': 'F23030'},
+	'dmgSize': 5,
 }
 
 
@@ -81,6 +84,16 @@ def buildTemplate():
 		templates.enableWhenAll(pulse, [{'varName': 'alertsOn', 'value': True},
 										{'varName': 'previewMode', 'value': 0}])
 		column2.append(pulse)
+
+	# CheckBoxColor (1.4.0) as a gating master: a checkbox + colour picker on one row, storing a
+	# {'enabled', 'color'} pair. Its 'enabled' half greys the size slider below when unchecked.
+	if hasattr(templates, 'createCheckboxColor'):
+		column2.append(templates.createCheckboxColor('Damage numbers', 'dmgNumbers',
+					settings['dmgNumbers']['enabled'], settings['dmgNumbers']['color']))
+		dmgSize = templates.createSlider('Damage number size', 'dmgSize', settings['dmgSize'], 1, 10, 1)
+		if hasattr(templates, 'enableWhen'):
+			templates.enableWhen(dmgSize, 'dmgNumbers', True)
+		column2.append(dmgSize)
 
 	# Image with a built-in label: the caption collapses/expands together with
 	# the image and can be live-updated via updateImage(label=...).
