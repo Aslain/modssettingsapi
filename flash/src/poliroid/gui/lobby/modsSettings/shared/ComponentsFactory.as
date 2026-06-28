@@ -1116,6 +1116,27 @@
 				button.iconOffsetLeft = componentConfig.button.hasOwnProperty('iconOffsetLeft') ? componentConfig.button.iconOffsetLeft : 0;
 			}
 
+			button.width = componentConfig.button.hasOwnProperty('width') ? componentConfig.button.width : 30;
+			button.height = componentConfig.button.hasOwnProperty('height') ? componentConfig.button.height : 25;
+
+			// Opt-in fixed positioning: defaults to false, so existing mods keep the original
+			// text-width-dependent positionX unless they explicitly request the new behaviour.
+			// This avoids any layout change for mods that already pass an unrelated 'width' value.
+			//
+			// Intended for CheckBox/RadioButtonGroup rows, where componentConfig.width was
+			// previously unused. For Dropdown rows componentConfig.width already sizes the
+			// dropdown control itself (see createDropdown) - using 'align: right' there would
+			// place the button on top of the dropdown's own right edge instead of next to it,
+			// so this should not be combined with Dropdown without adjusting that overlap.
+			if (componentConfig.button.hasOwnProperty('fixedPositioning') && componentConfig.button.fixedPositioning == true
+				&& componentConfig.hasOwnProperty('width'))
+			{
+				if (componentConfig.button.hasOwnProperty('align') && componentConfig.button.align == 'right')
+					positionX = Number(componentConfig.width) - button.width;  // right-aligned to the row's configured width
+				else
+					positionX = Number(componentConfig.width);  // button starts at a fixed x, ignoring label text length
+			}
+
 			button.x = positionX;
 			button.y = positionY;
 
@@ -1124,8 +1145,6 @@
 			if (componentConfig.button.hasOwnProperty('offsetTop'))
 				button.y += componentConfig.button.offsetTop;
 
-			button.width = componentConfig.button.hasOwnProperty('width') ? componentConfig.button.width : 30;
-			button.height = componentConfig.button.hasOwnProperty('height') ? componentConfig.button.height : 25;
 			button.validateNow();
 
 			return button;
