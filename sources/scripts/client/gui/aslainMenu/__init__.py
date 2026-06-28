@@ -6,7 +6,7 @@ __credits__ = ['Renat Iliev (izeberg) - original author',
 	'Andrii Andrushchyshyn (poliroid) - original contributor',
 	'Paul Ekshmidt (Kurzdor) - original maintainer']
 __license__ = 'CC BY-NC-SA 4.0'
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 __maintainer__ = 'Aslain'
 __doc__ = 'https://github.com/Aslain/modssettingsapi'
 

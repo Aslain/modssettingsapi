@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 1.4.1
+
+**Fixed**
+- A button attached to a `CheckBox` / `RadioButtonGroup` row (via `componentConfig.button`) can now be lined up by the row's configured `width` using an opt-in `button.fixedPositioning` flag, with an optional `button.align: 'right'`, instead of always sitting right after the label text. This lets a column of buttons align even when the labels have different lengths. The flag is opt-in, so existing mods are unchanged. Contributed by CH4MPi.
+
 ### 1.4.0
 
 **New for mod authors**
