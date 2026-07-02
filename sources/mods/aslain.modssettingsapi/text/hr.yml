@@ -14,3 +14,7 @@ reset/tooltip/header: Vraćanje postavki
 reset/tooltip/body: Vraća opcije ovog moda na zadane vrijednosti. Primijeni / OK zadržava, Odustani odbacuje.
 reset/confirm/message: Vratiti ovaj mod na zadane postavke?
 reset/confirm/submit: Vrati
+search/hits: pronađeno {0} od {1} modova
+colorchoice/preset/menu/edit: Uredi preset
+colorchoice/preset/menu/copyhex: Kopiraj hex kod
+colorchoice/preset/menu/clear: Očisti preset

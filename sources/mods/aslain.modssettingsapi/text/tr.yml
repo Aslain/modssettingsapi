@@ -14,3 +14,7 @@ reset/tooltip/header: Ayarları sıfırla
 reset/tooltip/body: Bu modun seçeneklerini varsayılana döndürür. Uygula / OK korur, İptal iptal eder.
 reset/confirm/message: Bu mod varsayılan ayarlara sıfırlansın mı?
 reset/confirm/submit: Sıfırla
+search/hits: {1} moddan {0} bulundu
+colorchoice/preset/menu/edit: Ön ayarı düzenle
+colorchoice/preset/menu/copyhex: Hex kodunu kopyala
+colorchoice/preset/menu/clear: Ön ayarı temizle

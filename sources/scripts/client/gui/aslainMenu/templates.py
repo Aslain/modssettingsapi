@@ -1,6 +1,5 @@
 from ._constants import COMPONENT_TYPE, CONDITION
 
-
 def createBase(type, text, tooltip=None, tooltipIcon=None, useHTML=True):
 	""" Helper to create base component
 
@@ -19,7 +18,6 @@ def createBase(type, text, tooltip=None, tooltipIcon=None, useHTML=True):
 	if tooltipIcon is not None:
 		base['tooltipIcon'] = tooltipIcon
 	return base
-
 
 def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create control component
@@ -42,7 +40,6 @@ def createControl(type, text, varName, value, tooltip=None, tooltipIcon=None, bu
 	if button is not None:
 		control['button'] = button
 	return control
-
 
 def generateOptions(entries):
 	""" Options generator for supported controls with tooltip generation support 
@@ -73,7 +70,6 @@ def generateOptions(entries):
 		options.append(option)
 	return options
 
-
 def createOptionsControl(type, text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create control with options component
 
@@ -95,7 +91,6 @@ def createOptionsControl(type, text, varName, options, value, tooltip=None, tool
 	control = createControl(type, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	control['options'] = generateOptions(options)
 	return control
-
 
 def createStepper(type, text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create stepper component (Slider, NumericStepper and RangeSlider)
@@ -122,7 +117,6 @@ def createStepper(type, text, varName, value, min, max, interval, tooltip=None, 
 	stepper = createControl(type, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	stepper.update({'minimum': min, 'maximum': max, 'snapInterval': interval})
 	return stepper
-
 
 def createButton(width=None, height=None, text=None, offsetTop=None, offsetLeft=None,
 				 icon=None, iconOffsetTop=None, iconOffsetLeft=None):
@@ -158,7 +152,6 @@ def createButton(width=None, height=None, text=None, offsetTop=None, offsetLeft=
 		button['iconOffsetLeft'] = iconOffsetLeft
 	return button
 
-
 def createEmpty(height=None):
 	""" Helper to create empty component
 	
@@ -170,7 +163,6 @@ def createEmpty(height=None):
 	if height is not None and isinstance(height, int):
 		component['height'] = height
 	return component
-
 
 def createLabel(text, tooltip=None, tooltipIcon=None, useHTML=True):
 	""" Helper to create Label component
@@ -185,7 +177,6 @@ def createLabel(text, tooltip=None, tooltipIcon=None, useHTML=True):
 	:return: Label component
 	"""
 	return createBase(COMPONENT_TYPE.LABEL, text, tooltip, tooltipIcon, useHTML)
-
 
 def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None, varName=None,
 				align=None, valign=None, containerWidth=None, containerHeight=None,
@@ -262,7 +253,6 @@ def createImage(source, width=None, height=None, tooltip=None, tooltipIcon=None,
 		component['atlas'] = atlas
 	return component
 
-
 def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create Checkbox component
 
@@ -281,7 +271,6 @@ def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=
 	"""
 	return createControl(COMPONENT_TYPE.CHECKBOX, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 
-
 def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create RadioButtonGroup component
 
@@ -299,7 +288,6 @@ def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipI
 	:return: RadioButtonGroup component
 	"""
 	return createOptionsControl(COMPONENT_TYPE.RADIO_BUTTON_GROUP, text, varName, options, value, tooltip, tooltipIcon, button, useHTML)
-
 
 def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Dropdown component
@@ -325,7 +313,6 @@ def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None
 	if width is not None:
 		control['width'] = width
 	return control
-
 
 def createSlider(text, varName, value, min, max, interval, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Slider component
@@ -358,7 +345,6 @@ def createSlider(text, varName, value, min, max, interval, format='{{value}}', t
 		stepper['width'] = width
 	return stepper
 
-
 def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create StepSlider component
 
@@ -385,7 +371,6 @@ def createStepSlider(text, varName, options, value, format='{{value}}', tooltip=
 		stepper['width'] = width
 	return stepper
 
-
 def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Input component
 
@@ -408,7 +393,6 @@ def createInput(text, varName, value, tooltip=None, tooltipIcon=None, button=Non
 	if width is not None:
 		control['width'] = width
 	return control
-
 
 def createNumericStepper(text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, manual=False, useHTML=True):
 	""" Helper to create NumericStepper component
@@ -438,7 +422,6 @@ def createNumericStepper(text, varName, value, min, max, interval, tooltip=None,
 	stepper['canManualInput'] = manual
 	return stepper
 
-
 def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=None, float='none', useHTML=True):
 	""" Helper to create Hotkey component
 
@@ -463,8 +446,7 @@ def createHotkey(text, varName, value, tooltip=None, tooltipIcon=None, button=No
 	control['float'] = float
 	return control
 
-
-def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
+def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True, presets=None, presetsOnly=False):
 	""" Helper to create ColorChoice component
 
 	:param text: Component text
@@ -477,35 +459,76 @@ def createColorChoice(text, varName, value, tooltip=None, tooltipIcon=None, butt
 	:param useHTML: When False, the label renders as plain text (the API escapes
 		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
 		labels (icons, <font>, <b>).
+	:param presets: Your mod's palette, shown as clickable preset rows in the color
+		picker (a list of up to 24 hex codes, with or without hash; the swatch matching
+		the current color is framed). When given, ONLY these colors are offered as
+		presets - the user's own editable palette is hidden in this picker. Leave None
+		(default) to show the user's palette instead; an empty list shows no presets.
+	:param presetsOnly: When True (needs presets), the picker is reduced to the preset
+		swatches and the Apply button - the spectrum, RGB sliders and hex input are
+		hidden, so the user can ONLY pick one of your preset colors.
 
 	:return: ColorChoice component
 	"""
 	if value.startswith('#'):
 		value = value.lstrip('#')
-	return createControl(COMPONENT_TYPE.COLOR_CHOICE, text, varName, value, tooltip, tooltipIcon, button, useHTML)
+	control = createControl(COMPONENT_TYPE.COLOR_CHOICE, text, varName, value, tooltip, tooltipIcon, button, useHTML)
+	if presets is not None:
+		control['presets'] = _normalizeColorPresets(presets)
+		if presetsOnly:
+			control['presetsOnly'] = True
+	return control
 
+def _normalizeColorPresets(presets):
+	""" Normalize a palette for the color picker's preset swatch row.
 
-def createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
+	Accepts any iterable of hex codes (with or without leading hash, any case);
+	invalid entries are dropped. Returns a list of lowercase 6-digit hex strings,
+	which is what the Flash side expects.
+	"""
+	normalized = []
+	try:
+		entries = list(presets)
+	except TypeError:
+		return normalized
+	for entry in entries:
+		try:
+			entry = str(entry).strip().lstrip('#').lower()
+		except Exception:
+			continue
+		if len(entry) == 6 and all(ch in '0123456789abcdef' for ch in entry):
+			normalized.append(entry)
+	return normalized
+
+def createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True, presets=None, presetsOnly=False):
 	""" Helper to create a Checkbox paired with a ColorChoice on a single row
 
-	The checkbox and the colour picker share one line: the checkbox (box + label) sits on the
-	left, the colour swatch on the right. A long label wraps onto extra lines under the
+	The checkbox and the color picker share one line: the checkbox (box + label) sits on the
+	left, the color swatch on the right. A long label wraps onto extra lines under the
 	checkbox and never runs under the swatch; the box, the first line and the tooltip icon stay
 	on the real checkbox, so the native click sound is preserved.
 
 	:param text: Component text (the checkbox label)
 	:param varName: Variable name bound to this component. Its stored value is a dict
-		{'enabled': <bool>, 'color': <hex str>} holding both the checkbox state and the colour,
+		{'enabled': <bool>, 'color': <hex str>} holding both the checkbox state and the color,
 		so read settings[varName]['enabled'] and settings[varName]['color'] in the callback.
 	:param value: Initial checkbox state
 	:type value: bool
-	:param color: Initial colour, hex code with or without leading hash
+	:param color: Initial color, hex code with or without leading hash
 	:type color: str
 	:param tooltip: Component tooltip, optional
 	:param tooltipIcon: Component tooltip icon, optional
 	:param button: Component button, optional
 	:param useHTML: When False, the label renders as plain text (the API escapes <, > and &)
 		instead of HTML. Default True keeps HTML labels (icons, <font>, <b>).
+	:param presets: Your mod's palette, shown as clickable preset rows in the color
+		picker (a list of up to 24 hex codes, with or without hash; the swatch matching
+		the current color is framed). When given, ONLY these colors are offered as
+		presets - the user's own editable palette is hidden in this picker. Leave None
+		(default) to show the user's palette instead; an empty list shows no presets.
+	:param presetsOnly: When True (needs presets), the picker is reduced to the preset
+		swatches and the Apply button - the spectrum, RGB sliders and hex input are
+		hidden, so the user can ONLY pick one of your preset colors.
 
 	:return: CheckBoxColor component
 	"""
@@ -513,8 +536,11 @@ def createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=N
 		color = color.lstrip('#')
 	compound = {'enabled': bool(value), 'color': color}
 	control = createControl(COMPONENT_TYPE.CHECKBOX_COLOR, text, varName, compound, tooltip, tooltipIcon, button, useHTML)
+	if presets is not None:
+		control['presets'] = _normalizeColorPresets(presets)
+		if presetsOnly:
+			control['presetsOnly'] = True
 	return control
-
 
 def createRangeSlider(text, varName, value, min, max, interval, step, minRange, labelStep, labelPostfix, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
 	""" Helper to create RangeSlider component
@@ -555,7 +581,6 @@ def createRangeSlider(text, varName, value, min, max, interval, step, minRange, 
 	})
 	return stepper
 
-
 def createControlsGroup(master, children, indent=True):
 	""" Bind a group of sub-option components to a master control
 
@@ -584,7 +609,6 @@ def createControlsGroup(master, children, indent=True):
 			child['masterIndent'] = False
 		group.append(child)
 	return group
-
 
 def enableWhen(control, masterVarName, value, indent=False, condition=CONDITION.EQUAL):
 	""" Enable a control only while a master control's value satisfies a condition
@@ -631,7 +655,6 @@ def enableWhen(control, masterVarName, value, indent=False, condition=CONDITION.
 	control['condition'] = condition
 	return control
 
-
 def visibleWhen(control, masterVarName, value, indent=False, condition=CONDITION.EQUAL):
 	""" Show a control only while a master control's value satisfies a condition
 
@@ -656,7 +679,6 @@ def visibleWhen(control, masterVarName, value, indent=False, condition=CONDITION
 	control['gateHides'] = True
 	return control
 
-
 def enableWhenAll(control, conditions, indent=False):
 	""" Enable a control only while ALL of several conditions match (logical AND)
 
@@ -677,7 +699,6 @@ def enableWhenAll(control, conditions, indent=False):
 	"""
 	return _setConditions(control, conditions, 'AND', False, indent)
 
-
 def enableWhenAny(control, conditions, indent=False):
 	""" Enable a control while ANY of several conditions match (logical OR)
 
@@ -687,7 +708,6 @@ def enableWhenAny(control, conditions, indent=False):
 	:return: The same control, so it can be used inline inside a column
 	"""
 	return _setConditions(control, conditions, 'OR', False, indent)
-
 
 def visibleWhenAll(control, conditions, indent=False):
 	""" Show a control only while ALL conditions match (AND); hide + reflow otherwise
@@ -701,7 +721,6 @@ def visibleWhenAll(control, conditions, indent=False):
 	"""
 	return _setConditions(control, conditions, 'AND', True, indent)
 
-
 def visibleWhenAny(control, conditions, indent=False):
 	""" Show a control while ANY condition matches (OR); hide + reflow otherwise
 
@@ -711,7 +730,6 @@ def visibleWhenAny(control, conditions, indent=False):
 	:return: The same control, so it can be used inline inside a column
 	"""
 	return _setConditions(control, conditions, 'OR', True, indent)
-
 
 def _setConditions(control, conditions, logic, hide, indent):
 	normalized = []
@@ -726,7 +744,6 @@ def _setConditions(control, conditions, logic, hide, indent):
 	if hide:
 		control['gateHides'] = True
 	return control
-
 
 def escape(text):
 	"""Escape &, < and > so literal text renders verbatim in an HTML menu label.

@@ -40,6 +40,7 @@ def generateLocalizationVO(userSettings):
 		'buttonApply': userSettings.get('buttonApply') or l10n('buttons/apply'),
 		'buttonClose': userSettings.get('buttonClose') or l10n('buttons/close'),
 		'searchPlaceholder': userSettings.get('searchPlaceholder') or l10n('search/placeholder'),
+		'searchHits': userSettings.get('searchHits') or l10n('search/hits'),
 	}
 
 
@@ -65,6 +66,12 @@ class ModsSettingsApiWindowMeta(View):
 
 	def requestModReset(self, linkage):
 		self._printOverrideError('requestModReset')
+
+	def saveUserColorPresets(self, data):
+		self._printOverrideError('saveUserColorPresets')
+
+	def saveScrollPosition(self, pos):
+		self._printOverrideError('saveScrollPosition')
 
 	def closeView(self):
 		self._printOverrideError('closeView')
@@ -97,6 +104,34 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			self.flashObject.as_resetMod(linkage, values)
 
+	def as_setUserColorPresetsS(self, presets):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_setUserColorPresets(presets)
+			except Exception:
+				pass
+
+	def as_userPresetActionS(self, action, slot):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_userPresetAction(action, slot)
+			except Exception:
+				pass
+
+	def as_setColorValueS(self, linkage, varName, color):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_setColorValue(linkage, varName, color)
+			except Exception:
+				pass
+
+	def as_setScrollPositionS(self, pos):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_setScrollPosition(pos)
+			except Exception:
+				pass
+
 	def onFocusIn(self, *args):
 		if self._isDAAPIInited():
 			return False
@@ -118,6 +153,10 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onReloadMod += self.__onReloadMod
 		if hasattr(self.api, 'onResetMod'):
 			self.api.onResetMod += self.__onResetMod
+		if hasattr(self.api, 'onUserPresetAction'):
+			self.api.onUserPresetAction += self.__onUserPresetAction
+		if hasattr(self.api, 'onColorValueSet'):
+			self.api.onColorValueSet += self.__onColorValueSet
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
@@ -133,6 +172,10 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onReloadMod -= self.__onReloadMod
 		if hasattr(self.api, 'onResetMod'):
 			self.api.onResetMod -= self.__onResetMod
+		if hasattr(self.api, 'onUserPresetAction'):
+			self.api.onUserPresetAction -= self.__onUserPresetAction
+		if hasattr(self.api, 'onColorValueSet'):
+			self.api.onColorValueSet -= self.__onColorValueSet
 		self.api.onWindowClosed()
 		super(ModsSettingsApiWindow, self)._dispose()
 
@@ -141,6 +184,10 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		self.as_setLocalizationS(generateLocalizationVO(self.api.userSettings))
 		self.as_setDataS(self.api.generateSettingsData())
 		self.as_setHotkeysS(self.api.getAllHotkeys())
+		if hasattr(self.api, 'getUserColorPresets'):
+			self.as_setUserColorPresetsS(self.api.getUserColorPresets())
+		if hasattr(self.api, 'getWindowScrollPosition'):
+			self.as_setScrollPositionS(self.api.getWindowScrollPosition())
 
 	def sendModsData(self, data):
 		data = byteify(json.loads(data))
@@ -182,6 +229,21 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		if hasattr(self.api, 'resetModToDefaults'):
 			self.api.resetModToDefaults(linkage)
 
+	def saveUserColorPresets(self, data):
+		try:
+			presets = byteify(json.loads(data))
+			if isinstance(presets, list) and hasattr(self.api, 'setUserColorPresets'):
+				self.api.setUserColorPresets(presets)
+		except Exception:
+			pass
+
+	def saveScrollPosition(self, pos):
+		try:
+			if hasattr(self.api, 'setWindowScrollPosition'):
+				self.api.setWindowScrollPosition(pos)
+		except Exception:
+			pass
+
 	def closeView(self):
 		self.api.saveState()
 		self.destroy()
@@ -201,6 +263,12 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 
 	def __onResetMod(self, linkage, values):
 		self.as_resetModS(linkage, values)
+
+	def __onUserPresetAction(self, action, slot):
+		self.as_userPresetActionS(action, slot)
+
+	def __onColorValueSet(self, linkage, varName, color):
+		self.as_setColorValueS(linkage, varName, color)
 
 
 def getViewSettings():

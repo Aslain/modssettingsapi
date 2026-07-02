@@ -14,3 +14,7 @@ reset/tooltip/header: Нулиране на настройки
 reset/tooltip/body: Връща настройките на този мод до стойностите по подразбиране. Приложи / OK запазва, Отказ отменя.
 reset/confirm/message: Да се възстановят ли настройките на този мод по подразбиране?
 reset/confirm/submit: Възстанови
+search/hits: намерени {0} от {1} мода
+colorchoice/preset/menu/edit: Редактиране на пресета
+colorchoice/preset/menu/copyhex: Копиране на hex кода
+colorchoice/preset/menu/clear: Изчистване на пресета

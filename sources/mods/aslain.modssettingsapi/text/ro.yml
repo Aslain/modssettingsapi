@@ -14,3 +14,7 @@ reset/tooltip/header: Resetare setări
 reset/tooltip/body: Readuce opțiunile acestui mod la valorile implicite. Aplică / OK păstrează, Anulează renunță.
 reset/confirm/message: Resetați acest mod la setările implicite?
 reset/confirm/submit: Resetează
+search/hits: {0} din {1} moduri găsite
+colorchoice/preset/menu/edit: Editează presetarea
+colorchoice/preset/menu/copyhex: Copiază codul hex
+colorchoice/preset/menu/clear: Golește presetarea

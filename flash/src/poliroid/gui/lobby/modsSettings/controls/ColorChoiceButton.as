@@ -13,10 +13,17 @@ package poliroid.gui.lobby.modsSettings.controls
 
 	public class ColorChoiceButton extends SoundButtonEx implements ISoundButtonEx
 	{
+		private static const POPUP_BOTTOM_MARGIN:int = 46;
+
 		public var hitAreaA:MovieClip;
 		public var colorFill:MovieClip;
 
+		public var contextLinkage:String = null;
+		public var contextVarName:String = null;
+
 		private var _color:String;
+		private var _presets:Array = null;
+		private var _presetsOnly:Boolean = false;
 
 		public function ColorChoiceButton()
 		{
@@ -52,18 +59,25 @@ package poliroid.gui.lobby.modsSettings.controls
 				var popup:ColorChoicePopup = App.utils.classFactory.getComponent('ColorChoicePopupUI', ColorChoicePopup);
 
 				popup.color = color;
-				popup.arrowDirection = getPopupArrowDirection();
+				popup.presetsOnly = _presetsOnly;
+				popup.presets = _presets;
+				popup.arrowDirection = getPopupArrowDirection(popup);
 				popup.position = getPopupPosition(popup);
 				popup.onValueChanged = onValueChanged;
 				popup.show();
 			}
+			else if (App.utils.commons.isRightButton(event) && contextLinkage != null && contextVarName != null)
+			{
+				App.contextMenuMgr.show(Constants.COLOR_VALUE_CONTEXT_MENU_HANDLER, this,
+					{'linkage': contextLinkage, 'varName': contextVarName, 'value': (_color != null ? _color : '')});
+			}
 		}
 
-		private function getPopupArrowDirection():int
+		private function getPopupArrowDirection(popup:ColorChoicePopup):int
 		{
 			var globalPos:Point = localToGlobal(new Point());
 			var globalPosY:int = globalPos.y / App.appScale >> 0;
-			var bottomOffset:int = globalPosY + Constants.MAX_BOTTOM_OFFSET;
+			var bottomOffset:int = globalPosY + popup.hitAreaA.height + POPUP_BOTTOM_MARGIN;
 
 			if (bottomOffset < App.appHeight)
 			{
@@ -78,7 +92,7 @@ package poliroid.gui.lobby.modsSettings.controls
 			var globalPos:Point = localToGlobal(new Point());
 			var globalPosX:int = globalPos.x / App.appScale >> 0;
 			var globalPosY:int = globalPos.y / App.appScale >> 0;
-			var bottomOffset:int = globalPosY + Constants.MAX_BOTTOM_OFFSET;
+			var bottomOffset:int = globalPosY + popup.hitAreaA.height + POPUP_BOTTOM_MARGIN;
 
 			globalPosX += width >> 1;
 			globalPosX -= popup.hitAreaA.width >> 1;
@@ -114,6 +128,26 @@ package poliroid.gui.lobby.modsSettings.controls
 		public function get color():String
 		{
 			return _color;
+		}
+
+		public function set presets(value:Array):void
+		{
+			_presets = value;
+		}
+
+		public function get presets():Array
+		{
+			return _presets;
+		}
+
+		public function set presetsOnly(value:Boolean):void
+		{
+			_presetsOnly = value;
+		}
+
+		public function get presetsOnly():Boolean
+		{
+			return _presetsOnly;
 		}
 	}
 }

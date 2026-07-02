@@ -14,3 +14,7 @@ reset/tooltip/header: Obnovení nastavení
 reset/tooltip/body: Vrátí volby tohoto modu na výchozí hodnoty. Použít / OK potvrdí, Zrušit zahodí.
 reset/confirm/message: Obnovit tento mod na výchozí nastavení?
 reset/confirm/submit: Obnovit
+search/hits: nalezeno {0} z {1} modů
+colorchoice/preset/menu/edit: Upravit předvolbu
+colorchoice/preset/menu/copyhex: Kopírovat hex kód
+colorchoice/preset/menu/clear: Vymazat předvolbu

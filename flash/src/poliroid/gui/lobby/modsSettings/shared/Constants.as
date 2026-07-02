@@ -41,6 +41,10 @@
 
 		public static const HOTKEY_CONTEXT_MENU_HANDLER:String = 'aslainMenuHotkeyContextMenuHandler';
 
+		public static const PRESET_CONTEXT_MENU_HANDLER:String = 'aslainMenuPresetContextMenuHandler';
+
+		public static const COLOR_VALUE_CONTEXT_MENU_HANDLER:String = 'aslainMenuColorValueContextMenuHandler';
+
 		public function Constants()
 		{
 			super();

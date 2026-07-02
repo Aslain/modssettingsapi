@@ -14,3 +14,7 @@ reset/tooltip/header: Palauta asetukset
 reset/tooltip/body: Palauttaa tämän modin asetukset oletusarvoihin. Käytä / OK säilyttää, Peruuta hylkää.
 reset/confirm/message: Palautetaanko tämä modi oletusasetuksiin?
 reset/confirm/submit: Palauta
+search/hits: löytyi {0}/{1} modia
+colorchoice/preset/menu/edit: Muokkaa esiasetusta
+colorchoice/preset/menu/copyhex: Kopioi hex-koodi
+colorchoice/preset/menu/clear: Tyhjennä esiasetus

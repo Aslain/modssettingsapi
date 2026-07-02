@@ -7,8 +7,8 @@ from external_strings_utils import unicode_from_utf8
 MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 
-VERSION = '1.4.1'
-VERSION_TUPLE = (1, 4, 1)
+VERSION = '1.5.0'
+VERSION_TUPLE = (1, 5, 0)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
@@ -31,8 +31,12 @@ VIEW_ALIAS = 'AslainMenuWindow'
 VIEW_SWF = 'aslainMenu.swf'
 
 HOTKEY_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuHotkeyContextMenuHandler'
+PRESET_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuPresetContextMenuHandler'
+COLOR_VALUE_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuColorValueContextMenuHandler'
 
 COLUMNS = ('column1', 'column2')
+
+USER_COLOR_PRESET_SLOTS = 48
 
 class COMPONENT_TYPE:
 	EMPTY = 'Empty'
@@ -50,7 +54,6 @@ class COMPONENT_TYPE:
 	RANGE_SLIDER = 'RangeSlider'
 	IMAGE = 'Image'
 
-
 class CONDITION:
 	EQUAL = '=='
 	NOT_EQUAL = '!='
@@ -60,23 +63,28 @@ class CONDITION:
 	LESS_EQUAL = '<='
 	ALL = (EQUAL, NOT_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)
 
-
 class LIVE_SETTINGS_MODE:
 	"""DEPRECATED since 1.2.0 - use the fullsettings flag of registerLiveSettingsChange instead; will be removed in a future version."""
 	FULL_SETTINGS = 'fullsettings'
 	CHANGED_ONLY = 'changedOnly'
 	ALL = (FULL_SETTINGS, CHANGED_ONLY)
 
-
 class HOTKEY_ACTIONS:
 	START_ACCEPT = 'startAccept'
 	STOP_ACCEPT = 'stopAccept'
-
 
 class HOTKEY_OPTIONS:
 	CLEAR_VALUE = 'clearValue'
 	RESET_TO_DEFAULT_VALUE = 'resetToDefaultValue'
 
+class PRESET_OPTIONS:
+	EDIT = 'presetEdit'
+	COPY_HEX = 'presetCopyHex'
+	CLEAR = 'presetClear'
+
+class COLOR_VALUE_OPTIONS:
+	RESET = 'colorValueReset'
+	COPY_HEX = 'colorValueCopyHex'
 
 class SPECIAL_KEYS:
 	KEY_ALT, KEY_CONTROL, KEY_SHIFT = range(-1, -4, -1)
@@ -90,7 +98,6 @@ class SPECIAL_KEYS:
 		for key in keys:
 			KEYS_TO_SPECIAL[key] = special
 	ALL = SPECIAL_TO_KEYS.keys()
-
 
 EXCLUDED_KEYS = {
 	Keys.KEY_NONE, Keys.KEY_RETURN,

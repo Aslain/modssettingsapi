@@ -14,3 +14,7 @@ reset/tooltip/header: Скидання налаштувань
 reset/tooltip/body: Повертає налаштування цього мода до типових значень. Застосувати / OK зберігає, Скасувати скасовує.
 reset/confirm/message: Скинути налаштування цього мода до типових значень?
 reset/confirm/submit: Скинути
+search/hits: знайдено {0} з {1} модів
+colorchoice/preset/menu/edit: Редагувати пресет
+colorchoice/preset/menu/copyhex: Копіювати hex-код
+colorchoice/preset/menu/clear: Очистити пресет

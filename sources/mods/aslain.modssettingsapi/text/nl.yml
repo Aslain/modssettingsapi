@@ -14,3 +14,7 @@ reset/tooltip/header: Instellingen herstellen
 reset/tooltip/body: Zet de opties van deze mod terug naar de standaardwaarden. Toepassen / OK behoudt het, Annuleren maakt het ongedaan.
 reset/confirm/message: Deze mod terugzetten naar de standaardinstellingen?
 reset/confirm/submit: Herstellen
+search/hits: {0} van {1} mods gevonden
+colorchoice/preset/menu/edit: Preset bewerken
+colorchoice/preset/menu/copyhex: Hex-code kopiëren
+colorchoice/preset/menu/clear: Preset wissen

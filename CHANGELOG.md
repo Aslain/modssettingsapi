@@ -1,5 +1,26 @@
 # CHANGELOG
 
+### 1.5.0
+
+**New in the color picker**
+- A personal **color palette**: up to 48 editable preset slots (rows of 12, revealed progressively — a fresh palette starts as a single row and grows as you fill it). Left-click a slot to pick its color, left-click an empty slot (+) to start defining it, right-click a filled slot for a context menu (**Edit preset / Copy hex code / Clear preset**), and **DEL** clears the slot being edited. While editing (gold frame) the slot follows every picked color live, and **Apply stores it without closing the picker**, so several presets can be defined in one go. The palette is shared by all mods, ships completely empty (the API hardcodes no colors) and is saved in `aslainmenu.dat`, so it survives game restarts and modpack reinstalls. The swatch matching the current color is always framed.
+- **Live preview**: while the cursor moves over the spectrum, the COLOR box previews the color under it — before any click; rolling out restores the selected color.
+
+**New in the settings window**
+- **Search upgrades**: a refreshed search field (magnifier inside, modern style) and a hit counter showing `found X of Y mods` as you type.
+- **Right-click menu on color controls**: right-click the color swatch next to any option to reset it to the mod's **default** or **copy its hex code** to the clipboard (bare value, e.g. `FF0000`).
+- The **Apply button counts pending changes** — `Apply (3)` means three options currently differ from their saved state; reverting a value drops it back out of the count.
+- **Jump highlight**: after clicking a letter on the A–Z bar (or when a search narrows to a single mod), the target mod's frame and title briefly pulse brighter, so the eye lands on it instantly.
+- The window **remembers its scroll position** within the current game session; a fresh game start begins at the top.
+
+**New for mod authors**
+- `createColorChoice(..., presets=[...])` and `createCheckboxColor(..., presets=[...])`: give the picker your mod's own palette (up to 24 hex codes, shown as one or two pick-only rows). When a mod supplies presets, **only those colors are offered as presets** — the user's editable palette is hidden in that picker. `None` (default) shows the user's palette; an empty list shows no preset rows at all.
+- `presetsOnly=True` (together with `presets`): reduce the picker to **just your preset swatches and the Apply button** — the spectrum, RGB sliders and hex input are hidden, so the user can only choose one of your colors (e.g. "pick 1 of these 8"). The popup width auto-fits the number of presets; the full picker's size is untouched.
+- Both are plain keyword arguments — on older API builds gate them on the version: `g_modsSettingsApi.getVersionTuple() >= (1, 5)`.
+
+**Fixed**
+- Clicking the spectrum on a color whose code starts with zero bytes (e.g. pure blue `0000FF`) produced a shortened hex code (`ff`), which was then stored as the option's value. The spectrum now always yields a full 6-digit code. Present in every earlier version (inherited from the original picker).
+
 ### 1.4.1
 
 **Fixed**
@@ -8,7 +29,7 @@
 ### 1.4.0
 
 **New for mod authors**
-- `templates.createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True)`: a checkbox paired with a colour picker on one row, the tick box and its label on the left and the colour swatch on the right. The stored value is a dict `{'enabled': <bool>, 'color': <hex str>}`, so read `settings[varName]['enabled']` and `settings[varName]['color']` in your callback. A long label wraps onto extra lines under the checkbox without ever running under the swatch. It works with `enableWhen` / `visibleWhen` (both as a gated control and as a master, where it gates on its `enabled` flag) and inside `createControlsGroup`, supports `tooltip` and `useHTML` like the other controls, and the per-mod reset button responds to its changes. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
+- `templates.createCheckboxColor(text, varName, value, color, tooltip=None, tooltipIcon=None, button=None, useHTML=True)`: a checkbox paired with a color picker on one row, the tick box and its label on the left and the color swatch on the right. The stored value is a dict `{'enabled': <bool>, 'color': <hex str>}`, so read `settings[varName]['enabled']` and `settings[varName]['color']` in your callback. A long label wraps onto extra lines under the checkbox without ever running under the swatch. It works with `enableWhen` / `visibleWhen` (both as a gated control and as a master, where it gates on its `enabled` flag) and inside `createControlsGroup`, supports `tooltip` and `useHTML` like the other controls, and the per-mod reset button responds to its changes. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
 
 ### 1.3.3
 

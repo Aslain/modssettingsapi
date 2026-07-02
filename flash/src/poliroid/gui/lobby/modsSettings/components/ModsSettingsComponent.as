@@ -49,6 +49,9 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _nameHovered:Boolean = false;
 		private var _arrowBright:HoverBrightener;
 		private var _nameBright:HoverBrightener;
+		private var _flashBright:HoverBrightener;
+		private var _flashFrames:int = 0;
+		private var _flashTicking:Boolean = false;
 		private var _resetButton:Sprite;
 		private var _resetColor:uint = 0xCCCCCC;
 		private var _resetting:Boolean = false;
@@ -71,13 +74,16 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
-		public function getConfigData():Object
+		public function getConfigData(excludeHotkeys:Boolean = false):Object
 		{
 			var result:Object = new Object();
 
 			for (var i:Number = 0; i < components.length; i++)
 			{
 				var component:Object = components[i];
+
+				if (excludeHotkeys && component.data.type == 'HotKey')
+					continue;
 
 				if ('varName' in component.data && component.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY] != null)
 					result[component.data.varName] = component.componentObject[Constants.COMPONENT_RETURN_VALUE_KEY].value;
@@ -89,13 +95,42 @@ package poliroid.gui.lobby.modsSettings.components
 			return result;
 		}
 
+		public function flashHighlight():void
+		{
+			if (_fieldSet == null)
+				return;
+
+			if (_flashBright == null)
+				_flashBright = new HoverBrightener(_fieldSet, Constants.HOVER_BRIGHTEN);
+
+			_flashFrames = 0;
+			_flashBright.on = true;
+
+			if (!_flashTicking)
+			{
+				_flashTicking = true;
+				addEventListener(Event.ENTER_FRAME, _flashTick);
+			}
+		}
+
+		private function _flashTick(event:Event):void
+		{
+			if (++_flashFrames < 15)
+				return;
+
+			_flashTicking = false;
+			removeEventListener(Event.ENTER_FRAME, _flashTick);
+
+			if (_flashBright != null)
+				_flashBright.on = false;
+		}
+
 		public function resetToValues(values:Object):void
 		{
 			if (values == null)
 				return;
 
 			_resetting = true;
-
 
 			for (var i:int = 0; i < components.length; i++)
 			{
@@ -659,7 +694,6 @@ package poliroid.gui.lobby.modsSettings.components
 
 			var defaults:Object = data.defaults;
 			var current:Object = getConfigData();
-
 
 			for (var i:int = 0; i < components.length; i++)
 			{

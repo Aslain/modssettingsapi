@@ -160,7 +160,7 @@ class Demo(object):
         ]
 
         if hasattr(templates, 'createCheckboxColor'):
-            column1.append(templates.createLabel('--- CheckBoxColor: checkbox + colour on one row ---'))
+            column1.append(templates.createLabel('--- CheckBoxColor: checkbox + color on one row ---'))
             column1.append(templates.createCheckboxColor('Damage', 'dccDmg', st['dccDmg']['enabled'], st['dccDmg']['color'], tooltip=TIP))
             column1.append(templates.createCheckboxColor('A long label to test wrapping onto its own extra lines under the checkbox', 'dccLong', st['dccLong']['enabled'], st['dccLong']['color'], tooltip=TIP))
             column1.append(templates.createCheckbox('Master: toggle to grey the 2 rows below', 'dccMaster', st['dccMaster']))
@@ -169,7 +169,7 @@ class Demo(object):
                 templates.createCheckboxColor('Gated CheckBoxColor', 'dccGated', st['dccGated']['enabled'], st['dccGated']['color'], tooltip=TIP),
                 'dccMaster', True, indent=True))
             column1.append(templates.createCheckboxColor('CheckBoxColor as master: uncheck to grey the row below', 'dccColMaster', st['dccColMaster']['enabled'], st['dccColMaster']['color']))
-            column1.append(_gate('enableWhen', templates.createSlider('Greyed by the checkbox+colour master above', 'dccColChild', st['dccColChild'], 1, 10, 1), 'dccColMaster', True, indent=True))
+            column1.append(_gate('enableWhen', templates.createSlider('Greyed by the checkbox+color master above', 'dccColChild', st['dccColChild'], 1, 10, 1), 'dccColMaster', True, indent=True))
 
         column2 = [
             templates.createLabel('--- visibleWhen: hides + reflows instead of greying ---'),

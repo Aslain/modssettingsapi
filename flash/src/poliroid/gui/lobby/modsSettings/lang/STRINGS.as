@@ -15,6 +15,7 @@
 		public static var RESET_CONFIRM_MESSAGE:String = "RESET_CONFIRM_MESSAGE";
 		public static var RESET_CONFIRM_SUBMIT:String = "RESET_CONFIRM_SUBMIT";
 		public static var POPUP_COLOR:String = "POPUP_COLOR";
+		public static var SEARCH_HITS:String = "";
 
 		public function STRINGS():void
 		{
@@ -34,6 +35,7 @@
 			RESET_CONFIRM_MESSAGE = vo.resetConfirmMessage;
 			RESET_CONFIRM_SUBMIT = vo.resetConfirmSubmit;
 			POPUP_COLOR = vo.popupColor;
+			SEARCH_HITS = vo.searchHits;
 		}
 	}
 }

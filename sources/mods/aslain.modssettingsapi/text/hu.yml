@@ -14,3 +14,7 @@ reset/tooltip/header: Beállítások visszaállítása
 reset/tooltip/body: Visszaállítja ennek a modnak a beállításait alapértelmezettre. Alkalmaz / OK megtartja, Mégse elveti.
 reset/confirm/message: Visszaállítja ezt a modot az alapértelmezett beállításokra?
 reset/confirm/submit: Visszaállítás
+search/hits: {0} találat {1} modból
+colorchoice/preset/menu/edit: Előbeállítás szerkesztése
+colorchoice/preset/menu/copyhex: Hex kód másolása
+colorchoice/preset/menu/clear: Előbeállítás törlése

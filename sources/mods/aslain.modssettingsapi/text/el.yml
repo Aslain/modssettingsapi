@@ -14,3 +14,7 @@ reset/tooltip/header: Επαναφορά ρυθμίσεων
 reset/tooltip/body: Επαναφέρει τις επιλογές αυτού του mod στις προεπιλογές. Εφαρμογή / OK τις κρατά, Άκυρο τις απορρίπτει.
 reset/confirm/message: Επαναφορά αυτού του mod στις προεπιλεγμένες ρυθμίσεις;
 reset/confirm/submit: Επαναφορά
+search/hits: βρέθηκαν {0} από {1} mods
+colorchoice/preset/menu/edit: Επεξεργασία preset
+colorchoice/preset/menu/copyhex: Αντιγραφή κωδικού hex
+colorchoice/preset/menu/clear: Καθαρισμός preset

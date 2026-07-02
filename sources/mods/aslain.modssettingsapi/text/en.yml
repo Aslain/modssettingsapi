@@ -14,3 +14,7 @@ reset/tooltip/header: Reset settings
 reset/tooltip/body: Set this mod's options back to their defaults. Apply / OK keeps it, Cancel discards.
 reset/confirm/message: Reset this mod to its default settings?
 reset/confirm/submit: Reset
+colorchoice/preset/menu/edit: Edit preset
+colorchoice/preset/menu/copyhex: Copy hex code
+colorchoice/preset/menu/clear: Clear preset
+search/hits: found {0} of {1} mods

@@ -17,12 +17,16 @@ package poliroid.gui.lobby.modsSettings.components
 	import net.wg.infrastructure.base.UIComponentEx;
 	import poliroid.gui.lobby.modsSettings.events.InteractiveEvent;
 	import poliroid.gui.lobby.modsSettings.data.ModsSettingsLocalizationVO;
+	import poliroid.gui.lobby.modsSettings.lang.STRINGS;
 	import poliroid.gui.lobby.modsSettings.shared.Constants;
 
 	public class ModsSettingsWindowHeader extends UIComponentEx
 	{
 		private static const SEARCH_WIDTH:Number = 150;
 		private static const SEARCH_CLOSE_GAP:Number = 32;
+		private static const SEARCH_ICON_INSET:Number = 7;
+		private static const SEARCH_TEXT_INDENT:Number = 20;
+		private static const SEARCH_CLEAR_ZONE:Number = 18;
 
 		public var titleTF:TextField;
 		public var closeButton:CloseButtonText;
@@ -31,8 +35,14 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _magnifier:Sprite;
 		private var _clearBtn:Sprite;
 		private var _placeholder:TextField;
+		private var _hitsTF:TextField;
 		private var _searchFocused:Boolean = false;
+		private var _searchAvailable:Boolean = true;
+		private var _baseTitle:String = '';
+		private var _modCount:int = -1;
 		private var _searchHint:String = "Search mods" + String.fromCharCode(0x2026);
+		private var _searchTfBaseW:Number = NaN;
+		private var _lastSearchText:String = '';
 
 		public function ModsSettingsWindowHeader()
 		{
@@ -73,20 +83,13 @@ package poliroid.gui.lobby.modsSettings.components
 
 			_magnifier = null;
 			_placeholder = null;
+			_hitsTF = null;
 
 			super.onDispose();
 		}
 
 		private function createSearch():void
 		{
-			_magnifier = new Sprite();
-			_magnifier.mouseEnabled = false;
-			_magnifier.graphics.lineStyle(1.5, Constants.TOOLBAR_TEXT_COLOR, 0.85);
-			_magnifier.graphics.drawCircle(5, 5, 4);
-			_magnifier.graphics.moveTo(8, 8);
-			_magnifier.graphics.lineTo(12, 12);
-			addChild(_magnifier);
-
 			_search = TextInput(App.utils.classFactory.getComponent('TextInput', TextInput));
 			_search.width = SEARCH_WIDTH;
 			_search.text = '';
@@ -96,6 +99,17 @@ package poliroid.gui.lobby.modsSettings.components
 			_search.addEventListener(FocusEvent.FOCUS_IN, onSearchFocusIn);
 			_search.addEventListener(FocusEvent.FOCUS_OUT, onSearchFocusOut);
 			_search.addEventListener(KeyboardEvent.KEY_DOWN, onSearchKeyDown);
+			applySearchIndent();
+
+			var iconColor:uint = (_search.textField != null) ? _search.textField.textColor : Constants.TOOLBAR_TEXT_COLOR;
+
+			_magnifier = new Sprite();
+			_magnifier.mouseEnabled = false;
+			_magnifier.graphics.lineStyle(1.5, iconColor, 1);
+			_magnifier.graphics.drawCircle(5, 5, 4);
+			_magnifier.graphics.moveTo(8, 8);
+			_magnifier.graphics.lineTo(12, 12);
+			addChild(_magnifier);
 
 			_placeholder = new TextField();
 			_placeholder.selectable = false;
@@ -108,6 +122,18 @@ package poliroid.gui.lobby.modsSettings.components
 			_placeholder.defaultTextFormat = fmt;
 			_placeholder.text = _searchHint;
 			addChild(_placeholder);
+
+			_hitsTF = new TextField();
+			_hitsTF.selectable = false;
+			_hitsTF.mouseEnabled = false;
+			_hitsTF.autoSize = TextFieldAutoSize.LEFT;
+			var hitsFmt:TextFormat = new TextFormat();
+			hitsFmt.font = "$FieldFont";
+			hitsFmt.size = 13;
+			hitsFmt.color = 0x959382;
+			_hitsTF.defaultTextFormat = hitsFmt;
+			_hitsTF.visible = false;
+			addChild(_hitsTF);
 
 			_clearBtn = new Sprite();
 			_clearBtn.buttonMode = true;
@@ -125,6 +151,8 @@ package poliroid.gui.lobby.modsSettings.components
 			addChild(_clearBtn);
 
 			layoutSearch();
+
+			setSearchAvailable(_searchAvailable);
 		}
 
 		public function updateStage(appWidth:Number, appHeight:Number):void
@@ -151,11 +179,65 @@ package poliroid.gui.lobby.modsSettings.components
 			_search.x = sx;
 			_search.y = cy - _search.height / 2;
 
-			_placeholder.x = sx + 6;
+			_placeholder.x = sx + 6 + SEARCH_TEXT_INDENT;
 			_placeholder.y = cy - _placeholder.height / 2;
 
-			centerSpriteOn(_magnifier, sx - 18, cy);
+			centerSpriteOn(_magnifier, sx + SEARCH_ICON_INSET, cy);
 			centerSpriteOn(_clearBtn, sx + SEARCH_WIDTH - 24, cy);
+
+			if (_hitsTF != null)
+			{
+				_hitsTF.x = sx - _hitsTF.width - 8;
+				_hitsTF.y = cy - _hitsTF.height / 2;
+			}
+		}
+
+		public function setSearchAvailable(available:Boolean):void
+		{
+			_searchAvailable = available;
+
+			if (_search != null)
+				_search.visible = available;
+
+			if (_clearBtn != null)
+				_clearBtn.visible = available && _search != null && (_search.text.length > 0);
+
+			if (_hitsTF != null && !available)
+				_hitsTF.visible = false;
+
+			updatePlaceholder();
+		}
+
+		public function setSearchResults(hits:int, total:int):void
+		{
+			if (_hitsTF == null)
+				return;
+
+			if (hits < 0 || !_searchAvailable)
+			{
+				_hitsTF.visible = false;
+				return;
+			}
+
+			var numHits:String = "<b><font color='#C8C8C8'>" + hits + "</font></b>";
+			var numTotal:String = "<b><font color='#C8C8C8'>" + total + "</font></b>";
+
+			_hitsTF.htmlText = STRINGS.SEARCH_HITS.split('{0}').join(numHits).split('{1}').join(numTotal);
+			_hitsTF.visible = true;
+
+			layoutSearch();
+		}
+
+		private function applySearchIndent():void
+		{
+			if (_search == null || _search.textField == null)
+				return;
+
+			if (isNaN(_searchTfBaseW))
+				_searchTfBaseW = _search.textField.width;
+
+			if (_search.textField.width != _searchTfBaseW - SEARCH_CLEAR_ZONE)
+				_search.textField.width = _searchTfBaseW - SEARCH_CLEAR_ZONE;
 		}
 
 		private function centerSpriteOn(s:Sprite, leftX:Number, centerY:Number):void
@@ -165,9 +247,22 @@ package poliroid.gui.lobby.modsSettings.components
 			s.y = centerY - b.top - b.height / 2;
 		}
 
+		public function setModCount(count:int):void
+		{
+			_modCount = count;
+			applyTitle();
+		}
+
+		private function applyTitle():void
+		{
+			if (titleTF != null)
+				titleTF.text = _baseTitle;
+		}
+
 		public function setLocalization(vo:ModsSettingsLocalizationVO):void
 		{
-			titleTF.text = vo.windowTitle;
+			_baseTitle = vo.windowTitle;
+			applyTitle();
 			closeButton.label = vo.buttonClose;
 			if (vo.searchPlaceholder != null && vo.searchPlaceholder != "")
 			{
@@ -179,7 +274,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 		public function focusSearch():void
 		{
-			if (_search == null || stage == null)
+			if (!_searchAvailable || _search == null || stage == null)
 				return;
 
 			if (_search.textField != null)
@@ -203,14 +298,27 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function updatePlaceholder():void
 		{
-			if (_placeholder != null && _search != null)
-				_placeholder.visible = (_search.text.length == 0) && !_searchFocused;
+			if (_placeholder == null || _search == null)
+				return;
+
+			var idle:Boolean = _searchAvailable && (_search.text.length == 0) && !_searchFocused;
+
+			_placeholder.visible = idle;
+
+			if (_magnifier != null)
+				_magnifier.visible = idle;
 		}
 
 		private function onSearchInput(event:InputEvent):void
 		{
+			applySearchIndent();
 			updatePlaceholder();
 			_clearBtn.visible = (_search.text.length > 0);
+
+			if (_search.text == _lastSearchText)
+				return;
+
+			_lastSearchText = _search.text;
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.SEARCH, '', '', _search.text));
 		}
 
@@ -220,7 +328,9 @@ package poliroid.gui.lobby.modsSettings.components
 				return;
 
 			_search.text = '';
+			_lastSearchText = '';
 			_search.validateNow();
+			applySearchIndent();
 			updatePlaceholder();
 
 			if (_clearBtn != null)
@@ -232,6 +342,7 @@ package poliroid.gui.lobby.modsSettings.components
 		private function onClearClick(event:MouseEvent):void
 		{
 			clearSearch();
+			blurSearch();
 		}
 
 		private function onSearchFocusIn(event:FocusEvent):void
@@ -270,6 +381,7 @@ package poliroid.gui.lobby.modsSettings.components
 				return;
 
 			_searchFocused = focused;
+			applySearchIndent();
 			updatePlaceholder();
 
 			if (_search != null)

@@ -49,6 +49,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onImageAtlasUpdate = Event.Event()
 		self.onReloadMod = Event.Event()
 		self.onResetMod = Event.Event()
+		self.onUserPresetAction = Event.Event()
+		self.onColorValueSet = Event.Event()
 
 		self.onWindowOpened += self._resetLiveSettingsBaseline
 		self.onWindowClosed += self._stopHotkeyAcceptOnClose
@@ -238,6 +240,83 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			'data': cPickle.dumps(data, -1),
 		}
 		self.saveState()
+
+	def getUserColorPresets(self):
+		""" User palette for the color picker: a list of exactly 48 slots (up to four
+		rows, revealed progressively), each a lowercase 6-digit hex string or None for an
+		empty slot. Slots start empty - the API ships no colors of its own. Stored under
+		its own top-level state key, which older builds simply ignore (and carry through
+		on save unchanged); shorter stored palettes are padded with empty slots. """
+		presets = self.state.get('userColorPresets')
+		return self._normalizeUserColorPresets(presets if isinstance(presets, list) else [])
+
+	def setUserColorPresets(self, presets):
+		self.state['userColorPresets'] = self._normalizeUserColorPresets(presets)
+		self.saveState()
+
+	def userPresetAction(self, action, slot):
+		""" Relay a color-preset context menu pick (edit / clear) to the open picker. """
+		self._fireEvent('onUserPresetAction', action, int(slot))
+
+	def getWindowScrollPosition(self):
+		""" Scroll memory is intentionally session-only: reopening the window mid-session
+		returns to the same spot, but a fresh game start begins at the top. """
+		try:
+			return max(0.0, float(getattr(self, '_sessionWindowScroll', 0.0)))
+		except Exception:
+			return 0.0
+
+	def setWindowScrollPosition(self, pos):
+		try:
+			self._sessionWindowScroll = max(0.0, float(pos))
+			if 'windowScroll' in self.state:
+				del self.state['windowScroll']
+				self.saveState()
+		except Exception:
+			pass
+
+	def getColorValueDefault(self, linkage, varName):
+		""" Default color of one color control, as a hex string, or None when unknown.
+		For CheckBoxColor the stored default is a {'enabled': ..., 'color': ...} dict,
+		so the color part is extracted. """
+		try:
+			default = self.state.get('defaults', {}).get(linkage, {}).get(varName)
+			if isinstance(default, dict):
+				default = default.get('color')
+			if default is None:
+				return None
+			default = str(default).lstrip('#').lower()
+			if len(default) == 6 and all(ch in '0123456789abcdef' for ch in default):
+				return default
+		except Exception:
+			pass
+		return None
+
+	def requestColorValueReset(self, linkage, varName):
+		""" Context menu pick: push the control's default color back to the open window,
+		where it is applied exactly like a manual pick (so Apply / OK persist it). """
+		default = self.getColorValueDefault(linkage, varName)
+		if default is not None:
+			self._fireEvent('onColorValueSet', linkage, varName, default)
+
+	@staticmethod
+	def _normalizeUserColorPresets(presets):
+		try:
+			entries = list(presets)
+		except TypeError:
+			entries = []
+		normalized = []
+		for entry in entries[:USER_COLOR_PRESET_SLOTS]:
+			try:
+				entry = str(entry).strip().lstrip('#').lower() if entry is not None else None
+			except Exception:
+				entry = None
+			if entry is not None and not (len(entry) == 6 and all(ch in '0123456789abcdef' for ch in entry)):
+				entry = None
+			normalized.append(entry)
+		while len(normalized) < USER_COLOR_PRESET_SLOTS:
+			normalized.append(None)
+		return normalized
 
 	def updateModSettings(self, linkage, newSettings):
 		self.state['settings'][linkage] = newSettings

@@ -14,3 +14,7 @@ reset/tooltip/header: Redefinir configurações
 reset/tooltip/body: Restaura as opções deste mod para os valores padrão. Aplicar / OK mantém, Cancelar descarta.
 reset/confirm/message: Redefinir este mod para as configurações padrão?
 reset/confirm/submit: Redefinir
+search/hits: {0} de {1} mods encontrados
+colorchoice/preset/menu/edit: Editar predefinição
+colorchoice/preset/menu/copyhex: Copiar código hex
+colorchoice/preset/menu/clear: Limpar predefinição

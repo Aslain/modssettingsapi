@@ -14,3 +14,7 @@ reset/tooltip/header: Einstellungen zurücksetzen
 reset/tooltip/body: Setzt die Optionen dieses Mods auf die Standardwerte zurück. Übernehmen / OK behält sie, Abbrechen verwirft.
 reset/confirm/message: Diesen Mod auf die Standardeinstellungen zurücksetzen?
 reset/confirm/submit: Zurücksetzen
+search/hits: {0} von {1} Mods gefunden
+colorchoice/preset/menu/edit: Preset bearbeiten
+colorchoice/preset/menu/copyhex: Hex-Code kopieren
+colorchoice/preset/menu/clear: Preset leeren

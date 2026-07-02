@@ -8,7 +8,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 
 - **Collapse / expand** each mod, plus a **Collapse All / Expand All** toolbar button, to keep a long settings list tidy.
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
-- **Mod search**: a search box in the window header filters the mod list by name as you type — magnifier, an "×" clear button and a "Search mods" placeholder. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded) and the list scrolls to them, and clearing it restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps.
+- **Mod search**: a search box in the window header filters the mod list by name as you type — a magnifier inside the field (it hides while you type), an "×" clear button and a "Search mods" placeholder. A hit counter left of the field shows `found X of Y mods`. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded), a search narrowing to a single mod briefly highlights it, and clearing the box restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps. With only one mod installed the search hides entirely.
 - **Per-mod reset**: a rotate icon below each mod's on/off switch (shown while the mod is expanded) restores that mod's options **and hotkeys** to their defaults. Dimmed when nothing differs from the defaults (or the mod is off), bright once something changes. Clicking it asks to confirm — a small dialog with the mod's name and **Reset** / **Cancel**, drawn on top inside the menu (localized in all 25 languages; skippable via the `resetSkipConfirm` user setting). On confirm the control reset is live (**Apply / OK** keeps it, **Cancel** reverts); hotkeys reset immediately; the mod's on/off state is never touched. Works automatically for every mod (no API call needed).
 - Mods list **sorted by the shown name** (case-insensitive), ignoring a leading badge or symbol; a registered translation orders the mod under its translated name, and names not in the Latin alphabet (e.g. Cyrillic) sort after the Latin-named ones.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on. Pass `indent=False` to keep the children un-indented (so a wide group doesn't crowd the second column).
@@ -17,7 +17,11 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **Multiple conditions (AND / OR)** via `templates.enableWhenAll` / `enableWhenAny` (plus `visibleWhenAll` / `visibleWhenAny`): gate a control on more than one master at once — `*All` requires every condition (AND), `*Any` requires at least one (OR).
 - **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, collapse its slot with `updateImage(..., removeImage=True)`, or start it collapsed via `createImage(..., collapsed=True)`. An optional built-in `label` (with `labelAlign`) renders above the image, collapses together with it and can be live-updated too. Image sources are plain root-relative paths resolved from the WoT root.
 - **Sprite-sheet animation** in an `Image` slot: `createImage(atlas={...})` plays a looping animation from a single sheet the moment the menu opens, and `updateImageAtlas(...)` switches it live — one image blitted frame-by-frame (`copyPixels` on a timer) instead of hundreds of frame files, light even at a high `fps`.
-- **Checkbox + colour picker on one row** via `templates.createCheckboxColor(text, varName, value, color, ...)`: a tick box with its label on the left and a colour swatch on the right, storing a `{'enabled': <bool>, 'color': <hex>}` pair under one name. A long label wraps onto extra lines under the checkbox without running under the swatch, and it slots into `enableWhen` / `visibleWhen` / `createControlsGroup` like any other control.
+- **Checkbox + color picker on one row** via `templates.createCheckboxColor(text, varName, value, color, ...)`: a tick box with its label on the left and a color swatch on the right, storing a `{'enabled': <bool>, 'color': <hex>}` pair under one name. A long label wraps onto extra lines under the checkbox without running under the swatch, and it slots into `enableWhen` / `visibleWhen` / `createControlsGroup` like any other control.
+- **Personal color palette** in the color picker: up to 48 editable preset slots shared by all mods (rows of 12, revealed as you fill them; starts empty). Left-click picks a color, left-click on an empty slot (+) starts defining it, right-click a filled slot opens a context menu (**Edit preset / Copy hex code / Clear preset**), **DEL** clears the slot being edited. While editing (gold frame) the slot follows every picked color live and **Apply saves it without closing the picker**. Saved in `aslainmenu.dat`, so it survives restarts and reinstalls.
+- **Color picker & color control QoL**: the COLOR box live-previews the color under the cursor while it moves over the spectrum, and right-clicking the color swatch next to an option (main view) offers **reset to the mod's default** and **copy hex code** (bare value).
+- **Mod-defined picker palettes** via `createColorChoice(..., presets=[...], presetsOnly=False)` (and the same on `createCheckboxColor`): supply up to 24 colors shown as pick-only preset rows — when given, only your colors are offered (the user palette hides in that picker). With `presetsOnly=True` the picker reduces to just your swatches and Apply (no spectrum / sliders / hex input), its width auto-fitting the palette — "pick 1 of these 8".
+- **Window QoL**: the Apply button counts pending changes (`Apply (3)`, options differing from their saved state; reverting a value drops it out), jumping via the A-Z bar briefly highlights the target mod's frame and title, and the window remembers its scroll position within the game session.
 - **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage; pass `fullsettings=False` to receive only the changed keys instead of the full dict — the old `mode='changedOnly'` form is deprecated) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window — only the controls that actually changed are rebuilt, the rest reused in place.
 - **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) — the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
 - **Plain-text labels**: pass `useHTML=False` to any `create*` control to render its label verbatim (so a literal `<` / `>` / `&` shows instead of being parsed as HTML markup), or `templates.escape(text)` to escape just a fragment of an otherwise-HTML label. Default `useHTML=True` keeps HTML labels (icons, `<font>`, `<b>`).
@@ -68,9 +72,17 @@ column += templates.createControlsGroup(
     templates.createCheckbox('Enable group', 'grp', True),
     [templates.createSlider('Volume', 'vol', 5, 0, 10, 1)])
 
-# Checkbox + colour picker on one row; stored value is {'enabled': bool, 'color': hex}
+# Checkbox + color picker on one row; stored value is {'enabled': bool, 'color': hex}
 templates.createCheckboxColor('Damage numbers', 'dmg', True, 'F23030')
 #   read in onModSettingsChanged: settings['dmg']['enabled'], settings['dmg']['color']
+
+# Color picker with your mod's own palette (pick-only rows; hides the user palette)
+templates.createColorChoice('Marker color', 'marker', 'FF0000',
+                            presets=['FF0000', '00FF00', 'FF00FF'])
+
+# ...and restricted to those colors only (compact picker: swatches + Apply, nothing else)
+templates.createColorChoice('Team color', 'team', 'FF0000',
+                            presets=['FF0000', '00FF00', 'FF00FF'], presetsOnly=True)
 
 # Grey a control unless another control's value passes a test
 templates.enableWhen(templates.createSlider('Fine tune', 'fine', 5, 1, 10, 1),
@@ -190,23 +202,52 @@ templates.enableWhenAny(templates.createCheckbox('Shortcut', 'shortcut', False),
 
 `visibleWhenAll` / `visibleWhenAny` work the same way but hide the control (like `visibleWhen`) instead of greying it. Feature-detect with `hasattr(templates, 'enableWhenAll')`; older builds leave the control always-enabled.
 
-### Checkbox with a colour picker (`createCheckboxColor`)
+### Checkbox with a color picker (`createCheckboxColor`)
 
-`createCheckboxColor` puts a checkbox and a colour picker on one row: the tick box and its label on the left, the colour swatch on the right. It stores both halves under one `varName` as a dict, so a single setting carries an on/off flag and a colour together:
+`createCheckboxColor` puts a checkbox and a color picker on one row: the tick box and its label on the left, the color swatch on the right. It stores both halves under one `varName` as a dict, so a single setting carries an on/off flag and a color together:
 
 ```python
 templates.createCheckboxColor('Damage numbers', 'dccDmg', True, 'F23030', tooltip=tip)
 ```
 
-The stored value is `{'enabled': <bool>, 'color': <hex str>}` (colour without the leading `#`), so read it like this:
+The stored value is `{'enabled': <bool>, 'color': <hex str>}` (color without the leading `#`), so read it like this:
 
 ```python
 def onModSettingsChanged(self, linkage, settings):
     on = settings['dccDmg']['enabled']
-    colour = settings['dccDmg']['color']
+    color = settings['dccDmg']['color']
 ```
 
 A long label wraps onto extra lines under the checkbox without ever running under the swatch (the box, the first line and the tooltip icon stay on a real checkbox, so clicking toggles with the usual sound). It works as both a gated control and a gating master in `enableWhen` / `visibleWhen` (as a master it gates on its `enabled` flag), and inside `createControlsGroup`. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
+
+### Color presets in the picker (`presets` / `presetsOnly`)
+
+By default the color picker shows the **user's own palette** — up to 48 editable slots shared across all mods, saved between sessions, starting empty. A mod can bring its own palette instead:
+
+```python
+# up to 24 colors, shown as one or two pick-only rows at the bottom of the picker;
+# when a mod supplies presets, ONLY these are offered (the user palette hides here)
+templates.createColorChoice('Marker color', 'marker', 'FF0000',
+                            presets=['FF0000', '00FF00', 'FF00FF'])
+```
+
+Add `presetsOnly=True` to **restrict** the choice to those colors: the picker reduces to just the preset swatches and the Apply button — no spectrum, no RGB sliders, no hex input — and its width auto-fits the palette:
+
+```python
+# the user can pick exactly one of these three colors, nothing else
+templates.createColorChoice('Team color', 'team', 'FF0000',
+                            presets=['FF0000', '00FF00', 'FF00FF'], presetsOnly=True)
+```
+
+Both parameters also exist on `createCheckboxColor`. `presets=None` (default) keeps the user palette; `presets=[]` shows no preset rows at all. Hex codes may come with or without the leading `#`, any case; invalid entries are dropped. Both are plain keyword arguments, so on older API builds gate them on the version:
+
+```python
+if g_modsSettingsApi.getVersionTuple() >= (1, 5):
+    column2.append(templates.createColorChoice('Team color', 'team', 'FF0000',
+                                               presets=TEAM_COLORS, presetsOnly=True))
+else:
+    column2.append(templates.createColorChoice('Team color', 'team', 'FF0000'))
+```
 
 ### Wrapping a long hotkey label
 
@@ -289,7 +330,7 @@ if apiVersion >= (1, 2):
 
 **aslainMenu-only - guard before use:**
 
-- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`
+- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`, the `presets` / `presetsOnly` arguments of `createColorChoice` / `createCheckboxColor` (version-gate these two: `getVersionTuple() >= (1, 5)`)
 - `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`
 
 ## Dependencies

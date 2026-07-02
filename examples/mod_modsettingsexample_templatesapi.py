@@ -61,11 +61,23 @@ if hasattr(templates, 'enableWhen'):
 	template['column2'].append(templates.enableWhen(templates.createSlider('Minimap blink count', 'blinkCount', 3, 1, 10, 1), 'spotMode', 0))
 	template['column2'].append(templates.enableWhen(templates.createDropdown('Chat phrase', 'chatPhrase', ['Help!', 'SOS', 'Spotted'], 0), 'spotMode', 1))
 
-# createCheckboxColor (aslainMenu-only): a checkbox paired with a colour picker on one row. The
+# createCheckboxColor (aslainMenu-only): a checkbox paired with a color picker on one row. The
 # stored value is a dict, read as settings['checkboxColor']['enabled'] and ['color'].
 if hasattr(templates, 'createCheckboxColor'):
 	template['column2'].append(templates.createCheckboxColor('CheckBoxColor test', 'checkboxColor', True, 'FFCC00',
-								tooltip='{HEADER}CheckBoxColor tooltip header{/HEADER}{BODY}A checkbox and a colour picker on one row; the value is a dict with enabled and color{/BODY}'))
+								tooltip='{HEADER}CheckBoxColor tooltip header{/HEADER}{BODY}A checkbox and a color picker on one row; the value is a dict with enabled and color{/BODY}'))
+
+# presets / presetsOnly (aslainMenu 1.5.0+): give the color picker your mod's own palette.
+# With presets, ONLY those colors are offered as preset rows (the user's editable palette is
+# hidden in that picker); presetsOnly=True reduces the picker to the swatches + Apply, so the
+# user can pick exactly one of your colors. Plain keyword arguments - gate them on the version.
+if hasattr(g_modsSettingsApi, 'getVersionTuple') and g_modsSettingsApi.getVersionTuple() >= (1, 5):
+	template['column2'].append(templates.createColorChoice('Marker color (mod palette)', 'markerColor', 'FF0000',
+								tooltip='{HEADER}Mod palette{/HEADER}{BODY}The picker offers this mod\'s own preset row; any color can still be mixed freely{/BODY}',
+								presets=['FF0000', 'FF7F00', 'FFD700', '00FF00', '00FFFF', 'FF00FF']))
+	template['column2'].append(templates.createColorChoice('Team color (restricted)', 'teamColor', 'FF0000',
+								tooltip='{HEADER}Restricted palette{/HEADER}{BODY}presetsOnly=True: the picker shrinks to the preset swatches and Apply, so exactly one of these colors can be chosen{/BODY}',
+								presets=['FF0000', '00FF00', 'FF00FF'], presetsOnly=True))
 
 
 settings = {
@@ -79,6 +91,8 @@ settings = {
 	'numStepperTest' : 5,
 	'colorChoice' : 'FFFFFF',
 	'checkboxColor' : {'enabled': True, 'color': 'FFCC00'},
+	'markerColor' : 'FF0000',
+	'teamColor' : 'FF0000',
 	'rangeSlider' : [20, 50],
 	'stepSliderTest': 0
 }

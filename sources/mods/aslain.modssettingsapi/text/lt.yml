@@ -14,3 +14,7 @@ reset/tooltip/header: Nustatymų atstatymas
 reset/tooltip/body: Grąžina šio modo parinktis į numatytąsias reikšmes. Taikyti / OK išsaugo, Atšaukti atmeta.
 reset/confirm/message: Atstatyti šį modą į numatytuosius nustatymus?
 reset/confirm/submit: Atstatyti
+search/hits: rasta {0} iš {1} modų
+colorchoice/preset/menu/edit: Redaguoti parinktį
+colorchoice/preset/menu/copyhex: Kopijuoti hex kodą
+colorchoice/preset/menu/clear: Išvalyti parinktį

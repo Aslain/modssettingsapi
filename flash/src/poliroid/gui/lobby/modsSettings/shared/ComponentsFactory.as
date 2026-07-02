@@ -913,6 +913,13 @@
 			colorChoice.x = 315;
 			colorChoice.y = 0;
 			colorChoice.color = value;
+			colorChoice.contextLinkage = modLinkage;
+			colorChoice.contextVarName = String(componentConfig.varName);
+			if (componentConfig.presets is Array)
+			{
+				colorChoice.presetsOnly = componentConfig.presetsOnly == true;
+				colorChoice.presets = componentConfig.presets as Array;
+			}
 
 			ui.addChild(colorChoice);
 
@@ -989,6 +996,13 @@
 			colorChoice.x = swatchX;
 			colorChoice.y = 0;
 			colorChoice.color = colorValue;
+			colorChoice.contextLinkage = modLinkage;
+			colorChoice.contextVarName = String(componentConfig.varName);
+			if (componentConfig.presets is Array)
+			{
+				colorChoice.presetsOnly = componentConfig.presetsOnly == true;
+				colorChoice.presets = componentConfig.presets as Array;
+			}
 			ui.addChild(colorChoice);
 			colorChoice.validateNow();
 

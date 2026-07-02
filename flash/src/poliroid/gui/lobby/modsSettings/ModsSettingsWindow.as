@@ -14,6 +14,8 @@ package poliroid.gui.lobby.modsSettings
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowContent;
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowFooter;
 	import poliroid.gui.lobby.modsSettings.components.ModsSettingsWindowHeader;
+	import poliroid.gui.lobby.modsSettings.controls.ColorChoiceButton;
+	import poliroid.gui.lobby.modsSettings.controls.ColorChoicePopup;
 	import poliroid.gui.lobby.modsSettings.controls.ResetConfirmDialog;
 	import poliroid.gui.lobby.modsSettings.data.HotkeyControlVO;
 	import poliroid.gui.lobby.modsSettings.data.ModsSettingsLocalizationVO;
@@ -35,6 +37,8 @@ package poliroid.gui.lobby.modsSettings
 		public var hotkeyAction:Function;
 		public var setModCollapsed:Function;
 		public var requestModReset:Function;
+		public var saveUserColorPresets:Function;
+		public var saveScrollPosition:Function;
 		public var closeView:Function;
 
 		private var modsArray:Array;
@@ -51,6 +55,10 @@ package poliroid.gui.lobby.modsSettings
 		private var _skipResetConfirm:Boolean = false;
 		private var _appW:Number = 0;
 		private var _appH:Number = 0;
+		private var _pendingScroll:Number = 0;
+		private var _pendingScrollTries:int = 0;
+		private var _baseline:Object = new Object();
+		private var _changedCounts:Object = new Object();
 
 		public function ModsSettingsWindow():void
 		{
@@ -94,11 +102,14 @@ package poliroid.gui.lobby.modsSettings
 			_resetConfirm.addEventListener(InteractiveEvent.RESET_CONFIRMED, onResetConfirmed);
 			addChild(_resetConfirm);
 
+			ColorChoicePopup.saveHandler = onUserPresetsSave;
+
 			requestModsData();
 		}
 
 		override protected function onDispose():void
 		{
+			App.utils.scheduler.cancelTask(applyPendingScroll);
 			App.gameInputMgr.clearKeyHandler(Keyboard.ESCAPE, KeyboardEvent.KEY_DOWN, onEscapeKeyDownHandler);
 			App.gameInputMgr.clearKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_DOWN, onCtrlKeyDownHandler);
 			App.gameInputMgr.clearKeyHandler(Keyboard.CONTROL, KeyboardEvent.KEY_UP, onCtrlKeyUpHandler);
@@ -132,6 +143,8 @@ package poliroid.gui.lobby.modsSettings
 				_resetConfirm.dispose();
 				_resetConfirm = null;
 			}
+
+			ColorChoicePopup.saveHandler = null;
 
 			header = null;
 			content = null;
@@ -186,11 +199,85 @@ package poliroid.gui.lobby.modsSettings
 				var mod:ModsSettingsComponent = content.addMod(template);
 
 				modsArray.push(mod);
+				snapshotBaseline(mod);
 			}
 
 			content.reflowMods();
 
 			updateToolbarState();
+
+			if (header != null)
+			{
+				header.setSearchAvailable(modsArray.length > 1);
+				header.setModCount(modsArray.length);
+			}
+		}
+
+		public function as_setScrollPosition(pos:Number):void
+		{
+			_pendingScroll = pos;
+			_pendingScrollTries = 10;
+			App.utils.scheduler.scheduleOnNextFrame(applyPendingScroll);
+		}
+
+		private function applyPendingScroll():void
+		{
+			if (_pendingScroll > 0 && content != null && content.scrollPane != null)
+			{
+				var max:Number = content.scrollPane.maxScroll;
+
+				if (isNaN(max) || max < 0)
+					max = 0;
+
+				if (_pendingScroll > max && _pendingScrollTries > 0)
+				{
+					_pendingScrollTries--;
+					App.utils.scheduler.scheduleOnNextFrame(applyPendingScroll);
+					return;
+				}
+
+				content.scrollPane.smoothScrollPosition = Math.min(_pendingScroll, max);
+			}
+
+			_pendingScroll = 0;
+		}
+
+		public function as_setUserColorPresets(data:Array):void
+		{
+			ColorChoicePopup.setUserPresets(data);
+		}
+
+		public function as_userPresetAction(action:String, slot:int):void
+		{
+			ColorChoicePopup.userPresetAction(action, slot);
+		}
+
+		public function as_setColorValue(linkage:String, varName:String, color:String):void
+		{
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod.modLinkage != linkage)
+					continue;
+
+				for each (var component:Object in mod.components)
+				{
+					if (component.data.hasOwnProperty('varName') && component.data.varName == varName)
+					{
+						var control:ColorChoiceButton = component.componentObject['control'] as ColorChoiceButton;
+
+						if (control != null)
+							control.onValueChanged(color);
+
+						return;
+					}
+				}
+			}
+		}
+
+		private function onUserPresetsSave(presets:Array):void
+		{
+			if (saveUserColorPresets != null)
+				saveUserColorPresets(App.utils.JSON.encode(presets));
 		}
 
 		public function as_setHotkeys(data:Object):void
@@ -248,6 +335,9 @@ package poliroid.gui.lobby.modsSettings
 					break;
 				}
 			}
+
+			recountChangedOptions(linkage);
+			updateApplyCounter();
 		}
 
 		public function as_resetMod(linkage:String, values:Object):void
@@ -294,6 +384,8 @@ package poliroid.gui.lobby.modsSettings
 			if (configChangedLinkages.indexOf(event.linkage) == -1)
 				configChangedLinkages.push(event.linkage);
 
+			recountChangedOptions(event.linkage);
+			updateApplyCounter();
 			notifyLiveChange(event.linkage);
 
 			if (stage != null && stage.focus != null)
@@ -443,6 +535,7 @@ package poliroid.gui.lobby.modsSettings
 			}
 
 			content.scrollToMod(target);
+			flashMod(target);
 		}
 
 		private function modInitial(mod:ModsSettingsComponent):String
@@ -498,29 +591,117 @@ package poliroid.gui.lobby.modsSettings
 			hotkeyAction(event.linkage, event.varName, event.value);
 		}
 
+		private function requestClose():void
+		{
+			if (saveScrollPosition != null && content != null && content.scrollPane != null)
+				saveScrollPosition(content.scrollPane.scrollPosition);
+
+			closeView();
+		}
+
+		private function encodeValue(value:*):String
+		{
+			return App.utils.JSON.encode({v: value});
+		}
+
+		private function snapshotBaseline(mod:ModsSettingsComponent):void
+		{
+			if (mod == null)
+				return;
+
+			var values:Object = mod.getConfigData(true);
+			var encoded:Object = new Object();
+
+			for (var k:String in values)
+				encoded[k] = encodeValue(values[k]);
+
+			_baseline[mod.modLinkage] = encoded;
+			_changedCounts[mod.modLinkage] = 0;
+		}
+
+		private function recountChangedOptions(linkage:String):void
+		{
+			var base:Object = _baseline[linkage];
+
+			if (base == null)
+				return;
+
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod == null || mod.modLinkage != linkage)
+					continue;
+
+				var values:Object = mod.getConfigData(true);
+				var count:int = 0;
+
+				for (var k:String in values)
+				{
+					if (encodeValue(values[k]) != base[k])
+						count++;
+				}
+
+				_changedCounts[linkage] = count;
+				return;
+			}
+		}
+
+		private function updateApplyCounter():void
+		{
+			if (footer == null || footer.applyButton == null)
+				return;
+
+			var pending:int = 0;
+
+			for each (var count:int in _changedCounts)
+				pending += count;
+
+			footer.applyButton.label = (pending > 0) ? STRINGS.BUTTON_APPLY + ' (' + pending + ')' : STRINGS.BUTTON_APPLY;
+		}
+
+		private function flashMod(mod:ModsSettingsComponent):void
+		{
+			if (mod != null)
+				mod.flashHighlight();
+		}
+
 		private function handleOkButtonClick(event:InteractiveEvent):void
 		{
 			if (configChanged)
 				syncModsData();
 
-			closeView();
+			requestClose();
 		}
 
 		private function handleApplyButtonClick(event:InteractiveEvent):void
 		{
 			syncModsData();
+
+			for each (var linkage:String in configChangedLinkages)
+			{
+				for each (var mod:ModsSettingsComponent in modsArray)
+				{
+					if (mod != null && mod.modLinkage == linkage)
+					{
+						snapshotBaseline(mod);
+						break;
+					}
+				}
+			}
+
 			configChanged = false;
+			configChangedLinkages.length = 0;
 			footer.applyButton.enabled = false;
+			updateApplyCounter();
 		}
 
 		private function handleCancelButtonClick(event:InteractiveEvent):void
 		{
-			closeView();
+			requestClose();
 		}
 
 		private function handleCloseButtonClick(event:InteractiveEvent):void
 		{
-			closeView();
+			requestClose();
 		}
 
 		private function handleSearch(event:InteractiveEvent):void
@@ -542,6 +723,9 @@ package poliroid.gui.lobby.modsSettings
 
 				_collapseSnapshot = null;
 
+				if (header != null)
+					header.setSearchResults(-1, 0);
+
 				if (content != null)
 				{
 					content.reflowMods();
@@ -560,10 +744,16 @@ package poliroid.gui.lobby.modsSettings
 						_collapseSnapshot[s.modLinkage] = s.isCollapsed;
 			}
 
+			var hits:int = 0;
+			var total:int = 0;
+			var lastHit:ModsSettingsComponent = null;
+
 			for each (var mod:ModsSettingsComponent in modsArray)
 			{
 				if (mod == null)
 					continue;
+
+				total++;
 
 				var name:String = (mod.data != null && mod.data.modDisplayName != null) ? String(mod.data.modDisplayName) : '';
 				name = name.replace(/<[^>]*>/g, '').toLowerCase();
@@ -571,9 +761,21 @@ package poliroid.gui.lobby.modsSettings
 				var hit:Boolean = name.indexOf(query) != -1;
 				mod.visible = hit;
 
+				if (hit)
+				{
+					hits++;
+					lastHit = mod;
+				}
+
 				if (hit && mod.isCollapsed)
 					mod.setCollapsed(false);
 			}
+
+			if (header != null)
+				header.setSearchResults(hits, total);
+
+			if (hits == 1)
+				flashMod(lastHit);
 
 			if (content != null)
 			{
@@ -587,7 +789,7 @@ package poliroid.gui.lobby.modsSettings
 			if (header != null && header.isSearchFocused())
 				header.blurSearch();
 			else
-				closeView();
+				requestClose();
 		}
 
 		private function onCtrlKeyDownHandler(event:InputEvent):void

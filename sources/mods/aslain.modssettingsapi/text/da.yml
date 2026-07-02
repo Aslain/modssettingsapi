@@ -14,3 +14,7 @@ reset/tooltip/header: Nulstil indstillinger
 reset/tooltip/body: Sætter denne mods indstillinger tilbage til standard. Anvend / OK beholder, Annuller fortryder.
 reset/confirm/message: Nulstil denne mod til standardindstillinger?
 reset/confirm/submit: Nulstil
+search/hits: {0} af {1} mods fundet
+colorchoice/preset/menu/edit: Rediger forudindstilling
+colorchoice/preset/menu/copyhex: Kopiér hex-kode
+colorchoice/preset/menu/clear: Ryd forudindstilling

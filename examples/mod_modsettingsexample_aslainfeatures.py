@@ -5,7 +5,8 @@
 - enableWhen (value-conditional grey-out) + enableWhenAll (gate on several masters)
 - visibleWhen (hide + reflow instead of greying)
 - createControlsGroup (sub-options greyed while the master is off; indent=False keeps them flush)
-- createCheckboxColor (1.4.0): a checkbox + colour picker on one row, here doubling as a gating master
+- createCheckboxColor (1.4.0): a checkbox + color picker on one row, here doubling as a gating master
+- presets / presetsOnly (1.5.0): the picker offers only the mod's own palette, optionally exclusively
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
@@ -35,6 +36,7 @@ settings = {
 	'hpWarn': True,
 	'dmgNumbers': {'enabled': True, 'color': 'F23030'},
 	'dmgSize': 5,
+	'teamColor': 'F23030',
 }
 
 
@@ -85,7 +87,7 @@ def buildTemplate():
 										{'varName': 'previewMode', 'value': 0}])
 		column2.append(pulse)
 
-	# CheckBoxColor (1.4.0) as a gating master: a checkbox + colour picker on one row, storing a
+	# CheckBoxColor (1.4.0) as a gating master: a checkbox + color picker on one row, storing a
 	# {'enabled', 'color'} pair. Its 'enabled' half greys the size slider below when unchecked.
 	if hasattr(templates, 'createCheckboxColor'):
 		column2.append(templates.createCheckboxColor('Damage numbers', 'dmgNumbers',
@@ -94,6 +96,15 @@ def buildTemplate():
 		if hasattr(templates, 'enableWhen'):
 			templates.enableWhen(dmgSize, 'dmgNumbers', True)
 		column2.append(dmgSize)
+
+	# presets / presetsOnly (1.5.0): the picker offers only this mod's palette; presetsOnly
+	# shrinks it to the swatches + Apply, so the user picks exactly one of these colors.
+	# Plain keyword arguments - version-gate them for older builds.
+	if hasattr(g_modsSettingsApi, 'getVersionTuple') and g_modsSettingsApi.getVersionTuple() >= (1, 5):
+		column2.append(templates.createColorChoice('Team color', 'teamColor', settings['teamColor'],
+					presets=['F23030', '30F230', 'F230F2'], presetsOnly=True))
+	else:
+		column2.append(templates.createColorChoice('Team color', 'teamColor', settings['teamColor']))
 
 	# Image with a built-in label: the caption collapses/expands together with
 	# the image and can be live-updated via updateImage(label=...).

@@ -17,6 +17,7 @@ package poliroid.gui.lobby.modsSettings.data
 		public var buttonApply:String = "";
 		public var buttonClose:String = "";
 		public var searchPlaceholder:String = "";
+		public var searchHits:String = "";
 
 		public function ModsSettingsLocalizationVO(data:Object)
 		{
