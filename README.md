@@ -40,7 +40,9 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPD
 
 ![Sub-options grouped under a master toggle - they grey out while it is off](./assets/aslainMenu_4.png)
 
-![Mod search box in the window header - filter the list as you type, or press Ctrl+F](./assets/search_feature.png)
+![Mod search box in the window header - magnifier inside the field](./assets/aslainMenu_search_idle.png)
+
+![Searching as you type - the hit counter shows how many mods matched](./assets/aslainMenu_search.png)
 
 ## Using it in your mod
 
@@ -221,6 +223,8 @@ def onModSettingsChanged(self, linkage, settings):
 A long label wraps onto extra lines under the checkbox without ever running under the swatch (the box, the first line and the tooltip icon stay on a real checkbox, so clicking toggles with the usual sound). It works as both a gated control and a gating master in `enableWhen` / `visibleWhen` (as a master it gates on its `enabled` flag), and inside `createControlsGroup`. Feature-detect with `hasattr(templates, 'createCheckboxColor')`.
 
 ### Color presets in the picker (`presets` / `presetsOnly`)
+
+![The color picker with the user's palette below the spectrum, and the Apply button counting pending changes](./assets/aslainMenu_colorpicker.png)
 
 By default the color picker shows the **user's own palette** — up to 48 editable slots shared across all mods, saved between sessions, starting empty. A mod can bring its own palette instead:
 
