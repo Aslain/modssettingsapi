@@ -18,3 +18,4 @@ search/hits: {0} találat {1} modból
 colorchoice/preset/menu/edit: Előbeállítás szerkesztése
 colorchoice/preset/menu/copyhex: Hex kód másolása
 colorchoice/preset/menu/clear: Előbeállítás törlése
+newfeature/menu/markallread: Összes megjelölése olvasottként

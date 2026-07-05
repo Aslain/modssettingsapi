@@ -32,6 +32,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			'storage': {},
 			'collapsed': {},
 			'defaults': {},
+			'seenFeatures': {},
 		}
 		self.userSettings = {}
 		self._liveSettingsChangeCallbacks = {}
@@ -50,6 +51,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.onReloadMod = Event.Event()
 		self.onResetMod = Event.Event()
 		self.onUserPresetAction = Event.Event()
+		self.onMarkAllFeaturesSeen = Event.Event()
 		self.onColorValueSet = Event.Event()
 
 		self.onWindowOpened += self._resetLiveSettingsBaseline
@@ -89,6 +91,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state.setdefault('storage', {})
 				self.state.setdefault('collapsed', {})
 				self.state.setdefault('defaults', {})
+				self.state.setdefault('seenFeatures', {})
 				self.__migrateState()
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
@@ -122,6 +125,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				del self.state['templates'][linkage]
 				del self.state['settings'][linkage]
 				self.state.get('defaults', {}).pop(linkage, None)
+				self.state.get('seenFeatures', {}).pop(linkage, None)
 
 	def registerModTranslation(self, linkage, mapping):
 		""" Register a display-only label translation for one mod, applied to the copy
@@ -187,6 +191,10 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		try:
 			self.activeMods.add(linkage)
 			currentTemplate = self.state['templates'].get(linkage)
+			if not currentTemplate:
+				newVars = self._collectNewFeatureVars(template)
+				if newVars:
+					self.state.setdefault('seenFeatures', {})[linkage] = dict(newVars)
 			if not currentTemplate or self.compareTemplates(template, currentTemplate):
 				self.state['templates'][linkage] = template
 				self.state['settings'][linkage] = self.getSettingsFromTemplate(template)
@@ -257,6 +265,74 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def userPresetAction(self, action, slot):
 		""" Relay a color-preset context menu pick (edit / clear) to the open picker. """
 		self._fireEvent('onUserPresetAction', action, int(slot))
+
+	@staticmethod
+	def _collectNewFeatureVars(template):
+		""" Map of {varName: token} for every flagged option. token is True when the
+		option carries no explicit newFeatureToken (the default one-shot highlight). """
+		result = {}
+		for column in COLUMNS:
+			for component in template.get(column) or ():
+				if component.get('newFeature') and 'varName' in component:
+					result[component['varName']] = component.get('newFeatureToken') or True
+		return result
+
+	@staticmethod
+	def _featureSeen(seenValue, token):
+		""" Whether a flagged option counts as already seen. Without a token any
+		recorded value counts (back-compat with pre-token .dat, where it was True).
+		With a token the stored value must equal the current token, so bumping the
+		token re-lights the option even for users who had already seen it. """
+		if not seenValue:
+			return False
+		if token is None:
+			return True
+		return seenValue == token
+
+	def _stripSeenFeatures(self, linkage, template):
+		""" Remove the 'newFeature' flag from components the user has already seen (and
+		from components without a varName, which could never be marked seen), and drop
+		the Python-side newFeatureToken so it never reaches AS3. Mutates the passed
+		template, so callers hand in their own deepcopy - both senders
+		(generateSettingsData and reloadModTemplate) already do. """
+		seen = self.state.get('seenFeatures', {}).get(linkage) or {}
+		for column in COLUMNS:
+			for component in template.get(column) or ():
+				token = component.pop('newFeatureToken', None)
+				if component.get('newFeature'):
+					varName = component.get('varName')
+					if varName is None or self._featureSeen(seen.get(varName), token):
+						del component['newFeature']
+
+	def markFeatureSeen(self, linkage, varName):
+		""" The user interacted with a highlighted option - never show its highlight
+		again (until its token changes, for options that carry one). Store the option's
+		current token so a later token bump re-lights it. """
+		template = self.state.get('templates', {}).get(linkage) or {}
+		token = self._collectNewFeatureVars(template).get(varName, True)
+		self.state.setdefault('seenFeatures', {}).setdefault(linkage, {})[str(varName)] = token
+		self.saveState()
+
+	def markAllFeaturesSeen(self, linkage):
+		""" Context menu pick on a mod's new-option counter: mark every flagged option of
+		that mod as seen at once, persist it, and tell the open window to drop all of that
+		mod's highlights (no template reload, so the user's live values are untouched).
+
+		Note: the method name must differ from the onMarkAllFeaturesSeen Event above -
+		an instance attribute (the Event, set in __init__) would otherwise shadow this
+		method, so the call would only fire the event (clear the window) and skip the
+		persist. """
+		template = self.state.get('templates', {}).get(linkage)
+		if not template:
+			return
+		vars = self._collectNewFeatureVars(template)
+		if not vars:
+			return
+		seen = self.state.setdefault('seenFeatures', {}).setdefault(linkage, {})
+		for varName, token in vars.items():
+			seen[str(varName)] = token
+		self.saveState()
+		self._fireEvent('onMarkAllFeaturesSeen', linkage)
 
 	def getWindowScrollPosition(self):
 		""" Scroll memory is intentionally session-only: reopening the window mid-session
@@ -412,6 +488,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
 		self._attachHotkeyDisplay(linkage, template)
 		self._applyTranslations(linkage, template)
+		self._stripSeenFeatures(linkage, template)
 		self._fireEvent('onReloadMod', linkage, template)
 
 	def resetModToDefaults(self, linkage):
@@ -553,6 +630,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 							component['value'] = settings[component['varName']]
 			self._attachHotkeyDisplay(linkage, template)
 			self._applyTranslations(linkage, template)
+			self._stripSeenFeatures(linkage, template)
 			templates.append(template)
 		return templates
 

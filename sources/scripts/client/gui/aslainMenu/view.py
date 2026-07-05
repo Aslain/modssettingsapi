@@ -64,6 +64,9 @@ class ModsSettingsApiWindowMeta(View):
 	def setModCollapsed(self, linkage, collapsed):
 		self._printOverrideError('setModCollapsed')
 
+	def markFeatureSeen(self, linkage, varName):
+		self._printOverrideError('markFeatureSeen')
+
 	def requestModReset(self, linkage):
 		self._printOverrideError('requestModReset')
 
@@ -132,6 +135,13 @@ class ModsSettingsApiWindowMeta(View):
 			except Exception:
 				pass
 
+	def as_markAllFeaturesSeenS(self, linkage):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_markAllFeaturesSeen(linkage)
+			except Exception:
+				pass
+
 	def onFocusIn(self, *args):
 		if self._isDAAPIInited():
 			return False
@@ -157,6 +167,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onUserPresetAction += self.__onUserPresetAction
 		if hasattr(self.api, 'onColorValueSet'):
 			self.api.onColorValueSet += self.__onColorValueSet
+		if hasattr(self.api, 'onMarkAllFeaturesSeen'):
+			self.api.onMarkAllFeaturesSeen += self.__onMarkAllFeaturesSeen
 		self._blur = CachedBlur(enabled=True, ownLayer=self.layer - 1)
 
 	def _dispose(self):
@@ -176,6 +188,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 			self.api.onUserPresetAction -= self.__onUserPresetAction
 		if hasattr(self.api, 'onColorValueSet'):
 			self.api.onColorValueSet -= self.__onColorValueSet
+		if hasattr(self.api, 'onMarkAllFeaturesSeen'):
+			self.api.onMarkAllFeaturesSeen -= self.__onMarkAllFeaturesSeen
 		self.api.onWindowClosed()
 		super(ModsSettingsApiWindow, self)._dispose()
 
@@ -225,6 +239,10 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		if hasattr(self.api, 'setModCollapsed'):
 			self.api.setModCollapsed(linkage, collapsed)
 
+	def markFeatureSeen(self, linkage, varName):
+		if hasattr(self.api, 'markFeatureSeen'):
+			self.api.markFeatureSeen(linkage, varName)
+
 	def requestModReset(self, linkage):
 		if hasattr(self.api, 'resetModToDefaults'):
 			self.api.resetModToDefaults(linkage)
@@ -269,6 +287,9 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 
 	def __onColorValueSet(self, linkage, varName, color):
 		self.as_setColorValueS(linkage, varName, color)
+
+	def __onMarkAllFeaturesSeen(self, linkage):
+		self.as_markAllFeaturesSeenS(linkage)
 
 
 def getViewSettings():

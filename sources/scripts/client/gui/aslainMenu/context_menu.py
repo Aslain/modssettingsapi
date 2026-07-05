@@ -130,11 +130,36 @@ class ColorValueContextMenuHandler(AbstractContextMenuHandler):
 			return self.api.getColorValueDefault(self._linkage, self._varName)
 		return None
 
+class NewFeatureContextMenuHandler(AbstractContextMenuHandler):
+	api = dependency.descriptor(IModsSettingsApiInternal)
+
+	def __init__(self, cmProxy, ctx=None):
+		self._linkage = None
+		super(NewFeatureContextMenuHandler, self).__init__(cmProxy, ctx, {
+			NEW_FEATURE_OPTIONS.MARK_ALL_READ: 'markAllRead'
+		})
+
+	def _initFlashValues(self, ctx):
+		self._linkage = ctx.linkage
+
+	def _clearFlashValues(self):
+		self._linkage = None
+
+	def markAllRead(self):
+		if self._linkage and hasattr(self.api, 'markAllFeaturesSeen'):
+			self.api.markAllFeaturesSeen(self._linkage)
+
+	def _generateOptions(self, ctx=None):
+		return [
+			self._makeItem(NEW_FEATURE_OPTIONS.MARK_ALL_READ, l10n('newfeature/menu/markallread')),
+		]
+
 def getContextMenuHandlers():
 	return (
 		(HOTKEY_CONTEXT_MENU_HANDLER_ALIAS, HotkeyContextMenuHandler),
 		(PRESET_CONTEXT_MENU_HANDLER_ALIAS, PresetContextMenuHandler),
 		(COLOR_VALUE_CONTEXT_MENU_HANDLER_ALIAS, ColorValueContextMenuHandler),
+		(NEW_FEATURE_CONTEXT_MENU_HANDLER_ALIAS, NewFeatureContextMenuHandler),
 	)
 
 registerContextMenuHandlers(*getContextMenuHandlers())

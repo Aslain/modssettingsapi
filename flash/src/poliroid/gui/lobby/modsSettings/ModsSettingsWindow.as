@@ -37,6 +37,7 @@ package poliroid.gui.lobby.modsSettings
 		public var hotkeyAction:Function;
 		public var setModCollapsed:Function;
 		public var requestModReset:Function;
+		public var markFeatureSeen:Function;
 		public var saveUserColorPresets:Function;
 		public var saveScrollPosition:Function;
 		public var closeView:Function;
@@ -87,6 +88,7 @@ package poliroid.gui.lobby.modsSettings
 			content.addEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
 			content.addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
 			content.addEventListener(InteractiveEvent.RESET_REQUESTED, handleModResetRequested);
+			content.addEventListener(InteractiveEvent.FEATURE_SEEN, handleFeatureSeen);
 
 			footer.addEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.addEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -125,6 +127,7 @@ package poliroid.gui.lobby.modsSettings
 			content.removeEventListener(InteractiveEvent.COLLAPSE_CHANGED, handleModCollapseChanged);
 			content.removeEventListener(InteractiveEvent.HEIGHT_CHANGED, handleModHeightChanged);
 			content.removeEventListener(InteractiveEvent.RESET_REQUESTED, handleModResetRequested);
+			content.removeEventListener(InteractiveEvent.FEATURE_SEEN, handleFeatureSeen);
 
 			footer.removeEventListener(InteractiveEvent.OK_BUTTON_CLICK, handleOkButtonClick);
 			footer.removeEventListener(InteractiveEvent.CANCEL_BUTTON_CLICK, handleCancelButtonClick);
@@ -145,6 +148,14 @@ package poliroid.gui.lobby.modsSettings
 			}
 
 			ColorChoicePopup.saveHandler = null;
+
+			try
+			{
+				App.utils.counterManager.disposeCountersForContainer(Constants.NEW_COUNTERS_CONTAINER);
+			}
+			catch (err:Error)
+			{
+			}
 
 			header = null;
 			content = null;
@@ -347,6 +358,18 @@ package poliroid.gui.lobby.modsSettings
 				if (mod.modLinkage == linkage)
 				{
 					mod.resetToValues(values);
+					return;
+				}
+			}
+		}
+
+		public function as_markAllFeaturesSeen(linkage:String):void
+		{
+			for each (var mod:ModsSettingsComponent in modsArray)
+			{
+				if (mod.modLinkage == linkage)
+				{
+					mod.clearAllNewMarkers();
 					return;
 				}
 			}
@@ -589,6 +612,12 @@ package poliroid.gui.lobby.modsSettings
 		private function handleModSettingsHotkeyAction(event:InteractiveEvent):void
 		{
 			hotkeyAction(event.linkage, event.varName, event.value);
+		}
+
+		private function handleFeatureSeen(event:InteractiveEvent):void
+		{
+			if (markFeatureSeen != null)
+				markFeatureSeen(event.linkage, event.varName);
 		}
 
 		private function requestClose():void

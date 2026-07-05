@@ -7,6 +7,7 @@
 - createControlsGroup (sub-options greyed while the master is off; indent=False keeps them flush)
 - createCheckboxColor (1.4.0): a checkbox + color picker on one row, here doubling as a gating master
 - presets / presetsOnly (1.5.0): the picker offers only the mod's own palette, optionally exclusively
+- markNew (1.6.0): flag a freshly added option so the window shows a red flare + a title counter
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
@@ -37,6 +38,7 @@ settings = {
 	'dmgNumbers': {'enabled': True, 'color': 'F23030'},
 	'dmgSize': 5,
 	'teamColor': 'F23030',
+	'fadeTime': 5,
 }
 
 
@@ -60,6 +62,16 @@ def buildTemplate():
 		column1.append(templates.createCheckbox('Warn when HP < 25%', 'hpWarn', settings['hpWarn'], useHTML=False))
 	except TypeError:
 		column1.append(templates.createCheckbox('Warn when HP below 25%', 'hpWarn', settings['hpWarn']))
+
+	# markNew (1.6.0): flag an option a mod update just added, so the window shows a red
+	# flare on its row + a red count on the mod's title (like the game's own Settings).
+	# The highlight clears once the user clicks the row or changes the value, and is
+	# remembered per user; a mod's first install never lights up. Wrap inline; older
+	# builds ignore the flag, so guard with hasattr.
+	fadeSlider = templates.createSlider('Fade time', 'fadeTime', settings['fadeTime'], 1, 15, 1)
+	if hasattr(templates, 'markNew'):
+		templates.markNew(fadeSlider)
+	column1.append(fadeSlider)
 
 	column2 = [
 		templates.createRadioButtonGroup('Preview', 'previewMode', ['Icon', 'No image'], settings['previewMode']),

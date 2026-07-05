@@ -7,8 +7,8 @@ from external_strings_utils import unicode_from_utf8
 MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 
-VERSION = '1.5.0'
-VERSION_TUPLE = (1, 5, 0)
+VERSION = '1.6.0'
+VERSION_TUPLE = (1, 6, 0)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
@@ -33,6 +33,7 @@ VIEW_SWF = 'aslainMenu.swf'
 HOTKEY_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuHotkeyContextMenuHandler'
 PRESET_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuPresetContextMenuHandler'
 COLOR_VALUE_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuColorValueContextMenuHandler'
+NEW_FEATURE_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuNewFeatureContextMenuHandler'
 
 COLUMNS = ('column1', 'column2')
 
@@ -85,6 +86,9 @@ class PRESET_OPTIONS:
 class COLOR_VALUE_OPTIONS:
 	RESET = 'colorValueReset'
 	COPY_HEX = 'colorValueCopyHex'
+
+class NEW_FEATURE_OPTIONS:
+	MARK_ALL_READ = 'newFeatureMarkAllRead'
 
 class SPECIAL_KEYS:
 	KEY_ALT, KEY_CONTROL, KEY_SHIFT = range(-1, -4, -1)

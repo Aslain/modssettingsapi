@@ -9,6 +9,8 @@ package poliroid.gui.lobby.modsSettings.components
 
 	public class ModsSettingsWindowContent extends UIComponentEx
 	{
+		private static const LIST_TOP_OFFSET:Number = 6;
+
 		public var scrollPane:SmoothResizableScrollPane;
 		public var scrollBar:ScrollBar;
 		public var container:MovieClip;
@@ -148,7 +150,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 		public function reflowMods():void
 		{
-			var pos:int = 0;
+			var pos:int = LIST_TOP_OFFSET;
 			var lastBottom:int = 0;
 
 			for (var i:int = 0; i < container.numChildren; i++)

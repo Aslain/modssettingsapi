@@ -1,14 +1,20 @@
 package poliroid.gui.lobby.modsSettings.components
 {
 	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
 	import flash.display.Graphics;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
+	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
+	import flash.text.TextFormatAlign;
+	import flash.utils.Dictionary;
+	import flash.utils.getQualifiedClassName;
+	import net.wg.infrastructure.managers.counter.CounterProps;
 	import scaleform.clik.constants.InvalidationType;
 	import scaleform.clik.core.UIComponent;
 	import net.wg.gui.components.advanced.FieldSet;
@@ -30,6 +36,14 @@ package poliroid.gui.lobby.modsSettings.components
 		private static const RESET_SIZE:Number = 14;
 		private static const RESET_STACK_GAP:Number = 8;
 		private static const RESET_DIM_ALPHA:Number = 0.4;
+		private static const FLARE_OFFSET_X:Number = -7;
+		private static const FLARE_LINE_CENTER:Number = 7;
+		private static const FLARE_AXIS_TWEAK:Number = -6;
+		private static const FLARE_STRETCH:Number = 1.6;
+		private static const BADGE_OFFSET_X:Number = 15;
+		private static const BADGE_OFFSET_Y:Number = 1;
+		private static const BADGE_HIT_WIDTH:Number = 40;
+		private static const BADGE_HIT_HEIGHT:Number = 24;
 		private static var _switcherWidthCache:Number = NaN;
 
 		public var modLinkage:String;
@@ -52,6 +66,9 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _flashBright:HoverBrightener;
 		private var _flashFrames:int = 0;
 		private var _flashTicking:Boolean = false;
+		private var _newCount:int = 0;
+		private var _badgeHit:Sprite;
+		private var _nfClaimed:Dictionary = new Dictionary(true);
 		private var _resetButton:Sprite;
 		private var _resetColor:uint = 0xCCCCCC;
 		private var _resetting:Boolean = false;
@@ -123,6 +140,301 @@ package poliroid.gui.lobby.modsSettings.components
 
 			if (_flashBright != null)
 				_flashBright.on = false;
+		}
+
+		private function refreshNewMarkers():void
+		{
+			_newCount = 0;
+
+			var hiddenMasters:Object = {};
+
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var entry:Object = components[i];
+				var wrapper:MovieClip = entry.componentObject as MovieClip;
+
+				if (wrapper == null)
+					continue;
+
+				var flagged:Boolean = entry.data.newFeature == true && ('varName' in entry.data);
+
+				if (flagged)
+					_newCount++;
+
+				var want:Boolean = flagged && wrapper.visible;
+
+				if (want && wrapper['newFlare'] == null)
+					attachNewMarker(entry);
+				else if (!want && wrapper['newFlare'] != null)
+					detachNewMarker(wrapper);
+
+				if (flagged && entry.gateHidden == true)
+				{
+					var masters:Array = getGateMasters(entry.data);
+					for (var mi:int = 0; mi < masters.length; mi++)
+						hiddenMasters[masters[mi]] = true;
+				}
+			}
+
+			for (i = 0; i < components.length; i++)
+			{
+				entry = components[i];
+				wrapper = entry.componentObject as MovieClip;
+
+				if (wrapper == null)
+					continue;
+
+				var wantProxy:Boolean = ('varName' in entry.data)
+					&& hiddenMasters[entry.data.varName] == true
+					&& wrapper.visible
+					&& wrapper['newFlare'] == null;
+
+				if (wantProxy && wrapper['newProxyFlare'] == null)
+					attachNewMarker(entry, true);
+				else if (!wantProxy && wrapper['newProxyFlare'] != null)
+					detachNewMarker(wrapper, true);
+			}
+
+			updateNewBadge();
+		}
+
+		private function attachNewMarker(entry:Object, isProxy:Boolean = false):void
+		{
+			var wrapper:MovieClip = entry.componentObject as MovieClip;
+
+			var localTop:Number = wrapper.getBounds(wrapper).y;
+			var labelCenter:Number = findRowLabelCenterY(wrapper);
+
+			if (isNaN(labelCenter))
+				labelCenter = FLARE_LINE_CENTER;
+
+			var offsetY:Number = labelCenter + FLARE_AXIS_TWEAK - localTop;
+			var flagKey:String = isProxy ? 'newProxyFlare' : 'newFlare';
+			var objKey:String = isProxy ? 'newProxyFlareObj' : 'newFlareObj';
+			var isNew:Boolean = (wrapper[flagKey] == null);
+
+			try
+			{
+				var childrenBefore:int = numChildren;
+
+				App.utils.counterManager.setCounter(wrapper, '1', Constants.NEW_COUNTERS_CONTAINER,
+					new CounterProps(FLARE_OFFSET_X, offsetY, TextFormatAlign.LEFT, false, Constants.NEW_FEATURE_LINE_LINKAGE));
+
+				if (isNew && numChildren > childrenBefore)
+				{
+					var lineClass:String = Constants.NEW_FEATURE_LINE_LINKAGE.toLowerCase();
+					var flare:DisplayObject = null;
+
+					for (var ci:int = numChildren - 1; ci >= 0; ci--)
+					{
+						var cand:DisplayObject = getChildAt(ci);
+
+						if (getQualifiedClassName(cand).toLowerCase().indexOf(lineClass) == -1)
+							continue;
+						if (_nfClaimed[cand] == true)
+							continue;
+
+						flare = cand;
+						break;
+					}
+
+					if (flare != null)
+					{
+						_nfClaimed[flare] = true;
+						flare.scaleX = FLARE_STRETCH;
+						wrapper[objKey] = flare;
+					}
+				}
+			}
+			catch (err:Error)
+			{
+				DebugUtils.LOG_ERROR('[ModsSettings] new-option flare unavailable: ' + err);
+				return;
+			}
+
+			if (isNew)
+			{
+				wrapper[flagKey] = true;
+				if (!isProxy)
+				{
+					wrapper.addEventListener(MouseEvent.CLICK, handleNewMarkerSeen);
+					wrapper.addEventListener(InteractiveEvent.VALUE_CHANGED, handleNewMarkerSeen);
+				}
+			}
+		}
+
+		private function detachNewMarker(wrapper:MovieClip, isProxy:Boolean = false):void
+		{
+			try
+			{
+				App.utils.counterManager.removeCounter(wrapper, Constants.NEW_COUNTERS_CONTAINER);
+			}
+			catch (err:Error)
+			{
+			}
+
+			if (isProxy)
+			{
+				wrapper['newProxyFlare'] = null;
+				wrapper['newProxyFlareObj'] = null;
+			}
+			else
+			{
+				wrapper['newFlare'] = null;
+				wrapper['newFlareObj'] = null;
+				wrapper.removeEventListener(MouseEvent.CLICK, handleNewMarkerSeen);
+				wrapper.removeEventListener(InteractiveEvent.VALUE_CHANGED, handleNewMarkerSeen);
+			}
+		}
+
+		private function getGateMasters(data:Object):Array
+		{
+			var result:Array = [];
+
+			if (data.hasOwnProperty('masterVarName'))
+				result.push(String(data.masterVarName));
+
+			if (data.conditions is Array)
+			{
+				for each (var c:Object in data.conditions)
+					if (c != null && c.hasOwnProperty('masterVarName'))
+						result.push(String(c.masterVarName));
+			}
+
+			return result;
+		}
+
+		private function findRowLabelCenterY(wrapper:DisplayObjectContainer):Number
+		{
+			return scanTextCenter(wrapper, wrapper, 0);
+		}
+
+		private function scanTextCenter(obj:DisplayObjectContainer, space:DisplayObjectContainer, depth:int):Number
+		{
+			var best:Number = NaN;
+
+			for (var i:int = 0; i < obj.numChildren; i++)
+			{
+				var child:DisplayObject = obj.getChildAt(i);
+
+				if (child == null || !child.visible)
+					continue;
+
+				var cand:Number = NaN;
+				var tf:TextField = child as TextField;
+
+				if (tf != null && tf.textHeight > 0)
+				{
+					cand = child.getBounds(space).y + 2 + tf.textHeight / 2;
+				}
+				else if (child is DisplayObjectContainer && depth < 4)
+				{
+					cand = scanTextCenter(DisplayObjectContainer(child), space, depth + 1);
+				}
+
+				if (!isNaN(cand) && (isNaN(best) || cand < best))
+					best = cand;
+			}
+
+			return best;
+		}
+
+		private function handleNewMarkerSeen(event:Event):void
+		{
+			if (_resetting)
+				return;
+
+			var wrapper:MovieClip = event.currentTarget as MovieClip;
+
+			if (wrapper == null || wrapper['newFlare'] == null)
+				return;
+
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var entry:Object = components[i];
+
+				if (entry.componentObject != wrapper)
+					continue;
+
+				delete entry.data.newFeature;
+				refreshNewMarkers();
+				dispatchEvent(new InteractiveEvent(InteractiveEvent.FEATURE_SEEN, modLinkage, entry.data.varName));
+				return;
+			}
+		}
+
+		private function updateNewBadge():void
+		{
+			if (_fieldSet == null || _fieldSet.textField == null)
+				return;
+
+			var count:String = (_newCount > 0) ? String(_newCount) : '';
+			var tf:Object = _fieldSet.textField;
+
+			try
+			{
+				App.utils.counterManager.setCounter(DisplayObject(tf), count, Constants.NEW_COUNTERS_CONTAINER,
+					new CounterProps(BADGE_OFFSET_X, BADGE_OFFSET_Y, TextFormatAlign.LEFT, true,
+						Constants.NEW_FEATURE_BADGE_LINKAGE));
+			}
+			catch (err:Error)
+			{
+				DebugUtils.LOG_ERROR('[ModsSettings] new-option counter unavailable: ' + err);
+			}
+
+			updateBadgeHitArea(_newCount > 0);
+		}
+
+		private function updateBadgeHitArea(show:Boolean):void
+		{
+			if (!show)
+			{
+				if (_badgeHit != null && _badgeHit.parent == this)
+					removeChild(_badgeHit);
+				return;
+			}
+
+			if (_badgeHit == null)
+			{
+				_badgeHit = new Sprite();
+				_badgeHit.graphics.beginFill(0, 0);
+				_badgeHit.graphics.drawRect(0, 0, BADGE_HIT_WIDTH, BADGE_HIT_HEIGHT);
+				_badgeHit.graphics.endFill();
+				_badgeHit.addEventListener(MouseEvent.MOUSE_DOWN, handleBadgeMouseDown);
+			}
+
+			var b:Rectangle = DisplayObject(_fieldSet.textField).getBounds(this);
+			_badgeHit.x = b.right - 4;
+			_badgeHit.y = b.top - 2;
+
+			if (_badgeHit.parent != this)
+				addChild(_badgeHit);
+		}
+
+		private function handleBadgeMouseDown(event:MouseEvent):void
+		{
+			if (_newCount <= 0 || !App.utils.commons.isRightButton(event))
+				return;
+
+			try
+			{
+				App.contextMenuMgr.show(Constants.NEW_FEATURE_CONTEXT_MENU_HANDLER, _badgeHit, {'linkage': modLinkage});
+			}
+			catch (err:Error)
+			{
+				DebugUtils.LOG_ERROR('[ModsSettings] new-option context menu unavailable: ' + err);
+			}
+		}
+
+		public function clearAllNewMarkers():void
+		{
+			for (var i:int = 0; i < components.length; i++)
+			{
+				if (components[i].data.newFeature == true)
+					delete components[i].data.newFeature;
+			}
+
+			refreshNewMarkers();
 		}
 
 		public function resetToValues(values:Object):void
@@ -227,6 +539,7 @@ package poliroid.gui.lobby.modsSettings.components
 
 			updateComponentsState();
 			updateResetState();
+			refreshNewMarkers();
 
 			addEventListener(InteractiveEvent.HEIGHT_CHANGED, handleChildHeightChanged);
 
@@ -738,8 +1051,12 @@ package poliroid.gui.lobby.modsSettings.components
 			for (var i:Number = 0; i < components.length; i++)
 			{
 				var entry:Object = components[i];
-				MovieClip(entry.componentObject).visible = !_collapsed && !(entry.gateHidden == true);
+				var wrapper:MovieClip = MovieClip(entry.componentObject);
+
+				wrapper.visible = !_collapsed && !(entry.gateHidden == true);
 			}
+
+			refreshNewMarkers();
 		}
 
 		private function applyCollapsed(value:Boolean):void
@@ -750,21 +1067,9 @@ package poliroid.gui.lobby.modsSettings.components
 
 			applyVisibility();
 
-			var h:Number = _collapsed ? _collapsedHeight : _fullHeight;
+			scrollRect = null;
 
-			if (_fieldSet != null)
-			{
-				_fieldSet.height = h;
-				if (_fieldSet.bg != null)
-					_fieldSet.bg.height = h;
-			}
-
-			height = h;
-
-			if (_collapsed)
-				scrollRect = new Rectangle(0, 0, Constants.MOD_COMPONENT_WIDTH, h);
-			else
-				scrollRect = null;
+			reflow();
 
 			drawCollapseArrow();
 		}
@@ -913,6 +1218,13 @@ package poliroid.gui.lobby.modsSettings.components
 				if (key == null || !used.hasOwnProperty(key))
 				{
 					var old:DisplayObject = DisplayObject(e.componentObject);
+
+					var oldMc:MovieClip = old as MovieClip;
+					if (oldMc != null && oldMc['newFlare'] != null)
+						detachNewMarker(oldMc);
+					if (oldMc != null && oldMc['newProxyFlare'] != null)
+						detachNewMarker(oldMc, true);
+
 					old.removeEventListener(InteractiveEvent.VALUE_CHANGED, handleComponentEvent);
 					if (old.parent == this)
 						removeChild(old);
@@ -924,6 +1236,7 @@ package poliroid.gui.lobby.modsSettings.components
 			data = newData;
 
 			updateComponentsState();
+			refreshNewMarkers();
 			reflow();
 			return true;
 		}
@@ -971,10 +1284,14 @@ package poliroid.gui.lobby.modsSettings.components
 			var c1len:int = (data && data.column1) ? data.column1.length : 0;
 			var pos1:Number = Constants.MOD_PADDING_TOP;
 			var pos2:Number = Constants.MOD_PADDING_TOP;
+			var i:int;
+			var comp:DisplayObject;
 
-			for (var i:int = 0; i < components.length; i++)
+			for (i = 0; i < components.length; i++)
 			{
-				var comp:DisplayObject = DisplayObject(components[i].componentObject);
+				comp = DisplayObject(components[i].componentObject);
+
+				comp.scrollRect = null;
 
 				if (components[i].gateHidden == true)
 				{
@@ -999,6 +1316,16 @@ package poliroid.gui.lobby.modsSettings.components
 
 			_fullHeight = Math.max(pos1, pos2) + Constants.MOD_PADDING_BOTTOM;
 
+			if (_collapsed)
+			{
+				for (i = 0; i < components.length; i++)
+				{
+					comp = DisplayObject(components[i].componentObject);
+					comp.y = 0;
+					comp.scrollRect = new Rectangle(0, 0, Constants.MOD_COMPONENT_WIDTH, 0);
+				}
+			}
+
 			var h:Number = _collapsed ? _collapsedHeight : _fullHeight;
 
 			if (_fieldSet != null)
@@ -1009,6 +1336,8 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 
 			height = h;
+
+			dispatchEvent(new Event(Event.RESIZE));
 
 			dispatchEvent(new InteractiveEvent(InteractiveEvent.HEIGHT_CHANGED, modLinkage));
 		}

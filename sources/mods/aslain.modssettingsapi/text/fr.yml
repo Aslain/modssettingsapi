@@ -18,3 +18,4 @@ search/hits: {0} mods trouvés sur {1}
 colorchoice/preset/menu/edit: Modifier le préréglage
 colorchoice/preset/menu/copyhex: Copier le code hex
 colorchoice/preset/menu/clear: Effacer le préréglage
+newfeature/menu/markallread: Tout marquer comme lu

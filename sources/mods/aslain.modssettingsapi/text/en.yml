@@ -18,3 +18,4 @@ colorchoice/preset/menu/edit: Edit preset
 colorchoice/preset/menu/copyhex: Copy hex code
 colorchoice/preset/menu/clear: Clear preset
 search/hits: found {0} of {1} mods
+newfeature/menu/markallread: Mark all as read

@@ -45,6 +45,12 @@
 
 		public static const COLOR_VALUE_CONTEXT_MENU_HANDLER:String = 'aslainMenuColorValueContextMenuHandler';
 
+		public static const NEW_FEATURE_CONTEXT_MENU_HANDLER:String = 'aslainMenuNewFeatureContextMenuHandler';
+
+		public static const NEW_COUNTERS_CONTAINER:String = 'aslainMenuNewCounters';
+		public static const NEW_FEATURE_LINE_LINKAGE:String = 'NewCounterLineUI';
+		public static const NEW_FEATURE_BADGE_LINKAGE:String = 'CounterUI';
+
 		public function Constants()
 		{
 			super();

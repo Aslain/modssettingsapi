@@ -610,6 +610,35 @@ def createControlsGroup(master, children, indent=True):
 		group.append(child)
 	return group
 
+def markNew(control, token=None):
+	""" Mark a control as newly added, so the settings window highlights it: a red
+	flare on the row and a red counter next to the mod's title, like the game's own
+	Settings window marks new options.
+
+	The highlight disappears permanently once the user clicks anywhere on the row
+	(the label is enough) or changes the control's value; the API remembers that
+	per user. A mod installed for the very first time never lights up - only
+	options added to an ALREADY installed mod do.
+
+	:param control: A control component (must have a 'varName'); returned unchanged
+		apart from the flag, so it can be used inline:
+		column1.append(templates.markNew(templates.createCheckbox(...)))
+	:param token: Optional version tag (any string). By default the highlight is
+		one-shot: once seen it never returns. Pass a token to re-highlight a control
+		whose CONTENT changed rather than one that is brand new - e.g. a language
+		dropdown that gained an entry. Bump the token to any new string and the
+		control lights up again even for users who had already seen it; it clears
+		once they interact with it and stays clear until the token changes again.
+
+	Older API builds ignore both the flag and the token (neither is part of the
+	settings structure, so saved values are never reset). Feature-detect with
+	hasattr(templates, 'markNew').
+	"""
+	control['newFeature'] = True
+	if token is not None:
+		control['newFeatureToken'] = str(token)
+	return control
+
 def enableWhen(control, masterVarName, value, indent=False, condition=CONDITION.EQUAL):
 	""" Enable a control only while a master control's value satisfies a condition
 

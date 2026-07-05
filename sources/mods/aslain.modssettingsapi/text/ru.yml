@@ -18,3 +18,4 @@ search/hits: найдено {0} из {1} модов
 colorchoice/preset/menu/edit: Редактировать пресет
 colorchoice/preset/menu/copyhex: Копировать hex-код
 colorchoice/preset/menu/clear: Очистить пресет
+newfeature/menu/markallread: Отметить все как прочитанные

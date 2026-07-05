@@ -19,6 +19,7 @@
 		public static const HEIGHT_CHANGED:String = "heightChanged";
 		public static const RESET_REQUESTED:String = "resetRequested";
 		public static const RESET_CONFIRMED:String = "resetConfirmed";
+		public static const FEATURE_SEEN:String = "featureSeen";
 
 		private var _modLinkage:String = "";
 		private var _varName:String = "";

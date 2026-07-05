@@ -79,6 +79,14 @@ if hasattr(g_modsSettingsApi, 'getVersionTuple') and g_modsSettingsApi.getVersio
 								tooltip='{HEADER}Restricted palette{/HEADER}{BODY}presetsOnly=True: the picker shrinks to the preset swatches and Apply, so exactly one of these colors can be chosen{/BODY}',
 								presets=['FF0000', '00FF00', 'FF00FF'], presetsOnly=True))
 
+# markNew (aslainMenu 1.6.0+): flag an option a mod update just added, so the window shows a
+# red flare on its row + a red count on the mod's title (like the game's own Settings). The
+# highlight clears once the user clicks the row or changes the value and is remembered per user;
+# a mod's first install never lights up. Wrap a control inline; older builds ignore the flag.
+if hasattr(templates, 'markNew'):
+	template['column1'].append(templates.markNew(templates.createCheckbox('New option (1.6.0)', 'newOptionTest', True,
+								tooltip='{HEADER}markNew{/HEADER}{BODY}Marked as new: a red flare on this row and a counter on the mod title, cleared once you click the row or change the value{/BODY}')))
+
 
 settings = {
 	'sixthSenseSound' : 0,
@@ -93,6 +101,7 @@ settings = {
 	'checkboxColor' : {'enabled': True, 'color': 'FFCC00'},
 	'markerColor' : 'FF0000',
 	'teamColor' : 'FF0000',
+	'newOptionTest' : True,
 	'rangeSlider' : [20, 50],
 	'stepSliderTest': 0
 }

@@ -1,6 +1,6 @@
 # Aslain's ModsSettings API
 
-Aslain's ModsSettings API (Aslain Menu) — the in-garage settings menu for World of Tanks mods, based on [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi). It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
+Aslain's ModsSettings API (Aslain Menu) - the in-garage settings menu for World of Tanks mods, based on [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi). It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
 
 It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features. In the hangar's mods list the menu appears as **"Mods settings+"** (localized), with a "+" badge on its icon.
 
@@ -8,25 +8,26 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 
 - **Collapse / expand** each mod, plus a **Collapse All / Expand All** toolbar button, to keep a long settings list tidy.
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
-- **Mod search**: a search box in the window header filters the mod list by name as you type — a magnifier inside the field (it hides while you type), an "×" clear button and a "Search mods" placeholder. A hit counter left of the field shows `found X of Y mods`. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded), a search narrowing to a single mod briefly highlights it, and clearing the box restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps. With only one mod installed the search hides entirely.
-- **Per-mod reset**: a rotate icon below each mod's on/off switch (shown while the mod is expanded) restores that mod's options **and hotkeys** to their defaults. Dimmed when nothing differs from the defaults (or the mod is off), bright once something changes. Clicking it asks to confirm — a small dialog with the mod's name and **Reset** / **Cancel**, drawn on top inside the menu (localized in all 25 languages; skippable via the `resetSkipConfirm` user setting). On confirm the control reset is live (**Apply / OK** keeps it, **Cancel** reverts); hotkeys reset immediately; the mod's on/off state is never touched. Works automatically for every mod (no API call needed).
+- **Mod search**: a search box in the window header filters the mod list by name as you type - a magnifier inside the field (it hides while you type), an "×" clear button and a "Search mods" placeholder. A hit counter left of the field shows `found X of Y mods`. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded), a search narrowing to a single mod briefly highlights it, and clearing the box restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps. With only one mod installed the search hides entirely.
+- **Per-mod reset**: a rotate icon below each mod's on/off switch (shown while the mod is expanded) restores that mod's options **and hotkeys** to their defaults. Dimmed when nothing differs from the defaults (or the mod is off), bright once something changes. Clicking it asks to confirm - a small dialog with the mod's name and **Reset** / **Cancel**, drawn on top inside the menu (localized in all 25 languages; skippable via the `resetSkipConfirm` user setting). On confirm the control reset is live (**Apply / OK** keeps it, **Cancel** reverts); hotkeys reset immediately; the mod's on/off state is never touched. Works automatically for every mod (no API call needed).
 - Mods list **sorted by the shown name** (case-insensitive), ignoring a leading badge or symbol; a registered translation orders the mod under its translated name, and names not in the Latin alphabet (e.g. Cyrillic) sort after the Latin-named ones.
 - **Grouped sub-options** via `templates.createControlsGroup(master, children)`: tie sub-controls to a master control so they are indented and **greyed-out / disabled while the master is off**, then enabled when it is on. Pass `indent=False` to keep the children un-indented (so a wide group doesn't crowd the second column).
-- **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value, condition='==')`: grey a control unless another control's value satisfies a condition — equality / list membership by default, or a comparison (`'!='`, `'>'`, `'>='`, `'<'`, `'<='`, e.g. master `>= 0`; also available as `CONDITION.*` aliases). Updates live as the master changes — extends the master/child idea beyond a boolean On/Off.
-- **Hide instead of grey** via `templates.visibleWhen(...)`: the sibling of `enableWhen` with the same arguments, but it hides the control and reflows the mod (rows below close the gap) when the condition fails, instead of greying it in place — for options that make no sense in the current mode.
-- **Multiple conditions (AND / OR)** via `templates.enableWhenAll` / `enableWhenAny` (plus `visibleWhenAll` / `visibleWhenAny`): gate a control on more than one master at once — `*All` requires every condition (AND), `*Any` requires at least one (OR).
+- **Value-conditional grey-out** via `templates.enableWhen(control, masterVarName, value, condition='==')`: grey a control unless another control's value satisfies a condition - equality / list membership by default, or a comparison (`'!='`, `'>'`, `'>='`, `'<'`, `'<='`, e.g. master `>= 0`; also available as `CONDITION.*` aliases). Updates live as the master changes - extends the master/child idea beyond a boolean On/Off.
+- **Hide instead of grey** via `templates.visibleWhen(...)`: the sibling of `enableWhen` with the same arguments, but it hides the control and reflows the mod (rows below close the gap) when the condition fails, instead of greying it in place - for options that make no sense in the current mode.
+- **Multiple conditions (AND / OR)** via `templates.enableWhenAll` / `enableWhenAny` (plus `visibleWhenAll` / `visibleWhenAny`): gate a control on more than one master at once - `*All` requires every condition (AND), `*Any` requires at least one (OR).
 - **`Image` component** (loaded via a plain `Loader` + `Bitmap`): render an image in the menu body, refresh it live with `updateImage(...)`, collapse its slot with `updateImage(..., removeImage=True)`, or start it collapsed via `createImage(..., collapsed=True)`. An optional built-in `label` (with `labelAlign`) renders above the image, collapses together with it and can be live-updated too. Image sources are plain root-relative paths resolved from the WoT root.
-- **Sprite-sheet animation** in an `Image` slot: `createImage(atlas={...})` plays a looping animation from a single sheet the moment the menu opens, and `updateImageAtlas(...)` switches it live — one image blitted frame-by-frame (`copyPixels` on a timer) instead of hundreds of frame files, light even at a high `fps`.
+- **Sprite-sheet animation** in an `Image` slot: `createImage(atlas={...})` plays a looping animation from a single sheet the moment the menu opens, and `updateImageAtlas(...)` switches it live - one image blitted frame-by-frame (`copyPixels` on a timer) instead of hundreds of frame files, light even at a high `fps`.
 - **Checkbox + color picker on one row** via `templates.createCheckboxColor(text, varName, value, color, ...)`: a tick box with its label on the left and a color swatch on the right, storing a `{'enabled': <bool>, 'color': <hex>}` pair under one name. A long label wraps onto extra lines under the checkbox without running under the swatch, and it slots into `enableWhen` / `visibleWhen` / `createControlsGroup` like any other control.
 - **Personal color palette** in the color picker: up to 48 editable preset slots shared by all mods (rows of 12, revealed as you fill them; starts empty). Left-click picks a color, left-click on an empty slot (+) starts defining it, right-click a filled slot opens a context menu (**Edit preset / Copy hex code / Clear preset**), **DEL** clears the slot being edited. While editing (gold frame) the slot follows every picked color live and **Apply saves it without closing the picker**. Saved in `aslainmenu.dat`, so it survives restarts and reinstalls.
 - **Color picker & color control QoL**: the COLOR box live-previews the color under the cursor while it moves over the spectrum, and right-clicking the color swatch next to an option (main view) offers **reset to the mod's default** and **copy hex code** (bare value).
-- **Mod-defined picker palettes** via `createColorChoice(..., presets=[...], presetsOnly=False)` (and the same on `createCheckboxColor`): supply up to 24 colors shown as pick-only preset rows — when given, only your colors are offered (the user palette hides in that picker). With `presetsOnly=True` the picker reduces to just your swatches and Apply (no spectrum / sliders / hex input), its width auto-fitting the palette — "pick 1 of these 8".
+- **Mod-defined picker palettes** via `createColorChoice(..., presets=[...], presetsOnly=False)` (and the same on `createCheckboxColor`): supply up to 24 colors shown as pick-only preset rows - when given, only your colors are offered (the user palette hides in that picker). With `presetsOnly=True` the picker reduces to just your swatches and Apply (no spectrum / sliders / hex input), its width auto-fitting the palette - "pick 1 of these 8".
 - **Window QoL**: the Apply button counts pending changes (`Apply (3)`, options differing from their saved state; reverting a value drops it out), jumping via the A-Z bar briefly highlights the target mod's frame and title, and the window remembers its scroll position within the game session.
-- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage; pass `fullsettings=False` to receive only the changed keys instead of the full dict — the old `mode='changedOnly'` form is deprecated) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window — only the controls that actually changed are rebuilt, the rest reused in place.
-- **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) — the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
+- **"New option" highlights** via `templates.markNew(control)`: flag an option a mod update just added and the window marks it like the game's own Settings does - a red flare on the row plus a red count on the mod's title (shown even while the mod is collapsed). The highlight clears when the user looks at the option (clicking its label or changing its value) and stays cleared across restarts; a mod's first install lights up nothing (only later updates do), and the flag never resets saved values.
+- **Live in-menu updates**: `registerLiveSettingsChange(...)` (per-linkage; pass `fullsettings=False` to receive only the changed keys instead of the full dict - the old `mode='changedOnly'` form is deprecated) for uncommitted value changes; `reloadModTemplate(...)` re-renders one mod in place (e.g. instant language switch) without closing the window - only the controls that actually changed are rebuilt, the rest reused in place.
+- **Hotkey label float**: `templates.createHotkey(..., float='right')` wraps a long hotkey label around the keys (CSS-`float` style) - the keys float to the right and the label's overflow lines run full row width underneath them, instead of cramming into the narrow column. Default `'none'` keeps the original layout (plain-text labels only).
 - **Plain-text labels**: pass `useHTML=False` to any `create*` control to render its label verbatim (so a literal `<` / `>` / `&` shows instead of being parsed as HTML markup), or `templates.escape(text)` to escape just a fragment of an otherwise-HTML label. Default `useHTML=True` keeps HTML labels (icons, `<font>`, `<b>`).
-- **API version** for feature-gating: `g_modsSettingsApi.getVersion()` (string, e.g. `'1.2.0'`) and `getVersionTuple()` (e.g. `(1, 2, 0)` — compare this, not the string), plus the importable `VERSION` / `VERSION_TUPLE` constants, so a mod can adapt to the running API version (`if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`).
-- **Translate another mod's menu** via `g_modsSettingsApi.registerModTranslation(linkage, mapping)`: supply a `{original string: replacement string}` dict and the API swaps those labels on the **copy** shown in the window — the target mod's stored template, saved values and code stay untouched (no settings reset). The API ships no translations itself; it is the hook an optional, separate localization mod uses to translate a mod whose menu is offered in only one language.
+- **API version** for feature-gating: `g_modsSettingsApi.getVersion()` (string, e.g. `'1.2.0'`) and `getVersionTuple()` (e.g. `(1, 2, 0)` - compare this, not the string), plus the importable `VERSION` / `VERSION_TUPLE` constants, so a mod can adapt to the running API version (`if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`).
+- **Translate another mod's menu** via `g_modsSettingsApi.registerModTranslation(linkage, mapping)`: supply a `{original string: replacement string}` dict and the API swaps those labels on the **copy** shown in the window - the target mod's stored template, saved values and code stay untouched (no settings reset). The API ships no translations itself; it is the hook an optional, separate localization mod uses to translate a mod whose menu is offered in only one language.
 
 See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
 
@@ -106,6 +107,11 @@ templates.createCheckbox('Warn when HP < 25%', 'hp', True, useHTML=False)
 
 # Long hotkey label wrapped around the keys
 templates.createHotkey('A long description for this hotkey', 'key', [Keys.KEY_F2], float='right')
+
+# Highlight an option a mod update just added (red flare + count on the mod title)
+templates.markNew(templates.createCheckbox('New option', 'opt', True))
+# ...and re-light it when its content grows later (e.g. a language dropdown gained an entry)
+templates.markNew(templates.createDropdown('Language', 'lang', LANGS, cur), token=str(len(LANGS)))
 ```
 
 ### Versioning your template (`settingsVersion`)
@@ -121,15 +127,15 @@ def buildTemplate():
     }
 ```
 
-**Bump `settingsVersion` for any structural change** — adding, removing or retyping a control, changing a dropdown / radio / step-slider's set of options, or changing a slider / stepper's min / max / interval. A structural change is only adopted — and that mod's saved values reset to the new defaults — when `settingsVersion` goes up; if you don't bump it, the stored template is kept and the change doesn't show. **Cosmetic changes (an edited label or tooltip, a changed default value, or reordered controls) no longer need a bump** — they refresh in place, with the user's saved values preserved. The rules:
+**Bump `settingsVersion` for any structural change** - adding, removing or retyping a control, changing a dropdown / radio / step-slider's set of options, or changing a slider / stepper's min / max / interval. A structural change is only adopted - and that mod's saved values reset to the new defaults - when `settingsVersion` goes up; if you don't bump it, the stored template is kept and the change doesn't show. **Cosmetic changes (an edited label or tooltip, a changed default value, or reordered controls) no longer need a bump** - they refresh in place, with the user's saved values preserved. The rules:
 
 The rule is the same whether or not your template carries a `settingsVersion`:
 
-- **Cosmetic change** (structure unchanged — label/tooltip text, a default value, or the order of controls differs) → the new template is adopted so it refreshes, and the user's saved values are **kept** (values are keyed by control name, so reordering controls is safe). No reset, no warning. This holds for any mod, including one with no `settingsVersion` and one adopting `settingsVersion` for the first time.
-- **Structural change** (a control added, removed or retyped, a dropdown / radio / step-slider's options changed, or a slider / stepper's range changed) → it needs a bump. With `settingsVersion` present and **bumped**, the new template is adopted and the mod's saved values reset to the new defaults. With `settingsVersion` present but **not bumped**, the stored template and the user's values are kept and the change is ignored (and a warning is logged). A mod with **no `settingsVersion`** adopts a structural change and resets — the legacy behaviour.
+- **Cosmetic change** (structure unchanged - label/tooltip text, a default value, or the order of controls differs) → the new template is adopted so it refreshes, and the user's saved values are **kept** (values are keyed by control name, so reordering controls is safe). No reset, no warning. This holds for any mod, including one with no `settingsVersion` and one adopting `settingsVersion` for the first time.
+- **Structural change** (a control added, removed or retyped, a dropdown / radio / step-slider's options changed, or a slider / stepper's range changed) → it needs a bump. With `settingsVersion` present and **bumped**, the new template is adopted and the mod's saved values reset to the new defaults. With `settingsVersion` present but **not bumped**, the stored template and the user's values are kept and the change is ignored (and a warning is logged). A mod with **no `settingsVersion`** adopts a structural change and resets - the legacy behaviour.
 - **First install** → the template is adopted and its defaults recorded.
 
-If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template structure for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic changes never warn — they just refresh.
+If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template structure for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic changes never warn - they just refresh.
 
 ### Grouping sub-options
 
@@ -168,7 +174,7 @@ column = [
 ]
 ```
 
-`condition` compares instead of matching: `'=='` (default), `'!='`, `'>'`, `'>='`, `'<'`, `'<='`. The `CONDITION` constants are aliases for these (`CONDITION.EQUAL`, `CONDITION.GREATER_EQUAL`, …) — import with `from gui.aslainMenu import templates, CONDITION`, or just pass the raw string. With `'=='`, `value` may be a list to enable for several master values. `indent=True` indents the control like a sub-option. `enableWhen` is aslainMenu-only - guard it with `hasattr(templates, 'enableWhen')`; a control without the binding simply stays always-enabled, so older API builds degrade gracefully.
+`condition` compares instead of matching: `'=='` (default), `'!='`, `'>'`, `'>='`, `'<'`, `'<='`. The `CONDITION` constants are aliases for these (`CONDITION.EQUAL`, `CONDITION.GREATER_EQUAL`, …) - import with `from gui.aslainMenu import templates, CONDITION`, or just pass the raw string. With `'=='`, `value` may be a list to enable for several master values. `indent=True` indents the control like a sub-option. `enableWhen` is aslainMenu-only - guard it with `hasattr(templates, 'enableWhen')`; a control without the binding simply stays always-enabled, so older API builds degrade gracefully.
 
 ### Hiding instead of greying (`visibleWhen`)
 
@@ -185,11 +191,11 @@ column = [
 
 Guard it with `hasattr(templates, 'visibleWhen')`. On older API builds it falls back to greying (the hide flag is ignored), so the control still gates correctly.
 
-`visibleWhen` works on any component, including `templates.createEmpty(height)` — a gated empty is a **dynamic spacer** (blank vertical space that appears/disappears and reflows the column), with no image needed. `createEmpty()` defaults to a 20px gap; pass any height.
+`visibleWhen` works on any component, including `templates.createEmpty(height)` - a gated empty is a **dynamic spacer** (blank vertical space that appears/disappears and reflows the column), with no image needed. `createEmpty()` defaults to a 20px gap; pass any height.
 
 ### Gating on several masters (`enableWhenAll` / `enableWhenAny`)
 
-To gate a control on more than one master at once, use `enableWhenAll` (every condition must hold — logical AND) or `enableWhenAny` (at least one — logical OR). Each takes a list of condition dicts `{'varName', 'value', 'condition'}`; `condition` defaults to `'=='`, and omitting `'value'` tests that a boolean master is On:
+To gate a control on more than one master at once, use `enableWhenAll` (every condition must hold - logical AND) or `enableWhenAny` (at least one - logical OR). Each takes a list of condition dicts `{'varName', 'value', 'condition'}`; `condition` defaults to `'=='`, and omitting `'value'` tests that a boolean master is On:
 
 ```python
 conditions = [
@@ -226,7 +232,7 @@ A long label wraps onto extra lines under the checkbox without ever running unde
 
 ![The color picker with the user's palette below the spectrum, and the Apply button counting pending changes](./assets/aslainMenu_colorpicker.png)
 
-By default the color picker shows the **user's own palette** — up to 48 editable slots shared across all mods, saved between sessions, starting empty. A mod can bring its own palette instead:
+By default the color picker shows the **user's own palette** - up to 48 editable slots shared across all mods, saved between sessions, starting empty. A mod can bring its own palette instead:
 
 ```python
 # up to 24 colors, shown as one or two pick-only rows at the bottom of the picker;
@@ -235,7 +241,7 @@ templates.createColorChoice('Marker color', 'marker', 'FF0000',
                             presets=['FF0000', '00FF00', 'FF00FF'])
 ```
 
-Add `presetsOnly=True` to **restrict** the choice to those colors: the picker reduces to just the preset swatches and the Apply button — no spectrum, no RGB sliders, no hex input — and its width auto-fits the palette:
+Add `presetsOnly=True` to **restrict** the choice to those colors: the picker reduces to just the preset swatches and the Apply button - no spectrum, no RGB sliders, no hex input - and its width auto-fits the palette:
 
 ```python
 # the user can pick exactly one of these three colors, nothing else
@@ -253,6 +259,31 @@ else:
     column2.append(templates.createColorChoice('Team color', 'team', 'FF0000'))
 ```
 
+### Highlighting new options (`markNew`)
+
+When a mod update adds an option, `templates.markNew(control)` flags it so the settings window points it out the way the game's own Settings window flags new options: a red flare on the option's row and a red counter on the mod's title with the number of new options (the counter shows even while the mod is collapsed). Wrap any control inline - it is returned unchanged apart from the flag:
+
+```python
+column1.append(templates.markNew(templates.createCheckbox('New: auto-reload', 'autoReload', True)))
+column1.append(templates.markNew(templates.createSlider('New: fade time', 'fade', 5, 1, 15, 1)))
+```
+
+The highlight clears **permanently** the moment the user looks at the option - clicking anywhere on its row (the label is enough, no value change needed) or changing its value - and the API remembers that per user in `aslainmenu.dat`, so it stays cleared across game restarts. The control must have a `varName` (that is how the seen-state is keyed). The user can also **right-click the counter** on the mod's title and pick **Mark all as read** to clear every one of that mod's highlights at once - no action needed from the mod.
+
+The important safety property: a mod's **first install lights up nothing**. Only options added to an *already-installed* mod are highlighted, so a brand-new user is not greeted by a wall of red on every option. Ship a new option flagged with `markNew`, and existing users see the highlight on their next update while fresh installs do not. Leave the flag in place across later versions - once a user has seen the option, it never lights up for them again.
+
+`markNew` sets a flag that is **not** part of the settings structure, so adding (or removing) it never resets saved values - it is safe to add to a shipped option in a cosmetic update. Feature-detect with `hasattr(templates, 'markNew')`; older API builds simply ignore the flag and show the option without a highlight.
+
+**Re-highlighting when content changed (`token`).** By default the highlight is one-shot - once dismissed it never returns. Pass `markNew(control, token='...')` (any string) to re-light a control whose *content* changed rather than one that is brand new - the classic case being a **language dropdown that gained an entry**. The API stores the token the user last saw; bump it to any new string and the option lights up again for everyone (and clears once they interact with it, staying clear until the token changes again). A natural token is a count or version, so a language dropdown re-lights automatically each time you add a language:
+
+```python
+# Re-lights whenever the language list grows, not only on first appearance
+column1.append(templates.markNew(
+    templates.createDropdown('Language', 'lang', LANGS, cur), token=str(len(LANGS))))
+```
+
+Bumping only the token never resets saved values either (the token is not part of the settings structure). Older API builds ignore it - a token'd control just behaves as a plain flagged option there.
+
 ### Wrapping a long hotkey label
 
 A long hotkey label wraps into the narrow column to the left of the keys by default. Pass `float='right'` to wrap it *around* the keys instead (CSS-`float` style) - the keys stay on the right and the overflow lines run the full row width underneath, so a long description reads naturally:
@@ -267,14 +298,14 @@ templates.createHotkey(
 
 ### Literal text in labels (`useHTML=False`)
 
-Menu labels render as HTML, so a literal `<`, `>` or `&` in label text is parsed as markup — a checkbox labelled `Warn when HP < 25%`, for example, shows up as just `Warn when HP `, because everything from the `<` on is read as an (unclosed) tag. The cleanest fix is `useHTML=False`, accepted by every `create*` control, which renders that control's whole label as plain text:
+Menu labels render as HTML, so a literal `<`, `>` or `&` in label text is parsed as markup - a checkbox labelled `Warn when HP < 25%`, for example, shows up as just `Warn when HP `, because everything from the `<` on is read as an (unclosed) tag. The cleanest fix is `useHTML=False`, accepted by every `create*` control, which renders that control's whole label as plain text:
 
 ```python
 templates.createCheckbox('Warn when HP < 25%', 'hpWarn', True, useHTML=False)
 templates.createSlider('Spread < 0.10', 'spread', 5, 0, 20, 1, useHTML=False)
 ```
 
-Default `useHTML=True` keeps full HTML support (icons, `<font color=...>`, `<b>`). It is a keyword argument, so older API builds reject it — gate it on the API version (or wrap the call in `try` / `except TypeError`):
+Default `useHTML=True` keeps full HTML support (icons, `<font color=...>`, `<b>`). It is a keyword argument, so older API builds reject it - gate it on the API version (or wrap the call in `try` / `except TypeError`):
 
 ```python
 kw = {'useHTML': False} if g_modsSettingsApi.getVersionTuple() >= (1, 3) else {}
@@ -287,7 +318,7 @@ To escape just a *fragment* of an otherwise-HTML label, `templates.escape(text)`
 templates.createLabel(templates.escape(userName) + " <font color='#80D639'>online</font>")
 ```
 
-Both only affect how literal text *displays* — neither has anything to do with gating. The `condition` in `enableWhen(control, varName, value, condition='<=')` is a separate feature.
+Both only affect how literal text *displays* - neither has anything to do with gating. The `condition` in `enableWhen(control, varName, value, condition='<=')` is a separate feature.
 
 ### Staying compatible with plain izeberg
 
@@ -323,7 +354,7 @@ if hasattr(g_modsSettingsApi, 'updateImage'):
     # inside onLiveChange call g_modsSettingsApi.updateImage(MOD_LINKAGE, 'icon', newSource)
 ```
 
-To gate on a feature level, read the running API version (guard the call — older builds don't provide it). Compare the tuple form, never the string:
+To gate on a feature level, read the running API version (guard the call - older builds don't provide it). Compare the tuple form, never the string:
 
 ```python
 getVer = getattr(g_modsSettingsApi, 'getVersionTuple', None)
@@ -334,7 +365,7 @@ if apiVersion >= (1, 2):
 
 **aslainMenu-only - guard before use:**
 
-- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`, the `presets` / `presetsOnly` arguments of `createColorChoice` / `createCheckboxColor` (version-gate these two: `getVersionTuple() >= (1, 5)`)
+- `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`, `markNew`, the `presets` / `presetsOnly` arguments of `createColorChoice` / `createCheckboxColor` (version-gate these two: `getVersionTuple() >= (1, 5)`)
 - `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`
 
 ## Dependencies
