@@ -346,16 +346,38 @@ class Demo(object):
             else:
                 column2 += [nfMaster, nfChild]
 
+        # column3 (multi-column expand mode): a third logical column. On a wide screen it
+        # will show as its own column; on a narrow screen (and on any older 2-column build)
+        # its rows fold under column1. Older API builds ignore column3 entirely - harmless.
+        column3 = [
+            templates.createLabel('--- column3 (expand mode: folds under column1 when narrow) ---'),
+            templates.createCheckbox('Column-3 checkbox', 'c3Chk', True),
+            templates.createSlider('Column-3 slider', 'c3Slider', 5, 1, 10, 1),
+            templates.createDropdown('Column-3 dropdown', 'c3Drop', ['Alpha', 'Beta', 'Gamma'], 0),
+        ]
+
+        # column4: a fourth logical column. On a wide screen (>= ~1850px, e.g. Full HD) it
+        # shows as its own 4th column; narrower, it folds under column2 (i % N). Older 2-column
+        # builds ignore it. This is what makes the demo reach the full 4-column expand.
+        column4 = [
+            templates.createLabel('--- column4 (expand mode: 4th column on Full HD) ---'),
+            templates.createCheckbox('Column-4 checkbox', 'c4Chk', True),
+            templates.createSlider('Column-4 slider', 'c4Slider', 5, 1, 10, 1),
+            templates.createDropdown('Column-4 dropdown', 'c4Drop', ['Red', 'Green', 'Blue'], 0),
+        ]
+
         # Title kept constant on purpose: reloadModTemplate only takes the fast IN-PLACE
         # reconcile path (reuse unchanged controls, rebuild only what changed) while the
         # mod's display name is unchanged. Changing it would force a full rebuild instead -
         # the language switch here exercises the in-place path other mods use.
         return {
             'modDisplayName': 'aslainMenu Demo (features)',
-            'settingsVersion': 12,
+            'settingsVersion': 14,
             'enabled': True,
             'column1': column1,
             'column2': column2,
+            'column3': column3,
+            'column4': column4,
         }
 
     def _onApply(self, linkage, settings):

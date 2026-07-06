@@ -84,7 +84,7 @@ package poliroid.gui.lobby.modsSettings.components
 			return renderer;
 		}
 
-		public function reloadMod(linkage:String, template:Object):ModsSettingsComponent
+		public function reloadMod(linkage:String, template:Object, forceFullRebuild:Boolean = false):ModsSettingsComponent
 		{
 			var oldRenderer:ModsSettingsComponent = null;
 			var idx:int = -1;
@@ -104,11 +104,13 @@ package poliroid.gui.lobby.modsSettings.components
 			if (oldRenderer == null)
 				return null;
 
-			if (oldRenderer.applyTemplate(template))
+			if (!forceFullRebuild && oldRenderer.applyTemplate(template))
 				return oldRenderer;
 
 			var wasCollapsed:Boolean = oldRenderer.isCollapsed;
 			var wasVisible:Boolean = oldRenderer.visible;
+
+			oldRenderer.detachNativeFlares();
 
 			var renderer:ModsSettingsComponent = new ModsSettingsComponent(linkage);
 
@@ -121,9 +123,11 @@ package poliroid.gui.lobby.modsSettings.components
 			renderer.validateNow();
 
 			renderer.setCollapsed(wasCollapsed);
-			renderer.visible = wasVisible;
 
-			reflowMods();
+			renderer.setSearchVisible(wasVisible);
+
+			if (!forceFullRebuild)
+				reflowMods();
 
 			return renderer;
 		}

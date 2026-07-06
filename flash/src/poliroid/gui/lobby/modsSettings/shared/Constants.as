@@ -5,7 +5,20 @@
 	{
 		public static const WINDOW_BACKGROUND_IMAGE:String = '../../gui/maps/uiKit/dialogs/noize_bg.png';
 
-		public static const MOD_COMPONENT_WIDTH:Number = 900;
+		public static const COLUMN_WIDTH:Number = 450;
+
+		public static var columnCount:int = 2;
+		public static var MOD_COMPONENT_WIDTH:Number = 900;
+
+		public static function updateForWidth(appWidth:Number, maxModColumns:int = 2):void
+		{
+			var afford:int = (appWidth >= 1850) ? 4 : ((appWidth >= 1400) ? 3 : 2);
+			var n:int = (afford < maxModColumns) ? afford : maxModColumns;
+			if (n < 2)
+				n = 2;
+			columnCount = n;
+			MOD_COMPONENT_WIDTH = n * COLUMN_WIDTH;
+		}
 
 		public static const COMPONENT_HEADER_MARGIN:Number = 20;
 		public static const COMPONENT_MARGIN_BOTTOM:Number = 10;

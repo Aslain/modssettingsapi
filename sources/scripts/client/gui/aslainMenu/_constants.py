@@ -35,7 +35,7 @@ PRESET_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuPresetContextMenuHandler'
 COLOR_VALUE_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuColorValueContextMenuHandler'
 NEW_FEATURE_CONTEXT_MENU_HANDLER_ALIAS = 'aslainMenuNewFeatureContextMenuHandler'
 
-COLUMNS = ('column1', 'column2')
+COLUMNS = ('column1', 'column2', 'column3', 'column4')
 
 USER_COLOR_PRESET_SLOTS = 48
 

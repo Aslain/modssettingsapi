@@ -48,7 +48,7 @@
 			x = int((appWidth - Constants.MOD_COMPONENT_WIDTH) / 2);
 			y = int(appHeight - 100);
 
-			okButton.x = Constants.MOD_COMPONENT_WIDTH - 483;
+			okButton.x = Constants.MOD_COMPONENT_WIDTH / 2 - 33;
 			cancelButton.x = okButton.x + 170;
 			applyButton.x = cancelButton.x + 170;
 		}

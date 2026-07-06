@@ -67,6 +67,7 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _flashFrames:int = 0;
 		private var _flashTicking:Boolean = false;
 		private var _newCount:int = 0;
+		private var _modWidth:Number = Constants.MOD_COMPONENT_WIDTH;
 		private var _badgeHit:Sprite;
 		private var _nfClaimed:Dictionary = new Dictionary(true);
 		private var _resetButton:Sprite;
@@ -287,6 +288,40 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 		}
 
+		public function setSearchVisible(vis:Boolean):void
+		{
+			visible = vis;
+			if (vis)
+				refreshNewMarkers();
+			else
+				disposeSearchFlares();
+		}
+
+		private function disposeSearchFlares():void
+		{
+			detachNativeFlares();
+		}
+
+		public function detachNativeFlares():void
+		{
+			for (var i:int = 0; i < components.length; i++)
+			{
+				var w:MovieClip = components[i].componentObject as MovieClip;
+				if (w == null)
+					continue;
+				if (w['newFlare'] != null)
+					detachNewMarker(w);
+				if (w['newProxyFlare'] != null)
+					detachNewMarker(w, true);
+			}
+
+			if (_fieldSet != null && _fieldSet.textField != null)
+			{
+				try { App.utils.counterManager.removeCounter(DisplayObject(_fieldSet.textField), Constants.NEW_COUNTERS_CONTAINER); }
+				catch (err:Error) {}
+			}
+		}
+
 		private function getGateMasters(data:Object):Array
 		{
 			var result:Array = [];
@@ -476,31 +511,66 @@ package poliroid.gui.lobby.modsSettings.components
 				setup();
 		}
 
+		private function displaySlots(src:Object):Array
+		{
+			var n:int = Constants.columnCount;
+			if (n < 1)
+				n = 1;
+
+			var logical:Array = [src.column1, src.column2, src.column3, src.column4];
+			var slots:Array = [];
+			var s:int;
+			for (s = 0; s < n; s++)
+				slots.push([]);
+
+			for (var i:int = 0; i < logical.length; i++)
+			{
+				var col:Array = logical[i] as Array;
+				if (col == null)
+					continue;
+
+				var target:Array = slots[i % n] as Array;
+				for (var j:int = 0; j < col.length; j++)
+					target.push(col[j]);
+			}
+
+			return slots;
+		}
+
 		private function setup():void
 		{
 			if (!data)
 				return;
 
-			var column1:Array = data.column1;
-			var column2:Array = data.column2;
+			var slots:Array = displaySlots(data);
+			var n:int = slots.length;
 			var paddingTop:Number = Constants.MOD_PADDING_TOP;
 			var lastPos:Number = 0;
+			var s:int;
 
-			var rightmostLimit:Number = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
+			var lastNonEmpty:int = -1;
+			for (s = 0; s < n; s++)
+				if ((slots[s] as Array).length > 0)
+					lastNonEmpty = s;
 
-			if (column1)
+			_modWidth = Math.max(2, lastNonEmpty + 1) * Constants.COLUMN_WIDTH;
+
+			var rightmostLimit:Number = _modWidth - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
+
+			for (s = 0; s < n; s++)
 			{
-				var limitCol1:Number = (column2)
-					? (Constants.MOD_COMPONENT_WIDTH / 2 - HOTKEY_GAP_BEFORE_COL2)
-					: rightmostLimit;
-				lastPos = createComponents(this, column1, Constants.MOD_PADDING_LEFT, paddingTop, limitCol1);
-			}
+				var slotData:Array = slots[s] as Array;
+				if (slotData.length == 0)
+					continue;
 
-			if (column2)
-			{
-				var lastPosTemp:Number = createComponents(this, column2, Constants.MOD_COMPONENT_WIDTH / 2, paddingTop, rightmostLimit);
-				if (lastPosTemp > lastPos)
-					lastPos = lastPosTemp;
+				var colX:Number = (s == 0) ? Constants.MOD_PADDING_LEFT : (s * Constants.COLUMN_WIDTH);
+				var colLimit:Number = (s == lastNonEmpty)
+					? rightmostLimit
+					: ((s + 1) * Constants.COLUMN_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+
+				var lp:Number = createComponents(this, slotData, colX, paddingTop, colLimit);
+				if (lp > lastPos)
+					lastPos = lp;
 			}
 
 			if (data.hasOwnProperty('enabled'))
@@ -1194,20 +1264,31 @@ package poliroid.gui.lobby.modsSettings.components
 			var newComps:Array = [];
 			var newByVar:Object = {};
 
-			var rightmost:Number = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
-			var col2Exists:Boolean = (newData.column2 != null);
+			var reSlots:Array = displaySlots(newData);
+			var reN:int = reSlots.length;
+			var rs:int;
 
-			if (newData.column1)
+			var reLastNonEmpty:int = -1;
+			for (rs = 0; rs < reN; rs++)
+				if ((reSlots[rs] as Array).length > 0)
+					reLastNonEmpty = rs;
+
+			_modWidth = Math.max(2, reLastNonEmpty + 1) * Constants.COLUMN_WIDTH;
+
+			var rightmost:Number = _modWidth - SWITCHER_RIGHT_OFFSET - GAP_BEFORE_SWITCHER;
+
+			for (rs = 0; rs < reN; rs++)
 			{
-				var limitCol1:Number = col2Exists
-					? (Constants.MOD_COMPONENT_WIDTH / 2 - HOTKEY_GAP_BEFORE_COL2)
-					: rightmost;
-				if (!reconcileColumn(newData.column1 as Array, Constants.MOD_PADDING_LEFT, limitCol1, existing, used, newComps, newByVar))
-					return false;
-			}
-			if (newData.column2)
-			{
-				if (!reconcileColumn(newData.column2 as Array, Constants.MOD_COMPONENT_WIDTH / 2, rightmost, existing, used, newComps, newByVar))
+				var reSlotData:Array = reSlots[rs] as Array;
+				if (reSlotData.length == 0)
+					continue;
+
+				var reColX:Number = (rs == 0) ? Constants.MOD_PADDING_LEFT : (rs * Constants.COLUMN_WIDTH);
+				var reColLimit:Number = (rs == reLastNonEmpty)
+					? rightmost
+					: ((rs + 1) * Constants.COLUMN_WIDTH - HOTKEY_GAP_BEFORE_COL2);
+
+				if (!reconcileColumn(reSlotData, reColX, reColLimit, existing, used, newComps, newByVar))
 					return false;
 			}
 
@@ -1234,6 +1315,15 @@ package poliroid.gui.lobby.modsSettings.components
 			components = newComps;
 			_componentsByVar = newByVar;
 			data = newData;
+
+			if (_fieldSet != null)
+			{
+				_fieldSet.width = Constants.MOD_COMPONENT_WIDTH;
+				_fieldSet.invalidateSize();
+				_fieldSet.validateNow();
+			}
+			if (_stateSwitcher != null)
+				_stateSwitcher.x = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET;
 
 			updateComponentsState();
 			refreshNewMarkers();
@@ -1281,9 +1371,22 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function reflow():void
 		{
-			var c1len:int = (data && data.column1) ? data.column1.length : 0;
-			var pos1:Number = Constants.MOD_PADDING_TOP;
-			var pos2:Number = Constants.MOD_PADDING_TOP;
+			var slots:Array = data ? displaySlots(data) : [];
+			var n:int = slots.length;
+			if (n < 1)
+				n = 1;
+
+			var boundaries:Array = [];
+			var posArr:Array = [];
+			var acc:int = 0;
+			var k:int;
+			for (k = 0; k < n; k++)
+			{
+				acc += (k < slots.length) ? (slots[k] as Array).length : 0;
+				boundaries.push(acc);
+				posArr.push(Constants.MOD_PADDING_TOP);
+			}
+
 			var i:int;
 			var comp:DisplayObject;
 
@@ -1302,19 +1405,19 @@ package poliroid.gui.lobby.modsSettings.components
 
 				comp.scaleY = 1;
 
-				if (i < c1len)
-				{
-					comp.y = pos1 + Constants.COMPONENT_MARGIN_BOTTOM;
-					pos1 = comp.y + comp.height;
-				}
-				else
-				{
-					comp.y = pos2 + Constants.COMPONENT_MARGIN_BOTTOM;
-					pos2 = comp.y + comp.height;
-				}
+				var col:int = 0;
+				while (col < n - 1 && i >= int(boundaries[col]))
+					col++;
+
+				comp.y = Number(posArr[col]) + Constants.COMPONENT_MARGIN_BOTTOM;
+				posArr[col] = comp.y + comp.height;
 			}
 
-			_fullHeight = Math.max(pos1, pos2) + Constants.MOD_PADDING_BOTTOM;
+			_fullHeight = Constants.MOD_PADDING_TOP;
+			for (k = 0; k < n; k++)
+				if (Number(posArr[k]) > _fullHeight)
+					_fullHeight = Number(posArr[k]);
+			_fullHeight += Constants.MOD_PADDING_BOTTOM;
 
 			if (_collapsed)
 			{

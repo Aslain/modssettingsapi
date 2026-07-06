@@ -56,6 +56,8 @@ package poliroid.gui.lobby.modsSettings
 		private var _skipResetConfirm:Boolean = false;
 		private var _appW:Number = 0;
 		private var _appH:Number = 0;
+		private var _maxModColumns:int = 2;
+		private var _lastColumnCount:int = 0;
 		private var _pendingScroll:Number = 0;
 		private var _pendingScrollTries:int = 0;
 		private var _baseline:Object = new Object();
@@ -170,12 +172,20 @@ package poliroid.gui.lobby.modsSettings
 			_appW = width;
 			_appH = height;
 
+			Constants.updateForWidth(width, _maxModColumns);
+
 			header.updateStage(width, height);
 			content.updateStage(width, height);
 			footer.updateStage(width, height);
 			background.updateStage(width, height);
 
 			positionToolbar();
+
+			if (Constants.columnCount != _lastColumnCount)
+			{
+				_lastColumnCount = Constants.columnCount;
+				rebuildModsForColumnCount();
+			}
 
 			if (_resetConfirm != null && _resetConfirm.visible)
 				_resetConfirm.resize(width, height);
@@ -205,6 +215,23 @@ package poliroid.gui.lobby.modsSettings
 		{
 			templates = data;
 
+			_maxModColumns = 2;
+			for each (var t:Object in templates)
+			{
+				var cc:int = 2;
+				if (t.column3 != null)
+					cc = 3;
+				if (t.column4 != null)
+					cc = 4;
+				if (cc > _maxModColumns)
+					_maxModColumns = cc;
+			}
+
+			var appW:Number = _appW > 0 ? _appW : (stage != null ? stage.stageWidth : 1920);
+			var appH:Number = _appH > 0 ? _appH : (stage != null ? stage.stageHeight : 1080);
+			Constants.updateForWidth(appW, _maxModColumns);
+			_lastColumnCount = Constants.columnCount;
+
 			for each (var template:Object in templates)
 			{
 				var mod:ModsSettingsComponent = content.addMod(template);
@@ -212,6 +239,8 @@ package poliroid.gui.lobby.modsSettings
 				modsArray.push(mod);
 				snapshotBaseline(mod);
 			}
+
+			updateStage(appW, appH);
 
 			content.reflowMods();
 
@@ -733,6 +762,43 @@ package poliroid.gui.lobby.modsSettings
 			requestClose();
 		}
 
+		private function rebuildModsForColumnCount():void
+		{
+			if (templates == null || content == null)
+				return;
+
+			var live:Object = new Object();
+			var m:ModsSettingsComponent;
+			for each (m in modsArray)
+				if (m != null && configChangedLinkages.indexOf(m.modLinkage) != -1)
+					live[m.modLinkage] = m.getConfigData();
+
+			for each (var t:Object in templates)
+			{
+				if (t == null || t.linkage == null)
+					continue;
+
+				var linkage:String = String(t.linkage);
+				var newMod:ModsSettingsComponent = content.reloadMod(linkage, t, true);
+				if (newMod == null)
+					continue;
+
+				for (var i:int = 0; i < modsArray.length; i++)
+				{
+					if (ModsSettingsComponent(modsArray[i]).modLinkage == linkage)
+					{
+						modsArray[i] = newMod;
+						break;
+					}
+				}
+
+				if (live[linkage] != null)
+					newMod.resetToValues(live[linkage]);
+			}
+
+			content.reflowMods();
+		}
+
 		private function handleSearch(event:InteractiveEvent):void
 		{
 			var query:String = (event.value == null) ? '' : String(event.value).toLowerCase();
@@ -744,7 +810,7 @@ package poliroid.gui.lobby.modsSettings
 					if (m == null)
 						continue;
 
-					m.visible = true;
+					m.setSearchVisible(true);
 
 					if (_collapseSnapshot != null && _collapseSnapshot.hasOwnProperty(m.modLinkage))
 						m.setCollapsed(Boolean(_collapseSnapshot[m.modLinkage]));
@@ -788,7 +854,7 @@ package poliroid.gui.lobby.modsSettings
 				name = name.replace(/<[^>]*>/g, '').toLowerCase();
 
 				var hit:Boolean = name.indexOf(query) != -1;
-				mod.visible = hit;
+				mod.setSearchVisible(hit);
 
 				if (hit)
 				{
