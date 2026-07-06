@@ -498,6 +498,12 @@ package poliroid.gui.lobby.modsSettings.components
 				}
 			}
 
+			if (values.hasOwnProperty('enabled') && _stateSwitcher != null)
+			{
+				modEnabled = Boolean(values['enabled']);
+				_stateSwitcher.selected = modEnabled;
+			}
+
 			_resetting = false;
 
 			updateComponentsState();
@@ -678,6 +684,9 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function handleStateSwitcherClick(event:Event):void
 		{
+			if (_resetting)
+				return;
+
 			App.utils.focusHandler.setFocus(this);
 
 			var switcher:StateSwitcher = StateSwitcher(event.target);

@@ -16,7 +16,11 @@ package poliroid.gui.lobby.modsSettings.components
 		private static const LETTERS:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		private static const COLOR_HOVER:uint = 0xFFFFFF;
 
+		private static const COLUMN_TOGGLE_ZONE:Number = 30;
+
 		private var _collapseBtn:Sprite;
+		private var _columnBtn:Sprite;
+		private var _multiMode:Boolean = false;
 		private var _letters:Object;
 		private var _allCollapsed:Boolean = false;
 		private var _textColor:uint = Constants.TOOLBAR_TEXT_COLOR;
@@ -27,6 +31,7 @@ package poliroid.gui.lobby.modsSettings.components
 			_letters = new Object();
 			mouseEnabled = false;
 			createCollapseButton();
+			createColumnButton();
 			createLetters();
 		}
 
@@ -81,10 +86,72 @@ package poliroid.gui.lobby.modsSettings.components
 			_collapseBtn.graphics.endFill();
 		}
 
+		private function createColumnButton():void
+		{
+			_columnBtn = new Sprite();
+			_columnBtn.y = 0;
+			_columnBtn.buttonMode = true;
+			_columnBtn.useHandCursor = true;
+			_columnBtn.addEventListener(MouseEvent.CLICK, onColumnClick);
+			_columnBtn.addEventListener(MouseEvent.ROLL_OVER, onColumnOver);
+			_columnBtn.addEventListener(MouseEvent.ROLL_OUT, onColumnOut);
+			addChild(_columnBtn);
+			drawColumnIcon();
+		}
+
+		private function drawColumnIcon():void
+		{
+			var s:Number = Constants.TOOLBAR_COLLAPSE_BTN_SIZE;
+			var bars:int = _multiMode ? 4 : 2;
+			var bw:Number = 3;
+			var gap:Number = 2;
+			var totalW:Number = bars * bw + (bars - 1) * gap;
+			var startX:Number = (s - totalW) / 2;
+			var top:Number = 3;
+			var h:Number = s - 6;
+
+			_columnBtn.graphics.clear();
+			_columnBtn.graphics.beginFill(0, 0);
+			_columnBtn.graphics.drawRect(0, 0, s, s);
+			_columnBtn.graphics.endFill();
+
+			_columnBtn.graphics.beginFill(_textColor, 1);
+			for (var i:int = 0; i < bars; i++)
+				_columnBtn.graphics.drawRect(startX + i * (bw + gap), top, bw, h);
+			_columnBtn.graphics.endFill();
+		}
+
+		public function setColumnMode(multiMode:Boolean):void
+		{
+			_multiMode = multiMode;
+			drawColumnIcon();
+		}
+
+		public function setWidth(w:Number):void
+		{
+			if (_columnBtn != null)
+				_columnBtn.x = w - Constants.TOOLBAR_COLLAPSE_BTN_SIZE - 4;
+		}
+
+		private function onColumnClick(event:MouseEvent):void
+		{
+			dispatchEvent(new InteractiveEvent(InteractiveEvent.COLUMN_MODE_TOGGLE));
+		}
+
+		private function onColumnOver(event:MouseEvent):void
+		{
+			_columnBtn.alpha = 0.7;
+		}
+
+		private function onColumnOut(event:MouseEvent):void
+		{
+			_columnBtn.alpha = 1;
+		}
+
 		private function createLetters():void
 		{
 			var left:Number = Constants.TOOLBAR_LETTERS_LEFT;
-			var slot:Number = (Constants.MOD_COMPONENT_WIDTH - left) / LETTERS.length;
+			var slot:Number = (Constants.MOD_COMPONENT_WIDTH - left - COLUMN_TOGGLE_ZONE) / LETTERS.length;
 
 			for (var i:int = 0; i < LETTERS.length; i++)
 			{

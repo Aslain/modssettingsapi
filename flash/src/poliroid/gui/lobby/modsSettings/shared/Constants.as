@@ -10,10 +10,16 @@
 		public static var columnCount:int = 2;
 		public static var MOD_COMPONENT_WIDTH:Number = 900;
 
+		public static var multiColumnMode:Boolean = false;
+
 		public static function updateForWidth(appWidth:Number, maxModColumns:int = 2):void
 		{
-			var afford:int = (appWidth >= 1850) ? 4 : ((appWidth >= 1400) ? 3 : 2);
-			var n:int = (afford < maxModColumns) ? afford : maxModColumns;
+			var n:int = 2;
+			if (multiColumnMode)
+			{
+				var afford:int = (appWidth >= 1850) ? 4 : ((appWidth >= 1400) ? 3 : 2);
+				n = (afford < maxModColumns) ? afford : maxModColumns;
+			}
 			if (n < 2)
 				n = 2;
 			columnCount = n;

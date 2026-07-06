@@ -76,6 +76,9 @@ class ModsSettingsApiWindowMeta(View):
 	def saveScrollPosition(self, pos):
 		self._printOverrideError('saveScrollPosition')
 
+	def saveMultiColumnMode(self, value):
+		self._printOverrideError('saveMultiColumnMode')
+
 	def closeView(self):
 		self._printOverrideError('closeView')
 
@@ -132,6 +135,13 @@ class ModsSettingsApiWindowMeta(View):
 		if self._isDAAPIInited():
 			try:
 				self.flashObject.as_setScrollPosition(pos)
+			except Exception:
+				pass
+
+	def as_setMultiColumnModeS(self, value):
+		if self._isDAAPIInited():
+			try:
+				self.flashObject.as_setMultiColumnMode(value)
 			except Exception:
 				pass
 
@@ -196,6 +206,8 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 	def requestModsData(self):
 		self.api.clearState()
 		self.as_setLocalizationS(generateLocalizationVO(self.api.userSettings))
+		if hasattr(self.api, 'getMultiColumnMode'):
+			self.as_setMultiColumnModeS(self.api.getMultiColumnMode())
 		self.as_setDataS(self.api.generateSettingsData())
 		self.as_setHotkeysS(self.api.getAllHotkeys())
 		if hasattr(self.api, 'getUserColorPresets'):
@@ -259,6 +271,13 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		try:
 			if hasattr(self.api, 'setWindowScrollPosition'):
 				self.api.setWindowScrollPosition(pos)
+		except Exception:
+			pass
+
+	def saveMultiColumnMode(self, value):
+		try:
+			if hasattr(self.api, 'setMultiColumnMode'):
+				self.api.setMultiColumnMode(value)
 		except Exception:
 			pass
 

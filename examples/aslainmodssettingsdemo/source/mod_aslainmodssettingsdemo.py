@@ -179,7 +179,16 @@ class Demo(object):
         if g_modsSettingsApi is None or templates is None:
             return
 
-        g_modsSettingsApi.setModTemplate(LINKAGE, self._template(), self._onApply)
+        # Option A: register a 2-column main template plus a 4-column multi template. The main
+        # (folded) layout shows in 2-column mode (default); the multi layout shows when the
+        # toolbar multi-column toggle is on. Feature-detect: older API builds lack the
+        # multiColumnTemplate arg, so fall back to the single 4-column template (auto-folded).
+        try:
+            g_modsSettingsApi.setModTemplate(
+                LINKAGE, self._template(wrapColumns=True), self._onApply,
+                multiColumnTemplate=self._template(wrapColumns=False))
+        except TypeError:
+            g_modsSettingsApi.setModTemplate(LINKAGE, self._template(wrapColumns=False), self._onApply)
 
         # Re-render the mod in place the moment the language dropdown changes (before Apply),
         # to exercise reloadModTemplate + the long-label re-wrap. fullsettings=False delivers
@@ -203,7 +212,14 @@ class Demo(object):
             newLang = int(changed['demoLang'])
             if newLang != self.lang and hasattr(g_modsSettingsApi, 'reloadModTemplate'):
                 self.lang = newLang
-                g_modsSettingsApi.reloadModTemplate(LINKAGE, self._template())
+                # Reload both layouts so multi mode re-translates in step. Older builds ignore
+                # the multiColumnTemplate arg (single-template reload).
+                try:
+                    g_modsSettingsApi.reloadModTemplate(
+                        LINKAGE, self._template(wrapColumns=True),
+                        multiColumnTemplate=self._template(wrapColumns=False))
+                except TypeError:
+                    g_modsSettingsApi.reloadModTemplate(LINKAGE, self._template(wrapColumns=True))
 
     def _apiVersion(self):
         fn = getattr(g_modsSettingsApi, 'getVersionTuple', None)
@@ -213,7 +229,7 @@ class Demo(object):
         fn = getattr(g_modsSettingsApi, 'getVersion', None)
         return '--- aslainMenu demo (API v%s) ---' % (fn() if fn else '?')
 
-    def _template(self, values=None):
+    def _template(self, values=None, wrapColumns=True):
         st = dict(self.state)
         if values:
             st.update(values)
@@ -370,6 +386,17 @@ class Demo(object):
         # reconcile path (reuse unchanged controls, rebuild only what changed) while the
         # mod's display name is unchanged. Changing it would force a full rebuild instead -
         # the language switch here exercises the in-place path other mods use.
+        # wrapColumns (the main / 2-column layout) folds column3 under column1 and column4 under
+        # column2, so the same options fit in two columns. wrapColumns=False keeps all four for
+        # the multi-column template. Same controls / varNames either way, only the columns differ.
+        if wrapColumns:
+            return {
+                'modDisplayName': 'aslainMenu Demo (features)',
+                'settingsVersion': 14,
+                'enabled': True,
+                'column1': column1 + column3,
+                'column2': column2 + column4,
+            }
         return {
             'modDisplayName': 'aslainMenu Demo (features)',
             'settingsVersion': 14,

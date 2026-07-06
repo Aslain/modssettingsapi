@@ -92,6 +92,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state.setdefault('collapsed', {})
 				self.state.setdefault('defaults', {})
 				self.state.setdefault('seenFeatures', {})
+				self.state.setdefault('multiColumnMode', False)
+				self.state.setdefault('multiColumnTemplates', {})
 				self.__migrateState()
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
@@ -126,6 +128,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				del self.state['settings'][linkage]
 				self.state.get('defaults', {}).pop(linkage, None)
 				self.state.get('seenFeatures', {}).pop(linkage, None)
+				self.state.get('multiColumnTemplates', {}).pop(linkage, None)
 
 	def registerModTranslation(self, linkage, mapping):
 		""" Register a display-only label translation for one mod, applied to the copy
@@ -187,7 +190,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		except Exception:
 			_logger.exception("[ModsSettings API] Translation pass failed for '%s'", linkage)
 
-	def setModTemplate(self, linkage, template, callback, buttonHandler=None):
+	def setModTemplate(self, linkage, template, callback, buttonHandler=None, multiColumnTemplate=None):
 		try:
 			self.activeMods.add(linkage)
 			currentTemplate = self.state['templates'].get(linkage)
@@ -216,6 +219,11 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			self.onSettingsChanged += callback
 			if buttonHandler is not None:
 				self.onButtonClicked += buttonHandler
+			if multiColumnTemplate is not None:
+				self.state.setdefault('multiColumnTemplates', {})[linkage] = multiColumnTemplate
+			else:
+				self.state.setdefault('multiColumnTemplates', {}).pop(linkage, None)
+			self.saveState()
 			return self.getModSettings(linkage, self.state['templates'][linkage])
 		except Exception:
 			_logger.exception('Error occured when trying to register mod template!')
@@ -351,6 +359,21 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		except Exception:
 			pass
 
+	def getMultiColumnMode(self):
+		""" The multi-column toolbar toggle. Persisted (unlike the session-only scroll
+		position) so the user's choice survives both a window reopen and a game restart. """
+		try:
+			return bool(self.state.get('multiColumnMode', False))
+		except Exception:
+			return False
+
+	def setMultiColumnMode(self, value):
+		try:
+			self.state['multiColumnMode'] = bool(value)
+			self.saveState()
+		except Exception:
+			pass
+
 	def getColorValueDefault(self, linkage, varName):
 		""" Default color of one color control, as a hex string, or None when unknown.
 		For CheckBoxColor the stored default is a {'enabled': ..., 'color': ...} dict,
@@ -472,16 +495,21 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				callback(linkage, settings)
 		self._lastLiveSettings[linkage] = dict(settings)
 
-	def reloadModTemplate(self, linkage, template):
+	def reloadModTemplate(self, linkage, template, multiColumnTemplate=None):
 		""" Re-render one mod's component subtree in the open settings window
 		from a fresh template (e.g. with new-language labels), without closing it.
 		The mod is responsible for filling the template with the values it wants
-		shown. Has no effect if the window is closed.
+		shown. A mod that registered a multiColumnTemplate should pass a fresh one
+		here too (e.g. re-translated), so the multi-column layout reloads in step with
+		the main one. Has no effect if the window is closed.
 		"""
 		try:
 			self.hotkeys.stopAccept()
 		except Exception:
 			_logger.exception("[ModsSettings API] stopAccept on reload of '%s' failed", linkage)
+		if multiColumnTemplate is not None:
+			self.state.setdefault('multiColumnTemplates', {})[linkage] = multiColumnTemplate
+			self.saveState()
 		template = copy.deepcopy(template)
 		template['linkage'] = linkage
 		template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
@@ -489,6 +517,20 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self._attachHotkeyDisplay(linkage, template)
 		self._applyTranslations(linkage, template)
 		self._stripSeenFeatures(linkage, template)
+		multi = self.state.get('multiColumnTemplates', {}).get(linkage)
+		if multi is not None:
+			multiCopy = copy.deepcopy(multi)
+			multiCopy['modDisplayName'] = template.get('modDisplayName')
+			if 'enabled' in template:
+				multiCopy['enabled'] = template['enabled']
+			if 'settingsVersion' in template:
+				multiCopy['settingsVersion'] = template['settingsVersion']
+			multiCopy['collapsed'] = template.get('collapsed')
+			multiCopy['defaults'] = template.get('defaults')
+			self._attachHotkeyDisplay(linkage, multiCopy)
+			self._applyTranslations(linkage, multiCopy)
+			self._stripSeenFeatures(linkage, multiCopy)
+			template['multiColumnTemplate'] = multiCopy
 		self._fireEvent('onReloadMod', linkage, template)
 
 	def resetModToDefaults(self, linkage):
@@ -612,25 +654,44 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				if component.get('type') == COMPONENT_TYPE.HOTKEY and 'varName' in component:
 					component['hotkey'] = self.hotkeys.getHotkeyData(linkage, component['varName'])
 
+	def _prepareTemplate(self, linkage, template, settings):
+		""" Fill one template copy with the live per-mod state (collapsed / defaults /
+		enabled), apply the saved values, and run the hotkey / translation / seen-feature
+		passes. Shared by the main template and its optional multiColumnTemplate so both
+		render identically. """
+		template['linkage'] = linkage
+		template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
+		template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
+		if 'enabled' in template and settings and 'enabled' in settings:
+			template['enabled'] = settings['enabled']
+		if settings:
+			for column in COLUMNS:
+				if column in template:
+					for component in template[column]:
+						if 'varName' in component and component['varName'] in settings:
+							component['value'] = settings[component['varName']]
+		self._attachHotkeyDisplay(linkage, template)
+		self._applyTranslations(linkage, template)
+		self._stripSeenFeatures(linkage, template)
+		return template
+
 	def generateSettingsData(self):
 		templates = []
 		linkages = sorted(self.state['templates'], key=self._modSortKey)
 		for linkage in linkages:
 			template = copy.deepcopy(self.state['templates'][linkage])
 			settings = self.getModSettings(linkage, template)
-			template['linkage'] = linkage
-			template['collapsed'] = self.state.get('collapsed', {}).get(linkage, False)
-			template['defaults'] = self.state.get('defaults', {}).get(linkage, {})
-			if 'enabled' in template:
-				template['enabled'] = settings['enabled']
-			for column in COLUMNS:
-				if column in template:
-					for component in template[column]:
-						if 'varName' in component and component['varName'] in settings:
-							component['value'] = settings[component['varName']]
-			self._attachHotkeyDisplay(linkage, template)
-			self._applyTranslations(linkage, template)
-			self._stripSeenFeatures(linkage, template)
+			self._prepareTemplate(linkage, template, settings)
+			multi = self.state.get('multiColumnTemplates', {}).get(linkage)
+			if multi is not None:
+				multiCopy = copy.deepcopy(multi)
+				multiCopy['modDisplayName'] = template.get('modDisplayName')
+				if 'enabled' in template:
+					multiCopy['enabled'] = template['enabled']
+				if 'settingsVersion' in template:
+					multiCopy['settingsVersion'] = template['settingsVersion']
+				self._prepareTemplate(linkage, multiCopy, settings)
+				template['multiColumnTemplate'] = multiCopy
 			templates.append(template)
 		return templates
 

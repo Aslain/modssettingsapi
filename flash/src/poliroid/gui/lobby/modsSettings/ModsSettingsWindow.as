@@ -40,6 +40,7 @@ package poliroid.gui.lobby.modsSettings
 		public var markFeatureSeen:Function;
 		public var saveUserColorPresets:Function;
 		public var saveScrollPosition:Function;
+		public var saveMultiColumnMode:Function;
 		public var closeView:Function;
 
 		private var modsArray:Array;
@@ -58,6 +59,7 @@ package poliroid.gui.lobby.modsSettings
 		private var _appH:Number = 0;
 		private var _maxModColumns:int = 2;
 		private var _lastColumnCount:int = 0;
+		private var _forceColumnRebuild:Boolean = false;
 		private var _pendingScroll:Number = 0;
 		private var _pendingScrollTries:int = 0;
 		private var _baseline:Object = new Object();
@@ -99,6 +101,8 @@ package poliroid.gui.lobby.modsSettings
 			_toolbar = new ModsSettingsToolbar();
 			_toolbar.addEventListener(InteractiveEvent.COLLAPSE_ALL, handleCollapseAll);
 			_toolbar.addEventListener(InteractiveEvent.JUMP_TO_LETTER, handleJumpToLetter);
+			_toolbar.addEventListener(InteractiveEvent.COLUMN_MODE_TOGGLE, handleColumnModeToggle);
+			_toolbar.setColumnMode(Constants.multiColumnMode);
 			addChild(_toolbar);
 			positionToolbar();
 
@@ -139,6 +143,7 @@ package poliroid.gui.lobby.modsSettings
 			{
 				_toolbar.removeEventListener(InteractiveEvent.COLLAPSE_ALL, handleCollapseAll);
 				_toolbar.removeEventListener(InteractiveEvent.JUMP_TO_LETTER, handleJumpToLetter);
+				_toolbar.removeEventListener(InteractiveEvent.COLUMN_MODE_TOGGLE, handleColumnModeToggle);
 				_toolbar = null;
 			}
 
@@ -181,8 +186,9 @@ package poliroid.gui.lobby.modsSettings
 
 			positionToolbar();
 
-			if (Constants.columnCount != _lastColumnCount)
+			if (Constants.columnCount != _lastColumnCount || _forceColumnRebuild)
 			{
+				_forceColumnRebuild = false;
 				_lastColumnCount = Constants.columnCount;
 				rebuildModsForColumnCount();
 			}
@@ -198,6 +204,7 @@ package poliroid.gui.lobby.modsSettings
 
 			_toolbar.x = content.x;
 			_toolbar.y = 10;
+			_toolbar.setWidth(Constants.MOD_COMPONENT_WIDTH);
 		}
 
 		public function as_setLocalization(l10n:Object):void
@@ -218,10 +225,11 @@ package poliroid.gui.lobby.modsSettings
 			_maxModColumns = 2;
 			for each (var t:Object in templates)
 			{
+				var layoutT:Object = (t.multiColumnTemplate != null) ? t.multiColumnTemplate : t;
 				var cc:int = 2;
-				if (t.column3 != null)
+				if (layoutT.column3 != null)
 					cc = 3;
-				if (t.column4 != null)
+				if (layoutT.column4 != null)
 					cc = 4;
 				if (cc > _maxModColumns)
 					_maxModColumns = cc;
@@ -234,7 +242,7 @@ package poliroid.gui.lobby.modsSettings
 
 			for each (var template:Object in templates)
 			{
-				var mod:ModsSettingsComponent = content.addMod(template);
+				var mod:ModsSettingsComponent = content.addMod(activeTemplate(template));
 
 				modsArray.push(mod);
 				snapshotBaseline(mod);
@@ -280,6 +288,14 @@ package poliroid.gui.lobby.modsSettings
 			}
 
 			_pendingScroll = 0;
+		}
+
+		public function as_setMultiColumnMode(value:Boolean):void
+		{
+			Constants.multiColumnMode = value;
+
+			if (_toolbar != null)
+				_toolbar.setColumnMode(value);
 		}
 
 		public function as_setUserColorPresets(data:Array):void
@@ -362,7 +378,19 @@ package poliroid.gui.lobby.modsSettings
 
 		public function as_reloadMod(linkage:String, template:Object):void
 		{
-			var newMod:ModsSettingsComponent = content.reloadMod(linkage, template);
+			if (templates != null)
+			{
+				for (var j:int = 0; j < templates.length; j++)
+				{
+					if (templates[j] != null && String(templates[j].linkage) == linkage)
+					{
+						templates[j] = template;
+						break;
+					}
+				}
+			}
+
+			var newMod:ModsSettingsComponent = content.reloadMod(linkage, activeTemplate(template));
 
 			if (newMod == null)
 				return;
@@ -537,6 +565,20 @@ package poliroid.gui.lobby.modsSettings
 
 			if (_toolbar != null)
 				_toolbar.setCollapseState(value);
+		}
+
+		private function handleColumnModeToggle(event:InteractiveEvent):void
+		{
+			Constants.multiColumnMode = !Constants.multiColumnMode;
+
+			if (_toolbar != null)
+				_toolbar.setColumnMode(Constants.multiColumnMode);
+
+			if (saveMultiColumnMode != null)
+				saveMultiColumnMode(Constants.multiColumnMode);
+
+			_forceColumnRebuild = true;
+			updateStage(_appW, _appH);
 		}
 
 		private function handleJumpToLetter(event:InteractiveEvent):void
@@ -762,6 +804,13 @@ package poliroid.gui.lobby.modsSettings
 			requestClose();
 		}
 
+		private function activeTemplate(t:Object):Object
+		{
+			if (Constants.multiColumnMode && t != null && t.multiColumnTemplate != null)
+				return t.multiColumnTemplate;
+			return t;
+		}
+
 		private function rebuildModsForColumnCount():void
 		{
 			if (templates == null || content == null)
@@ -779,7 +828,7 @@ package poliroid.gui.lobby.modsSettings
 					continue;
 
 				var linkage:String = String(t.linkage);
-				var newMod:ModsSettingsComponent = content.reloadMod(linkage, t, true);
+				var newMod:ModsSettingsComponent = content.reloadMod(linkage, activeTemplate(t), true);
 				if (newMod == null)
 					continue;
 
