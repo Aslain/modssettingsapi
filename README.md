@@ -7,6 +7,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 ## Enhancements over the original
 
 - **Collapse / expand** each mod, plus a **Collapse All / Expand All** toolbar button, to keep a long settings list tidy.
+- **Multi-column layout**: a toolbar switch spreads the mods across 2, 3 or 4 columns by window width (a wide screen uses the space instead of one tall 2-column list; the default stays 2 columns). It re-flows live when you flip it, no reopen, and the choice is remembered across menu reopens and game restarts. A mod opts into the wide look by defining `column3` / `column4`, or by registering a dedicated wide layout via `setModTemplate(..., multiColumnTemplate=...)` (see the cookbook); a plain 2-column mod that does neither still has its `column1` / `column2` auto-wrapped across the width.
 - **A-Z quick-jump bar** above the list: click a letter to jump to the first mod with that initial.
 - **Mod search**: a search box in the window header filters the mod list by name as you type - a magnifier inside the field (it hides while you type), an "×" clear button and a "Search mods" placeholder. A hit counter left of the field shows `found X of Y mods`. Press **Ctrl+F** to focus it; matching mods are revealed (auto-expanded), a search narrowing to a single mod briefly highlights it, and clearing the box restores your view. Clicking an A-Z letter while a search is active clears it first, then jumps. With only one mod installed the search hides entirely.
 - **Per-mod reset**: a rotate icon below each mod's on/off switch (shown while the mod is expanded) restores that mod's options **and hotkeys** to their defaults. Dimmed when nothing differs from the defaults (or the mod is off), bright once something changes. Clicking it asks to confirm - a small dialog with the mod's name and **Reset** / **Cancel**, drawn on top inside the menu (localized in all 25 languages; skippable via the `resetSkipConfirm` user setting). On confirm the control reset is live (**Apply / OK** keeps it, **Cancel** reverts); hotkeys reset immediately; the mod's on/off state is never touched. Works automatically for every mod (no API call needed).
@@ -132,7 +133,7 @@ def buildTemplate():
 The rule is the same whether or not your template carries a `settingsVersion`:
 
 - **Cosmetic change** (structure unchanged - label/tooltip text, a default value, or the order of controls differs) → the new template is adopted so it refreshes, and the user's saved values are **kept** (values are keyed by control name, so reordering controls is safe). No reset, no warning. This holds for any mod, including one with no `settingsVersion` and one adopting `settingsVersion` for the first time.
-- **Structural change** (a control added, removed or retyped, a dropdown / radio / step-slider's options changed, or a slider / stepper's range changed) → it needs a bump. With `settingsVersion` present and **bumped**, the new template is adopted and the mod's saved values reset to the new defaults. With `settingsVersion` present but **not bumped**, the stored template and the user's values are kept and the change is ignored (and a warning is logged). A mod with **no `settingsVersion`** adopts a structural change and resets - the legacy behaviour.
+- **Structural change** (a control added, removed or retyped, a dropdown / radio / step-slider's options changed, or a slider / stepper's range changed) → it needs a bump. With `settingsVersion` present and **bumped**, the new template is adopted and the mod's saved values reset to the new defaults. With `settingsVersion` present but **not bumped**, the stored template and the user's values are kept and the change is ignored (and a warning is logged). A mod with **no `settingsVersion`** adopts a structural change and resets - the legacy behavior.
 - **First install** → the template is adopted and its defaults recorded.
 
 If you make a **structural** change but keep the same `settingsVersion`, the API logs a warning to `python.log` (`[ModsSettings API] Template structure for '…' changed but settingsVersion was not bumped …`), so a forgotten bump is easy to spot during development. Cosmetic changes never warn - they just refresh.
@@ -284,6 +285,38 @@ column1.append(templates.markNew(
 
 Bumping only the token never resets saved values either (the token is not part of the settings structure). Older API builds ignore it - a token'd control just behaves as a plain flagged option there.
 
+### Multi-column layout (`column3` / `column4`, `multiColumnTemplate`)
+
+The window can lay a mod out in 2, 3 or 4 columns, chosen by a toolbar switch and the window width. Two ways to opt into the wide look:
+
+**Extra columns in one template** - add `column3` and/or `column4` next to `column1` / `column2`:
+
+```python
+return {
+    'modDisplayName': 'My mod',
+    'column1': column1,
+    'column2': column2,
+    'column3': column3,   # a 3rd column when the window is wide and multi-column mode is on
+    'column4': column4,   # a 4th column on a Full HD+ screen
+}
+```
+
+When narrow (or in 2-column mode) `column3` folds under `column1` and `column4` under `column2`, so the same options always fit two columns.
+
+**A dedicated wide layout** - when the automatic fold does not arrange things the way you want, register a second template just for multi-column mode. The main (2-column) template shows in 2-column mode, the `multiColumnTemplate` (3 or 4 columns) in multi-column mode - the same controls, laid out differently:
+
+```python
+main = {'modDisplayName': 'My mod', 'column1': col1 + col3, 'column2': col2 + col4}
+wide = {'modDisplayName': 'My mod', 'column1': col1, 'column2': col2,
+        'column3': col3, 'column4': col4}
+try:
+    g_modsSettingsApi.setModTemplate(LINKAGE, main, onApply, multiColumnTemplate=wide)
+except TypeError:                      # older API build without the argument
+    g_modsSettingsApi.setModTemplate(LINKAGE, wide, onApply)
+```
+
+The two layouts share saved values (keyed by `varName`), so switching between them never loses a setting. If you reload the template live (e.g. a language switch), pass both so they re-translate together - `reloadModTemplate(LINKAGE, main, multiColumnTemplate=wide)`, with the same `try` / `except TypeError` fallback. A mod that supplies no `multiColumnTemplate` uses its own `column3` / `column4` if it has them; a plain 2-column mod (no `column3` / `column4` either) has its `column1` / `column2` auto-wrapped across the columns instead.
+
 ### Wrapping a long hotkey label
 
 A long hotkey label wraps into the narrow column to the left of the keys by default. Pass `float='right'` to wrap it *around* the keys instead (CSS-`float` style) - the keys stay on the right and the overflow lines run the full row width underneath, so a long description reads naturally:
@@ -366,7 +399,7 @@ if apiVersion >= (1, 2):
 **aslainMenu-only - guard before use:**
 
 - `templates`: `createImage` (incl. `atlas=`), `createControlsGroup`, `createCheckboxColor`, `enableWhen` / `visibleWhen`, `enableWhenAll` / `enableWhenAny` / `visibleWhenAll` / `visibleWhenAny`, `escape`, `markNew`, the `presets` / `presetsOnly` arguments of `createColorChoice` / `createCheckboxColor` (version-gate these two: `getVersionTuple() >= (1, 5)`)
-- `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`
+- `g_modsSettingsApi`: `updateImage`, `updateImageAtlas`, `registerLiveSettingsChange` / `unregisterLiveSettingsChange`, `notifyLiveSettingsChange`, `reloadModTemplate`, `setModCollapsed`, `getVersion` / `getVersionTuple`, `registerModTranslation`, the `multiColumnTemplate` argument of `setModTemplate` / `reloadModTemplate` (guard with `try` / `except TypeError`)
 
 ## Dependencies
 

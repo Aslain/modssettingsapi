@@ -16,6 +16,8 @@ package poliroid.gui.lobby.modsSettings.components
 		private static const LETTERS:String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		private static const COLOR_HOVER:uint = 0xFFFFFF;
 
+		private static const LETTER_SLOT:Number = 32;
+
 		private static const COLUMN_TOGGLE_ZONE:Number = 30;
 
 		private var _collapseBtn:Sprite;
@@ -56,10 +58,10 @@ package poliroid.gui.lobby.modsSettings.components
 			_collapseBtn.addEventListener(MouseEvent.ROLL_OVER, onCollapseOver);
 			_collapseBtn.addEventListener(MouseEvent.ROLL_OUT, onCollapseOut);
 			addChild(_collapseBtn);
-			drawCollapseIcon();
+			drawCollapseIcon(_textColor);
 		}
 
-		private function drawCollapseIcon():void
+		private function drawCollapseIcon(color:uint):void
 		{
 			var s:Number = Constants.TOOLBAR_COLLAPSE_BTN_SIZE;
 			var cx:Number = s / 2;
@@ -70,7 +72,7 @@ package poliroid.gui.lobby.modsSettings.components
 			_collapseBtn.graphics.beginFill(0, 0);
 			_collapseBtn.graphics.drawRect(0, 0, s, s);
 			_collapseBtn.graphics.endFill();
-			_collapseBtn.graphics.beginFill(_textColor, 1);
+			_collapseBtn.graphics.beginFill(color, 1);
 
 			if (_allCollapsed)
 			{
@@ -96,10 +98,10 @@ package poliroid.gui.lobby.modsSettings.components
 			_columnBtn.addEventListener(MouseEvent.ROLL_OVER, onColumnOver);
 			_columnBtn.addEventListener(MouseEvent.ROLL_OUT, onColumnOut);
 			addChild(_columnBtn);
-			drawColumnIcon();
+			drawColumnIcon(_textColor);
 		}
 
-		private function drawColumnIcon():void
+		private function drawColumnIcon(color:uint):void
 		{
 			var s:Number = Constants.TOOLBAR_COLLAPSE_BTN_SIZE;
 			var bars:int = _multiMode ? 4 : 2;
@@ -115,7 +117,7 @@ package poliroid.gui.lobby.modsSettings.components
 			_columnBtn.graphics.drawRect(0, 0, s, s);
 			_columnBtn.graphics.endFill();
 
-			_columnBtn.graphics.beginFill(_textColor, 1);
+			_columnBtn.graphics.beginFill(color, 1);
 			for (var i:int = 0; i < bars; i++)
 				_columnBtn.graphics.drawRect(startX + i * (bw + gap), top, bw, h);
 			_columnBtn.graphics.endFill();
@@ -124,13 +126,46 @@ package poliroid.gui.lobby.modsSettings.components
 		public function setColumnMode(multiMode:Boolean):void
 		{
 			_multiMode = multiMode;
-			drawColumnIcon();
+			drawColumnIcon(_textColor);
 		}
 
 		public function setWidth(w:Number):void
 		{
 			if (_columnBtn != null)
 				_columnBtn.x = w - Constants.TOOLBAR_COLLAPSE_BTN_SIZE - 4;
+		}
+
+		public function relayoutLetters():void
+		{
+			if (_letters == null)
+				return;
+
+			var slot:Number = LETTER_SLOT;
+			var startX:Number = (Constants.MOD_COMPONENT_WIDTH - LETTERS.length * slot) / 2;
+
+			for (var i:int = 0; i < LETTERS.length; i++)
+			{
+				var holder:MovieClip = MovieClip(_letters[LETTERS.charAt(i)]);
+				if (holder == null)
+					continue;
+
+				var hx:Number = startX + i * slot;
+
+				holder.scaleX = holder.scaleY = 1;
+				holder.y = 0;
+				holder.x = hx;
+				holder["ox"] = hx;
+				holder["slot"] = slot;
+
+				var tf:TextField = TextField(holder["tf"]);
+				if (tf != null)
+					tf.width = slot;
+
+				holder.graphics.clear();
+				holder.graphics.beginFill(0, 0);
+				holder.graphics.drawRect(0, 0, slot, Constants.TOOLBAR_HEIGHT);
+				holder.graphics.endFill();
+			}
 		}
 
 		private function onColumnClick(event:MouseEvent):void
@@ -140,18 +175,19 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function onColumnOver(event:MouseEvent):void
 		{
-			_columnBtn.alpha = 0.7;
+			drawColumnIcon(COLOR_HOVER);
+			Constants.playHoverSound();
 		}
 
 		private function onColumnOut(event:MouseEvent):void
 		{
-			_columnBtn.alpha = 1;
+			drawColumnIcon(_textColor);
 		}
 
 		private function createLetters():void
 		{
 			var left:Number = Constants.TOOLBAR_LETTERS_LEFT;
-			var slot:Number = (Constants.MOD_COMPONENT_WIDTH - left - COLUMN_TOGGLE_ZONE) / LETTERS.length;
+			var slot:Number = LETTER_SLOT;
 
 			for (var i:int = 0; i < LETTERS.length; i++)
 			{
@@ -189,6 +225,8 @@ package poliroid.gui.lobby.modsSettings.components
 				addChild(holder);
 				_letters[letter] = holder;
 			}
+
+			relayoutLetters();
 		}
 
 		public function setAvailableLetters(available:Object):void
@@ -210,7 +248,7 @@ package poliroid.gui.lobby.modsSettings.components
 				return;
 
 			_allCollapsed = allCollapsed;
-			drawCollapseIcon();
+			drawCollapseIcon(_textColor);
 		}
 
 		private function onCollapseClick(event:MouseEvent):void
@@ -220,12 +258,13 @@ package poliroid.gui.lobby.modsSettings.components
 
 		private function onCollapseOver(event:MouseEvent):void
 		{
-			_collapseBtn.alpha = 0.7;
+			drawCollapseIcon(COLOR_HOVER);
+			Constants.playHoverSound();
 		}
 
 		private function onCollapseOut(event:MouseEvent):void
 		{
-			_collapseBtn.alpha = 1;
+			drawCollapseIcon(_textColor);
 		}
 
 		private function onLetterClick(event:MouseEvent):void
@@ -240,6 +279,7 @@ package poliroid.gui.lobby.modsSettings.components
 		{
 			var holder:MovieClip = MovieClip(event.currentTarget);
 			TextField(holder["tf"]).textColor = COLOR_HOVER;
+			Constants.playHoverSound();
 
 			var s:Number = 1.4;
 			var slot:Number = Number(holder["slot"]);

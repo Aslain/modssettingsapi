@@ -205,6 +205,7 @@ package poliroid.gui.lobby.modsSettings
 			_toolbar.x = content.x;
 			_toolbar.y = 10;
 			_toolbar.setWidth(Constants.MOD_COMPONENT_WIDTH);
+			_toolbar.relayoutLetters();
 		}
 
 		public function as_setLocalization(l10n:Object):void

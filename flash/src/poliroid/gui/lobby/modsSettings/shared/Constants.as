@@ -1,5 +1,7 @@
 ﻿package poliroid.gui.lobby.modsSettings.shared
 {
+	import net.wg.data.constants.SoundManagerStates;
+	import net.wg.data.constants.SoundTypes;
 
 	public class Constants extends Object
 	{
@@ -24,6 +26,12 @@
 				n = 2;
 			columnCount = n;
 			MOD_COMPONENT_WIDTH = n * COLUMN_WIDTH;
+		}
+
+		public static function playHoverSound():void
+		{
+			if (App.soundMgr != null)
+				App.soundMgr.playControlsSnd(SoundManagerStates.SND_OVER, SoundTypes.NORMAL_BTN, null);
 		}
 
 		public static const COMPONENT_HEADER_MARGIN:Number = 20;

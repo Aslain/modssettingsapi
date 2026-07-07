@@ -23,6 +23,10 @@ testing and as a copy-paste reference:
   - markNew token (1.6.0): the language dropdown passes token=str(len(LANG_NAMES)), so
     it re-lights whenever a language is ADDED (the token changes) even for users who
     already dismissed it - the pattern for a dropdown whose content grows over versions.
+  - multi-column (1.6.0): registers a 2-column main template plus a 4-column
+    multiColumnTemplate, so the toolbar multi-column switch swaps between the folded
+    2-column layout and a dedicated 4-column one (both reload together on a language
+    switch). A mod that ships no multiColumnTemplate is auto-wrapped instead.
 
 Every aslainMenu-only call is feature-detected with hasattr(), so the mod still loads (with
 fewer demos) on the plain izeberg menu or an older aslainMenu build.

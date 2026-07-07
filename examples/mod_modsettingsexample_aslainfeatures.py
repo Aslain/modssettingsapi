@@ -8,6 +8,8 @@
 - createCheckboxColor (1.4.0): a checkbox + color picker on one row, here doubling as a gating master
 - presets / presetsOnly (1.5.0): the picker offers only the mod's own palette, optionally exclusively
 - markNew (1.6.0): flag a freshly added option so the window shows a red flare + a title counter
+- multi-column (1.6.0): a column3 that shows as a 3rd column in multi-column mode and folds
+  back under column1 when narrow (see aslainmodssettingsdemo for a full multiColumnTemplate)
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
@@ -118,10 +120,14 @@ def buildTemplate():
 	else:
 		column2.append(templates.createColorChoice('Team color', 'teamColor', settings['teamColor']))
 
-	# Image with a built-in label: the caption collapses/expands together with
-	# the image and can be live-updated via updateImage(label=...).
+	# Multi-column (1.6.0): put the preview in its own column3 - it shows as a 3rd column in
+	# multi-column mode (the toolbar switch) and folds back under column1 when narrow or the
+	# switch is off. The simple opt-in; for a fully custom wide layout register a second
+	# template via setModTemplate(..., multiColumnTemplate=wide) - see aslainmodssettingsdemo.
+	# The Image's built-in label collapses/expands with it and is live-updatable via updateImage.
+	column3 = []
 	if hasattr(templates, 'createImage'):
-		column2.append(templates.createImage(
+		column3.append(templates.createImage(
 			PREVIEW_ICON, settings['iconSize'], settings['iconSize'],
 			varName='preview', align='center', valign='center',
 			containerWidth=120, containerHeight=120,
@@ -133,6 +139,7 @@ def buildTemplate():
 		'enabled': settings['enabled'],
 		'column1': column1,
 		'column2': column2,
+		'column3': column3,
 	}
 
 

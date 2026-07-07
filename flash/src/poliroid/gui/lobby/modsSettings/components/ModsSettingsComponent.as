@@ -36,6 +36,8 @@ package poliroid.gui.lobby.modsSettings.components
 		private static const RESET_SIZE:Number = 14;
 		private static const RESET_STACK_GAP:Number = 8;
 		private static const RESET_DIM_ALPHA:Number = 0.4;
+		private static const RESET_ACTIVE_ALPHA:Number = 0.75;
+		private static const RESET_HOVER_COLOR:uint = 0xFFF0D8;
 		private static const FLARE_OFFSET_X:Number = -7;
 		private static const FLARE_LINE_CENTER:Number = 7;
 		private static const FLARE_AXIS_TWEAK:Number = -6;
@@ -523,12 +525,55 @@ package poliroid.gui.lobby.modsSettings.components
 			if (n < 1)
 				n = 1;
 
-			var logical:Array = [src.column1, src.column2, src.column3, src.column4];
 			var slots:Array = [];
 			var s:int;
 			for (s = 0; s < n; s++)
 				slots.push([]);
 
+			var hasWide:Boolean = (src.column3 is Array && (src.column3 as Array).length > 0)
+				|| (src.column4 is Array && (src.column4 as Array).length > 0);
+
+			if (n > 2 && !hasWide)
+			{
+				var all:Array = [];
+				if (src.column1 is Array)
+					for each (var e1:Object in (src.column1 as Array))
+						all.push(e1);
+				if (src.column2 is Array)
+					for each (var e2:Object in (src.column2 as Array))
+						all.push(e2);
+
+				if (all.length >= n * 2)
+				{
+					var hasLabels:Boolean = false;
+					for each (var chk:Object in all)
+						if (chk != null && chk.type == 'Label')
+						{
+							hasLabels = true;
+							break;
+						}
+
+					var share:Number = all.length / n;
+					var wcol:int = 0;
+					var count:int = 0;
+					for (var ai:int = 0; ai < all.length; ai++)
+					{
+						var entry:Object = all[ai];
+						var boundary:Boolean = hasLabels ? (entry != null && entry.type == 'Label') : true;
+						var forceBreak:Boolean = count >= share * 2;
+						if ((boundary || forceBreak) && count >= share && wcol < n - 1)
+						{
+							wcol++;
+							count = 0;
+						}
+						(slots[wcol] as Array).push(entry);
+						count++;
+					}
+					return slots;
+				}
+			}
+
+			var logical:Array = [src.column1, src.column2, src.column3, src.column4];
 			for (var i:int = 0; i < logical.length; i++)
 			{
 				var col:Array = logical[i] as Array;
@@ -1014,10 +1059,10 @@ package poliroid.gui.lobby.modsSettings.components
 
 			addChild(_resetButton);
 
-			drawResetIcon();
+			drawResetIcon(_resetColor);
 		}
 
-		private function drawResetIcon():void
+		private function drawResetIcon(color:uint):void
 		{
 			if (_resetButton == null)
 				return;
@@ -1036,7 +1081,7 @@ package poliroid.gui.lobby.modsSettings.components
 			var startA:Number = -55 * Math.PI / 180;
 			var endA:Number = 215 * Math.PI / 180;
 			var steps:int = 28;
-			g.lineStyle(1.5, _resetColor, 1, true);
+			g.lineStyle(1.5, color, 1, true);
 			g.moveTo(cx + r * Math.cos(startA), cy + r * Math.sin(startA));
 			for (var i:int = 1; i <= steps; i++)
 			{
@@ -1053,7 +1098,7 @@ package poliroid.gui.lobby.modsSettings.components
 			var ny:Number = Math.sin(startA);
 			var head:Number = RESET_SIZE * 0.34;
 			var halfBase:Number = head * 0.7;
-			g.beginFill(_resetColor, 1);
+			g.beginFill(color, 1);
 			g.moveTo(px + tx * head, py + ty * head);
 			g.lineTo(px + nx * halfBase, py + ny * halfBase);
 			g.lineTo(px - nx * halfBase, py - ny * halfBase);
@@ -1069,12 +1114,17 @@ package poliroid.gui.lobby.modsSettings.components
 		private function onResetOver(event:MouseEvent):void
 		{
 			if (_resetButton != null && modEnabled)
+			{
+				drawResetIcon(RESET_HOVER_COLOR);
 				_resetButton.alpha = 1.0;
+				Constants.playHoverSound();
+			}
 			try { App.toolTipMgr.showComplex(STRINGS.BUTTON_RESET_TOOLTIP); } catch (err:Error) {}
 		}
 
 		private function onResetOut(event:MouseEvent):void
 		{
+			drawResetIcon(_resetColor);
 			updateResetState();
 			try { App.toolTipMgr.hide(); } catch (err:Error) {}
 		}
@@ -1122,7 +1172,7 @@ package poliroid.gui.lobby.modsSettings.components
 			_resetButton.mouseEnabled = modEnabled;
 			_resetButton.buttonMode = modEnabled;
 			_resetButton.useHandCursor = modEnabled;
-			_resetButton.alpha = (modEnabled && differsFromDefaults()) ? 1.0 : RESET_DIM_ALPHA;
+			_resetButton.alpha = (modEnabled && differsFromDefaults()) ? RESET_ACTIVE_ALPHA : RESET_DIM_ALPHA;
 		}
 
 		private function applyVisibility():void
