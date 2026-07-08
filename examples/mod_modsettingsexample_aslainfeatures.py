@@ -10,6 +10,8 @@
 - markNew (1.6.0): flag a freshly added option so the window shows a red flare + a title counter
 - multi-column (1.6.0): a column3 that shows as a 3rd column in multi-column mode and folds
   back under column1 when narrow (see aslainmodssettingsdemo for a full multiColumnTemplate)
+- inline radio (1.6.1): createRadioButtonGroup(..., inline=True) lays the options out in one
+  horizontal row (gated with try/except TypeError - older builds lack the argument)
 - useHTML=False / templates.escape (literal <, >, & in a label)
 - getVersionTuple() version-gating (guarded for older builds)
 Every Aslain Menu only call is feature-detected with hasattr(), so this mod still
@@ -75,8 +77,18 @@ def buildTemplate():
 		templates.markNew(fadeSlider)
 	column1.append(fadeSlider)
 
+	# Inline radio (1.6.1): the options sit in one horizontal row instead of stacking.
+	# The argument is part of the function signature, so older builds raise TypeError -
+	# gate with try/except (unlike template keys, hasattr() cannot detect it).
+	try:
+		previewRadio = templates.createRadioButtonGroup('Preview', 'previewMode',
+									['Icon', 'No image'], settings['previewMode'], inline=True)
+	except TypeError:
+		previewRadio = templates.createRadioButtonGroup('Preview', 'previewMode',
+									['Icon', 'No image'], settings['previewMode'])
+
 	column2 = [
-		templates.createRadioButtonGroup('Preview', 'previewMode', ['Icon', 'No image'], settings['previewMode']),
+		previewRadio,
 	]
 
 	# Value-conditional grey-out: the size slider is editable only while

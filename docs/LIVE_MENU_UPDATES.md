@@ -98,6 +98,13 @@ one — jump up to fill the gap. Default `False` keeps the reserved slot. Set a 
 
 Returns nothing; safe to call whenever the window is open.
 
+Since 1.6.1 a pushed image also **survives layout rebuilds**: the API remembers the last
+`updateImage` / `updateImageAtlas` per control and replays it after the window rebuilds
+the mods (the multi-column toggle, or a resize crossing a column boundary). Before that,
+a rebuild silently dropped the runtime image and showed the template's initial one again.
+Nothing to do on the mod side — pushing on every change (as below) keeps working and is
+still the right pattern.
+
 ---
 
 ## 3. Sprite-sheet animation — `createImage(atlas={...})` + `g_modsSettingsApi.updateImageAtlas(...)`

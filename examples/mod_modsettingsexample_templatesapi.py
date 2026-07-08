@@ -87,6 +87,13 @@ if hasattr(templates, 'markNew'):
 	template['column1'].append(templates.markNew(templates.createCheckbox('New option (1.6.0)', 'newOptionTest', True,
 								tooltip='{HEADER}markNew{/HEADER}{BODY}Marked as new: a red flare on this row and a counter on the mod title, cleared once you click the row or change the value{/BODY}')))
 
+# Inline radio group (aslainMenu 1.6.1+): the options render in one horizontal row instead of
+# a vertical stack. The flag is a function argument (not a template key), so older builds raise
+# TypeError - gate on the version (or wrap the call in try/except TypeError).
+if hasattr(g_modsSettingsApi, 'getVersionTuple') and g_modsSettingsApi.getVersionTuple() >= (1, 6, 1):
+	template['column2'].append(templates.createRadioButtonGroup('Marker style (inline)', 'markerStyle',
+								['Dot', 'Cross', 'Ring'], 0, inline=True))
+
 
 settings = {
 	'sixthSenseSound' : 0,

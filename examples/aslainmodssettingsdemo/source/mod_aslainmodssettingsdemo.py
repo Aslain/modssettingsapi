@@ -27,6 +27,9 @@ testing and as a copy-paste reference:
     multiColumnTemplate, so the toolbar multi-column switch swaps between the folded
     2-column layout and a dedicated 4-column one (both reload together on a language
     switch). A mod that ships no multiColumnTemplate is auto-wrapped instead.
+  - inline radio (1.6.1): the "Radio group (inline)" options sit in one horizontal row
+    (the inline= kwarg is gated by try/except TypeError - see _radio - because it is a
+    function argument older builds reject, unlike a template key).
 
 Every aslainMenu-only call is feature-detected with hasattr(), so the mod still loads (with
 fewer demos) on the plain izeberg menu or an older aslainMenu build.
@@ -136,6 +139,16 @@ def _hotkey(text, varName, value, **kw):
     except TypeError:
         kw.pop('float', None)
         return templates.createHotkey(text, varName, value, **kw)
+
+
+def _radio(text, varName, options, value, **kw):
+    """createRadioButtonGroup, dropping the 1.6.1-only inline= kwarg on older API builds
+    (the flag is a function argument, so hasattr() cannot detect it - TypeError does)."""
+    try:
+        return templates.createRadioButtonGroup(text, varName, options, value, **kw)
+    except TypeError:
+        kw.pop('inline', None)
+        return templates.createRadioButtonGroup(text, varName, options, value, **kw)
 
 
 def _esc(text):
@@ -261,7 +274,7 @@ class Demo(object):
             _gate('visibleWhen', _new(templates.createSlider('Extra row 3', 'demoColR3', st['demoColR3'], 1, 10, 1)), 'demoColGrow', True, indent=True),
             templates.createLabel('--- Control types ---'),
             templates.createCheckbox('Checkbox', 'dChk', st['dChk'], tooltip=TIP),
-            templates.createRadioButtonGroup('Radio group', 'dRadio', ['One', 'Two', 'Three'], st['dRadio']),
+            _radio('Radio group (inline)', 'dRadio', ['One', 'Two', 'Three'], st['dRadio'], inline=True),
             templates.createDropdown('Dropdown', 'dDrop', DD_OPTIONS, st['dDrop']),
             templates.createSlider('Slider', 'dSlider', st['dSlider'], 0, 10, 1),
             templates.createStepSlider('Step slider', 'dStep', ['Low', 'Mid', 'High'], st['dStep']),

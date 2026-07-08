@@ -70,7 +70,7 @@ def generateOptions(entries):
 		options.append(option)
 	return options
 
-def createOptionsControl(type, text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
+def createOptionsControl(type, text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True, inline=False):
 	""" Helper to create control with options component
 
 	:param type: Component type, MUST be one of COMPONENT_TYPE
@@ -85,11 +85,17 @@ def createOptionsControl(type, text, varName, options, value, tooltip=None, tool
 	:param useHTML: When False, the label renders as plain text (the API escapes
 		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
 		labels (icons, <font>, <b>).
-	
+	:param inline: When True, a RadioButtonGroup lays its options out in one
+		horizontal row instead of stacking them vertically. Ignored by controls
+		that do not support it. Default False. Older API builds lack the argument
+		(TypeError) - gate it with try/except or getVersionTuple() >= (1, 6, 1).
+
 	:return: Control component with options
 	"""
 	control = createControl(type, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 	control['options'] = generateOptions(options)
+	if inline:
+		control['inline'] = True
 	return control
 
 def createStepper(type, text, varName, value, min, max, interval, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
@@ -271,7 +277,7 @@ def createCheckbox(text, varName, value, tooltip=None, tooltipIcon=None, button=
 	"""
 	return createControl(COMPONENT_TYPE.CHECKBOX, text, varName, value, tooltip, tooltipIcon, button, useHTML)
 
-def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True):
+def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, useHTML=True, inline=False):
 	""" Helper to create RadioButtonGroup component
 
 	:param text: Component text
@@ -284,10 +290,14 @@ def createRadioButtonGroup(text, varName, options, value, tooltip=None, tooltipI
 	:param useHTML: When False, the label renders as plain text (the API escapes
 		<, > and & so they show verbatim) instead of HTML. Default True keeps HTML
 		labels (icons, <font>, <b>).
+	:param inline: When True, the options render in a single horizontal row
+		([x] a  [ ] b  [ ] c) instead of stacked vertically. Default False keeps
+		the vertical stack. Older API builds lack the argument (TypeError) - gate
+		it with try/except or getVersionTuple() >= (1, 6, 1).
 
 	:return: RadioButtonGroup component
 	"""
-	return createOptionsControl(COMPONENT_TYPE.RADIO_BUTTON_GROUP, text, varName, options, value, tooltip, tooltipIcon, button, useHTML)
+	return createOptionsControl(COMPONENT_TYPE.RADIO_BUTTON_GROUP, text, varName, options, value, tooltip, tooltipIcon, button, useHTML, inline)
 
 def createDropdown(text, varName, options, value, tooltip=None, tooltipIcon=None, button=None, width=None, useHTML=True):
 	""" Helper to create Dropdown component

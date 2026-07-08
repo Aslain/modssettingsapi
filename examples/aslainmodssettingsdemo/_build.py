@@ -2,7 +2,7 @@
 import os, py_compile, zipfile, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = '1.0.10'
+VERSION = '1.0.12'
 SRC = os.path.join(HERE, 'source', 'mod_aslainmodssettingsdemo.py')
 BUILD = os.path.join(HERE, 'build')
 PYC = os.path.join(BUILD, 'mod_aslainmodssettingsdemo.pyc')

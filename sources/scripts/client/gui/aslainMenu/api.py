@@ -39,6 +39,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self._lastLiveSettings = {}
 		self._warnedLegacyLiveMode = set()
 		self._modTranslations = {}
+		self._liveImages = {}
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
@@ -129,6 +130,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state.get('defaults', {}).pop(linkage, None)
 				self.state.get('seenFeatures', {}).pop(linkage, None)
 				self.state.get('multiColumnTemplates', {}).pop(linkage, None)
+				self._liveImageStore().pop(linkage, None)
 
 	def registerModTranslation(self, linkage, mapping):
 		""" Register a display-only label translation for one mod, applied to the copy
@@ -377,15 +379,20 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def getColorValueDefault(self, linkage, varName):
 		""" Default color of one color control, as a hex string, or None when unknown.
 		For CheckBoxColor the stored default is a {'enabled': ..., 'color': ...} dict,
-		so the color part is extracted. """
+		so the color part is extracted. The value is returned in the exact format the
+		template stored (case and any leading '#' preserved): the window pushes it into
+		the control verbatim, and reformatting it here would register as a phantom
+		pending change against the Apply baseline - resetting an already-default color
+		must be a no-op, not a change. Validation runs on a normalized copy only. """
 		try:
 			default = self.state.get('defaults', {}).get(linkage, {}).get(varName)
 			if isinstance(default, dict):
 				default = default.get('color')
 			if default is None:
 				return None
-			default = str(default).lstrip('#').lower()
-			if len(default) == 6 and all(ch in '0123456789abcdef' for ch in default):
+			default = str(default)
+			check = default.lstrip('#').lower()
+			if len(check) == 6 and all(ch in '0123456789abcdef' for ch in check):
 				return default
 		except Exception:
 			pass
@@ -434,16 +441,49 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		if event is not None:
 			event(*args)
 
+	def _liveImageStore(self):
+		""" The runtime image cache, fetched defensively: the live instance can be a superseded
+		or older fork build whose __init__ never created the attribute (see _fireEvent), so it
+		is lazily (re)created instead of assumed. updateImage MUST keep working on such an
+		instance - the cache is an add-on, never a prerequisite. """
+		store = getattr(self, '_liveImages', None)
+		if store is None:
+			store = {}
+			self._liveImages = store
+		return store
+
 	def updateImage(self, linkage, varName, source, width=None, height=None, removeImage=False, label=None):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
+		if removeImage:
+			self._liveImageStore().get(linkage, {}).pop(varName, None)
+		else:
+			self._liveImageStore().setdefault(linkage, {})[varName] = ('image', (source, w, h, label))
 		self._fireEvent('onImageUpdate', linkage, varName, source, w, h, bool(removeImage), label)
 
 	def updateImageAtlas(self, linkage, varName, atlasSource, frameWidth, frameHeight, columns, count, fps, loop=True, width=None, height=None):
 		w = int(width) if width else 0
 		h = int(height) if height else 0
+		self._liveImageStore().setdefault(linkage, {})[varName] = ('atlas',
+				(atlasSource, int(frameWidth), int(frameHeight), int(columns), int(count), float(fps), bool(loop), w, h))
 		self._fireEvent('onImageAtlasUpdate', linkage, varName, atlasSource, int(frameWidth), int(frameHeight),
 								int(columns), int(count), float(fps), bool(loop), w, h)
+
+	def replayLiveImages(self):
+		""" Re-emit the last updateImage / updateImageAtlas for every live preview. The window
+		calls this after a full rebuild (column-mode switch, resize) so preview images that
+		live on the runtime component - not in the template - are restored. Runtime-only state,
+		never persisted; a mod that never pushed an image is unaffected. """
+		for linkage, byVar in self._liveImageStore().items():
+			for varName, entry in byVar.items():
+				kind, args = entry
+				if kind == 'atlas':
+					atlasSource, fw, fh, cols, count, fps, loop, w, h = args
+					self._fireEvent('onImageAtlasUpdate', linkage, varName, atlasSource, fw, fh,
+									cols, count, fps, loop, w, h)
+				else:
+					source, w, h, label = args
+					self._fireEvent('onImageUpdate', linkage, varName, source, w, h, False, label)
 
 	def getVersion(self):
 		return VERSION

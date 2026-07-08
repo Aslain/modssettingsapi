@@ -79,6 +79,9 @@ class ModsSettingsApiWindowMeta(View):
 	def saveMultiColumnMode(self, value):
 		self._printOverrideError('saveMultiColumnMode')
 
+	def replayLiveImages(self):
+		self._printOverrideError('replayLiveImages')
+
 	def closeView(self):
 		self._printOverrideError('closeView')
 
@@ -278,6 +281,13 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 		try:
 			if hasattr(self.api, 'setMultiColumnMode'):
 				self.api.setMultiColumnMode(value)
+		except Exception:
+			pass
+
+	def replayLiveImages(self):
+		try:
+			if hasattr(self.api, 'replayLiveImages'):
+				self.api.replayLiveImages()
 		except Exception:
 			pass
 

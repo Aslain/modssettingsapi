@@ -455,16 +455,31 @@
 
 			var buttonGroup:ButtonGroup = ButtonGroup.getGroup(groupName, ui);
 
+			var inline:Boolean = (componentConfig.inline == true);
+			var inlineX:Number = 0;
+			var inlineRowY:Number = (margin ? Constants.RADIO_HEADER_MARGIN : 0);
+
 			for (var i:Number = 0; i < options.length; i++)
 			{
 				var radioButton:RadioButton = RadioButton(App.utils.classFactory.getComponent('RadioButton', RadioButton));
 
-				radioButton.y = i * Constants.RADIO_BUTTONS_MARGIN + (margin ? Constants.RADIO_HEADER_MARGIN : 0);
 				radioButton.label = options[i].label;
 				radioButton.autoSize = TextFieldAutoSize.LEFT;
 
+				if (inline)
+					radioButton.y = inlineRowY;
+				else
+					radioButton.y = i * Constants.RADIO_BUTTONS_MARGIN + (margin ? Constants.RADIO_HEADER_MARGIN : 0);
+
 				ui.addChild(radioButton);
 				buttonGroup.addButton(radioButton);
+
+				if (inline)
+				{
+					radioButton.validateNow();
+					radioButton.x = inlineX;
+					inlineX += radioButton.width + Constants.RADIO_INLINE_GAP;
+				}
 
 				radioButton.addEventListener(Event.SELECT, handleComponentEvent);
 			}

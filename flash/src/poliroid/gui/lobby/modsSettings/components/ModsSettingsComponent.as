@@ -63,6 +63,7 @@ package poliroid.gui.lobby.modsSettings.components
 		private var _arrowColor:uint = 0xCCCCCC;
 		private var _arrowHovered:Boolean = false;
 		private var _nameHovered:Boolean = false;
+		private var _headerHoverOn:Boolean = false;
 		private var _arrowBright:HoverBrightener;
 		private var _nameBright:HoverBrightener;
 		private var _flashBright:HoverBrightener;
@@ -1018,6 +1019,9 @@ package poliroid.gui.lobby.modsSettings.components
 		private function refreshHeaderHighlight():void
 		{
 			var on:Boolean = _arrowHovered || _nameHovered;
+			if (on && !_headerHoverOn)
+				Constants.playHoverSound();
+			_headerHoverOn = on;
 			if (_arrowBright != null)
 				_arrowBright.on = on;
 			if (_nameBright != null)
@@ -1141,17 +1145,47 @@ package poliroid.gui.lobby.modsSettings.components
 			{
 				var entry:Object = components[i];
 
-				if (!('varName' in entry.data) || entry.data.type == 'HotKey')
+				if (!('varName' in entry.data))
 					continue;
 
 				var vn:String = entry.data.varName;
 				if (!defaults.hasOwnProperty(vn) || !current.hasOwnProperty(vn))
 					continue;
+
+				if (entry.data.type == 'HotKey')
+				{
+					if (!keysetsEqual(current[vn], defaults[vn]))
+						return true;
+					continue;
+				}
+
 				if (!valuesEqual(current[vn], defaults[vn]))
 					return true;
 			}
 
 			return false;
+		}
+
+		private function keysetsEqual(a:*, b:*):Boolean
+		{
+			var aa:Array = (a is Array) ? (a as Array).concat() : null;
+			var bb:Array = (b is Array) ? (b as Array).concat() : null;
+
+			if (aa == null || bb == null)
+				return String(a) == String(b);
+
+			if (aa.length != bb.length)
+				return false;
+
+			aa.sort(Array.NUMERIC);
+			bb.sort(Array.NUMERIC);
+
+			return aa.toString() == bb.toString();
+		}
+
+		public function refreshResetState():void
+		{
+			updateResetState();
 		}
 
 		private function valuesEqual(a:*, b:*):Boolean

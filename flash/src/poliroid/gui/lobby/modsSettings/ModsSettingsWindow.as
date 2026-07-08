@@ -41,6 +41,7 @@ package poliroid.gui.lobby.modsSettings
 		public var saveUserColorPresets:Function;
 		public var saveScrollPosition:Function;
 		public var saveMultiColumnMode:Function;
+		public var replayLiveImages:Function;
 		public var closeView:Function;
 
 		private var modsArray:Array;
@@ -355,6 +356,8 @@ package poliroid.gui.lobby.modsSettings
 							component.componentObject['control'].setData(hotkeyControlVO);
 						}
 					}
+
+					mod.refreshResetState();
 				}
 			}
 		}
@@ -460,7 +463,6 @@ package poliroid.gui.lobby.modsSettings
 		private function handleModSettingsChanged(event:InteractiveEvent):void
 		{
 			configChanged = true;
-			footer.applyButton.enabled = true;
 
 			if (configChangedLinkages.indexOf(event.linkage) == -1)
 				configChangedLinkages.push(event.linkage);
@@ -756,7 +758,14 @@ package poliroid.gui.lobby.modsSettings
 			for each (var count:int in _changedCounts)
 				pending += count;
 
+			var applicable:int = pending;
+
+			for each (var linkage:String in configChangedLinkages)
+				if (_baseline[linkage] == null)
+					applicable++;
+
 			footer.applyButton.label = (pending > 0) ? STRINGS.BUTTON_APPLY + ' (' + pending + ')' : STRINGS.BUTTON_APPLY;
+			footer.applyButton.enabled = applicable > 0;
 		}
 
 		private function flashMod(mod:ModsSettingsComponent):void
@@ -847,6 +856,9 @@ package poliroid.gui.lobby.modsSettings
 			}
 
 			content.reflowMods();
+
+			if (replayLiveImages != null)
+				replayLiveImages();
 		}
 
 		private function handleSearch(event:InteractiveEvent):void

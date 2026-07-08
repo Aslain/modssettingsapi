@@ -1,5 +1,16 @@
 # CHANGELOG
 
+### 1.6.1
+
+**New for mod authors**
+- **Inline radio group**: `templates.createRadioButtonGroup(..., inline=True)` renders the group's options in a single horizontal row (`[x] One  [ ] Two  [ ] Three`) instead of stacking them vertically - a short option list takes one row instead of three. Vertical stays the default. Older API builds lack the argument (`TypeError`), so gate it: `try` / `except TypeError`, or `g_modsSettingsApi.getVersionTuple() >= (1, 6, 1)`.
+
+**Fixed**
+- **Live preview images survive the multi-column switch**: an image pushed at runtime via `updateImage` / `updateImageAtlas` (a live preview following a dropdown, say) was dropped whenever the window rebuilt the layout - the column-mode toggle or a resize across a column boundary. The API now remembers the last image pushed to each control and restores it after the rebuild; no mod-side change needed.
+- **The Apply button greys out again when nothing is left to apply**: reverting every changed option back to its saved value correctly dropped the pending counter to 0, but the button stayed clickable (inherited from the original API - the 1.5.0 counter made it visible). The button now follows the counter, so it also stays grey when a mod reset changes nothing.
+- **The per-mod reset button notices hotkeys**: the mod reset restores hotkeys too, but the button's dim/bright state ignored them - a mod whose only change was a reassigned hotkey looked like it had nothing to reset. A hotkey away from its default now lights the button the moment it is assigned, and resetting dims it again.
+- **Right-click > Default on a color swatch no longer registers a phantom change**: the default color was pushed into the control reformatted (lowercased, leading `#` stripped), so even resetting an already-default color lit the Apply counter with a "change" that was just a different spelling of the same color. The default is now applied in the exact format the mod's template stored, and the value a mod receives keeps its own formatting.
+
 ### 1.6.0
 
 **New in the settings window**

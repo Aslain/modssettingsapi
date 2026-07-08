@@ -1,7 +1,7 @@
 {
 	"meta": {
 		"id": "aslain.modssettingsapi",
-		"version": "1.6.0",
+		"version": "1.6.1",
 		"name": "ModsSettings API",
 		"description": "This modification allows you to configure installed mods even more easily"
 	},
