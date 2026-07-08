@@ -31,7 +31,7 @@ It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, s
 - **API version** for feature-gating: `g_modsSettingsApi.getVersion()` (string, e.g. `'1.2.0'`) and `getVersionTuple()` (e.g. `(1, 2, 0)` - compare this, not the string), plus the importable `VERSION` / `VERSION_TUPLE` constants, so a mod can adapt to the running API version (`if g_modsSettingsApi.getVersionTuple() >= (1, 2): ...`).
 - **Translate another mod's menu** via `g_modsSettingsApi.registerModTranslation(linkage, mapping)`: supply a `{original string: replacement string}` dict and the API swaps those labels on the **copy** shown in the window - the target mod's stored template, saved values and code stay untouched (no settings reset). The API ships no translations itself; it is the hook an optional, separate localization mod uses to translate a mod whose menu is offered in only one language.
 
-See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, and [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API.
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full list, [`docs/LIVE_MENU_UPDATES.md`](./docs/LIVE_MENU_UPDATES.md) for the live-update and image API, and [`docs/API_VERSIONS.md`](./docs/API_VERSIONS.md) for every function and argument with the version that introduced it (one version gate instead of try/except probing).
 
 ## Screenshots
 
