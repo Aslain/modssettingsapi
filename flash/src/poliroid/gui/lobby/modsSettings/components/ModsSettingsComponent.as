@@ -554,26 +554,46 @@ package poliroid.gui.lobby.modsSettings.components
 							break;
 						}
 
-					var share:Number = all.length / n;
-					var wcol:int = 0;
-					var count:int = 0;
-					for (var ai:int = 0; ai < all.length; ai++)
-					{
-						var entry:Object = all[ai];
-						var boundary:Boolean = hasLabels ? (entry != null && entry.type == 'Label') : true;
-						var forceBreak:Boolean = count >= share * 2;
-						if ((boundary || forceBreak) && count >= share && wcol < n - 1)
-						{
-							wcol++;
-							count = 0;
-						}
-						(slots[wcol] as Array).push(entry);
-						count++;
-					}
-					return slots;
+					var wrapped:Array = fillWrapSlots(all, n, hasLabels);
+
+					if (hasLabels && (wrapped[n - 1] as Array).length == 0)
+						wrapped = fillWrapSlots(all, n, false);
+
+					return wrapped;
 				}
 			}
 
+			return foldSlots(src, slots, n);
+		}
+
+		private function fillWrapSlots(all:Array, n:int, labelBreaks:Boolean):Array
+		{
+			var slots:Array = [];
+			for (var s:int = 0; s < n; s++)
+				slots.push([]);
+
+			var share:Number = all.length / n;
+			var wcol:int = 0;
+			var count:int = 0;
+
+			for (var ai:int = 0; ai < all.length; ai++)
+			{
+				var entry:Object = all[ai];
+				var boundary:Boolean = labelBreaks ? (entry != null && entry.type == 'Label') : true;
+				var forceBreak:Boolean = count >= share * 2;
+				if ((boundary || forceBreak) && count >= share && wcol < n - 1)
+				{
+					wcol++;
+					count = 0;
+				}
+				(slots[wcol] as Array).push(entry);
+				count++;
+			}
+			return slots;
+		}
+
+		private function foldSlots(src:Object, slots:Array, n:int):Array
+		{
 			var logical:Array = [src.column1, src.column2, src.column3, src.column4];
 			for (var i:int = 0; i < logical.length; i++)
 			{
@@ -1286,9 +1306,9 @@ package poliroid.gui.lobby.modsSettings.components
 				return null;
 			var t:String = String(cfg.type);
 			if ('varName' in cfg)
-				return t + "|" + String(cfg.varName) + "|" + valStr(cfg.text) + "|" + valStr(cfg.value);
+				return t + "|" + String(cfg.varName) + "|" + valStr(cfg.text) + "|" + valStr(cfg.value) + "|" + valStr(cfg.tooltip);
 			if (t == 'Label')
-				return "Label|" + valStr(cfg.text);
+				return "Label|" + valStr(cfg.text) + "|" + valStr(cfg.tooltip);
 			return null;
 		}
 

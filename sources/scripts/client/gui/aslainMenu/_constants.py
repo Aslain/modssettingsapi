@@ -7,8 +7,8 @@ from external_strings_utils import unicode_from_utf8
 MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 
-VERSION = '1.6.1'
-VERSION_TUPLE = (1, 6, 1)
+VERSION = '1.6.2'
+VERSION_TUPLE = (1, 6, 2)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
