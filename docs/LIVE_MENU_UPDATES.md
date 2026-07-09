@@ -182,9 +182,12 @@ labels and the current values, then call this.
   purely visual — Apply/OK still commits via the normal `onModSettingsChanged`, and
   Cancel/Close still discards.
 - Other mods are untouched; the components below are re-flowed to the new height.
-- The re-render is **incremental**: only controls whose type, variable, label or value
-  changed are rebuilt — unchanged controls are reused in place (an instant language switch,
-  for example, rebuilds the labels and keeps the controls whose values did not change).
+- The re-render is **incremental**: only controls whose type, variable, label, value or
+  **tooltip** changed are rebuilt — unchanged controls are reused in place (an instant
+  language switch, for example, rebuilds the labels and keeps the controls whose values did
+  not change). Because the tooltip is part of that check, a reload that changes only a
+  control's tooltip refreshes it — useful for live tooltip content (a running status, a
+  current value shown inside the tooltip).
 - Re-rendered **hotkey** controls are re-filled automatically — the API re-applies the
   stored keysets after a reload.
 - No effect if the window is closed — it re-renders the open window only. For conditional structure that should **persist** across reopens, gate the controls with `visibleWhen` / `createControlsGroup` (section 6); `reloadModTemplate` is for transient re-renders of the open window.

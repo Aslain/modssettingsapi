@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### 1.6.2
+
+**Fixed**
+- **Auto-wrap now spreads a label-less mod across all columns**: a plain 2-column mod (no `multiColumnTemplate`, no `column3` / `column4`) that is one long wall of options with its section labels only near the top - think a mod with ~50 checkboxes and no separators past the header - filled only two crowded columns in 3/4-column mode and left the rest empty. The auto-wrap now redoes the split evenly whenever its label-aware pass would leave a column empty, so the mod uses the full width. Mods with their own wide layout (a `multiColumnTemplate`, or `column3` / `column4`) are untouched - only the pure 2-column fallback got smarter.
+- **Tooltips refresh on an in-place `reloadModTemplate`**: the reload reuses a control when its type, name, text and value match (the anti-flicker reconcile), but a tooltip was bound only when the control was first created - so a reload that changed *only* the tooltip kept showing the old one. A control whose tooltip changed is now recreated in place (fresh tooltip, same frame, same spot), while an unchanged one is still reused, so the anti-flicker path for ordinary reloads is unaffected. A mod that rebuilds its template with live tooltip content (a running status or a current value inside the tooltip) now sees it update on every reload.
+
 ### 1.6.1
 
 **New for mod authors**
