@@ -88,7 +88,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			return
 		try:
 			with open(STATE_FILE_PATH, 'rb') as stateFile:
-				self.state = jsonLoad(stateFile)
+				self.state = jsonLoad(stateFile, skipcomments=True)
 				self.state.setdefault('storage', {})
 				self.state.setdefault('collapsed', {})
 				self.state.setdefault('defaults', {})
