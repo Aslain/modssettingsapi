@@ -253,7 +253,6 @@ def jsonRemoveComments(data, strip_space=True):
 	"""
 
 	tokenizer = re.compile('"|(/\*)|(\*/)|(//)|\n|\r')
-	endSlashes = re.compile(r'(\\)*$')
 
 	inString = False
 	inMultiString = False
@@ -273,9 +272,13 @@ def jsonRemoveComments(data, strip_space=True):
 		group = match.group()
 
 		if group == '"' and not (inMultiString or inSingle):
-			escaped = endSlashes.search(data, 0, match.start())
+			j = match.start() - 1
+			backslashes = 0
+			while j >= 0 and data[j] == '\\':
+				backslashes += 1
+				j -= 1
 
-			if not inString or (escaped is None or len(escaped.group()) % 2 == 0):
+			if not inString or (backslashes % 2 == 0):
 				inString = not inString
 			index -= 1
 		elif not (inString or inMultiString or inSingle):
