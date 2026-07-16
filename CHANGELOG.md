@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 1.6.4
+
+**Fixed**
+- **The multi-column switch works even when no installed mod declares a wide layout**: the window sized itself only from the mods' own declarations (`column3` / `column4` / `multiColumnTemplate`), so a menu holding nothing but plain 2-column mods stayed pinned at 2 columns and the toolbar switch did nothing - the auto-wrap those mods rely on never got a wide window to run in. A plain mod with enough options now unlocks the width by itself (8+ rows allow up to 4 columns, 6+ rows allow 3 - the same thresholds the auto-wrap already uses), so flipping the switch spreads it as intended. Very short mods keep their compact 2-column look by design.
+
 ### 1.6.3
 
 **Fixed**

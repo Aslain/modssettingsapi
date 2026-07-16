@@ -233,6 +233,15 @@ package poliroid.gui.lobby.modsSettings
 					cc = 3;
 				if (layoutT.column4 != null)
 					cc = 4;
+				if (cc == 2)
+				{
+					var entries:int = ((t.column1 is Array) ? (t.column1 as Array).length : 0)
+						+ ((t.column2 is Array) ? (t.column2 as Array).length : 0);
+					if (entries >= 8)
+						cc = 4;
+					else if (entries >= 6)
+						cc = 3;
+				}
 				if (cc > _maxModColumns)
 					_maxModColumns = cc;
 			}
