@@ -86,6 +86,8 @@ Template basics: `modDisplayName`, `column1` / `column2`, `enabled`, `settingsVe
 | 1.6.0 | Template keys `column3` / `column4` (ignored by older builds - no gating needed) |
 | 1.6.0 | `templates.markNew(control)` and `markNew(control, token='...')` |
 | 1.6.1 | `createRadioButtonGroup(..., inline=True)` - options in one horizontal row |
+| 1.7.0 | `setModDefaults(linkage, defaults)` - declare your factory defaults explicitly; the API stops deriving them |
+| 1.7.0 | `resetFeatureHighlights(linkage, varNames=None)` - re-light options flagged with `markNew` |
 | 1.6.1 | Behavior: images pushed via `updateImage` / `updateImageAtlas` survive layout rebuilds (the multi-column switch replays them) |
 
 Functions detectable with `hasattr()` (new *names*, e.g. `markNew`, `updateImageAtlas`)

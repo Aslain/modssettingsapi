@@ -1,5 +1,14 @@
 # CHANGELOG
 
+### 1.7.0
+
+**New for mod authors**
+- **`setModDefaults(linkage, defaults)`**: declare your mod's factory defaults explicitly, at any time, instead of letting the API derive them from the registered template. The values you pass are what the per-mod reset restores, and the API stops deriving them for that mod - a later re-registration or a `settingsVersion` bump will not overwrite them. `defaults` is a `{varName: value}` dict (including `'enabled'` for the mod's on/off switch). A partial declaration is fine: options you leave out fall back to the value in the registered template, so you only need to list the ones you want to own. Callable before or after `setModTemplate` - the result is the same either way. Feature-detect with `hasattr(g_modsSettingsApi, 'setModDefaults')`.
+- **`resetFeatureHighlights(linkage, varNames=None)`**: forget that the user has seen this mod's highlighted options, so the ones flagged with `templates.markNew` light up again - for re-announcing options for your own reasons (leaving beta, re-introducing a feature) rather than because their content changed. Pass a list of `varNames` to clear only some, omit it to clear all of the mod's highlights. Takes effect the next time the window renders the mod. The per-control alternative remains bumping `markNew`'s `token`. Feature-detect with `hasattr(g_modsSettingsApi, 'resetFeatureHighlights')`.
+
+**Fixed**
+- **A mod's factory defaults are no longer overwritten by its own re-registration**: the stored defaults were refreshed whenever a mod registered a template whose controls were unchanged but whose values differed. A mod that rebuilds its template from the user's current settings on every launch - a common pattern, and a harmless one since the menu injects saved values anyway - therefore replaced its own factory defaults with last session's values, turning the per-mod reset into "restore what I had before the restart". Defaults are now derived once, at first registration, and re-derived only on a `settingsVersion` bump (or never, once the mod declares them through `setModDefaults`).
+
 ### 1.6.4
 
 **Fixed**

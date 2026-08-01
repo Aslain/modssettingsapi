@@ -95,6 +95,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state.setdefault('seenFeatures', {})
 				self.state.setdefault('multiColumnMode', False)
 				self.state.setdefault('multiColumnTemplates', {})
+				self.state.setdefault('defaultsLocked', {})
 				self.__migrateState()
 		except Exception:
 			_logger.exception('Error occured when trying to load state!')
@@ -130,6 +131,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				self.state.get('defaults', {}).pop(linkage, None)
 				self.state.get('seenFeatures', {}).pop(linkage, None)
 				self.state.get('multiColumnTemplates', {}).pop(linkage, None)
+				self.state.get('defaultsLocked', {}).pop(linkage, None)
 				self._liveImageStore().pop(linkage, None)
 
 	def registerModTranslation(self, linkage, mapping):
@@ -203,12 +205,11 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			if not currentTemplate or self.compareTemplates(template, currentTemplate):
 				self.state['templates'][linkage] = template
 				self.state['settings'][linkage] = self.getSettingsFromTemplate(template)
-				self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
+				self._autoDefaults(linkage, template)
 				self.saveState()
 			elif self._settingsStructure(template) == self._settingsStructure(currentTemplate):
 				if jsonDump(template, True) != jsonDump(currentTemplate, True):
 					self.state['templates'][linkage] = template
-					self.state.setdefault('defaults', {})[linkage] = self.getSettingsFromTemplate(template)
 					self.saveState()
 			else:
 				_logger.warning(
@@ -229,6 +230,52 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			return self.getModSettings(linkage, self.state['templates'][linkage])
 		except Exception:
 			_logger.exception('Error occured when trying to register mod template!')
+
+	def _autoDefaults(self, linkage, template):
+		""" Derive this mod's factory defaults from its template.
+
+		Once the mod has declared defaults through setModDefaults, the declaration wins
+		PER OPTION: the declared ones are never overwritten, while options the mod left
+		out are still filled in from the template - so a partial declaration works and
+		the rest keeps a sensible fallback, whichever order the two calls happen in. """
+		derived = self.getSettingsFromTemplate(template)
+		defaults = self.state.setdefault('defaults', {})
+		if self.state.get('defaultsLocked', {}).get(linkage):
+			stored = defaults.setdefault(linkage, {})
+			for varName, value in derived.items():
+				stored.setdefault(varName, value)
+			return
+		defaults[linkage] = derived
+
+	def setModDefaults(self, linkage, defaults):
+		""" Declare this mod's factory defaults explicitly, at any time.
+
+		By default the API derives the defaults from the template registered with
+		setModTemplate. Call this to own them instead: the values passed here are what
+		the per-mod reset button restores, and the API stops deriving them - a later
+		re-registration or a settingsVersion bump will not overwrite them.
+
+		:param linkage: The mod's linkage, as used in setModTemplate
+		:param defaults: {varName: value} - the factory value of each option, and of
+			'enabled' for the mod's on/off switch if it has one. Keys unknown to the
+			template are kept but never used. A PARTIAL declaration is fine: options you
+			leave out fall back to the value in the registered template, so you only
+			need to list the ones the template cannot express.
+
+		Can be called before or after setModTemplate. Older API builds lack it, so
+		feature-detect with hasattr(g_modsSettingsApi, 'setModDefaults').
+		"""
+		try:
+			if not isinstance(defaults, dict):
+				_logger.error("[ModsSettings API] setModDefaults('%s'): defaults must be a dict, got %s",
+								linkage, type(defaults).__name__)
+				return
+			stored = self.state.setdefault('defaults', {}).setdefault(linkage, {})
+			stored.update(defaults)
+			self.state.setdefault('defaultsLocked', {})[linkage] = True
+			self.saveState()
+		except Exception:
+			_logger.exception("[ModsSettings API] setModDefaults failed for '%s'", linkage)
 
 	def getModSettings(self, linkage, template):
 		result = None
@@ -342,6 +389,39 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		for varName, token in vars.items():
 			seen[str(varName)] = token
 		self.saveState()
+
+	def resetFeatureHighlights(self, linkage, varNames=None):
+		""" Forget that the user has seen this mod's highlighted options, so the ones
+		flagged with templates.markNew light up again.
+
+		The counterpart of the window's "mark all as read": use it when a mod wants to
+		re-announce options for its own reasons (leaving beta, re-introducing a feature)
+		rather than because their content changed - the per-control alternative is to
+		bump markNew's token.
+
+		:param linkage: The mod's linkage, as used in setModTemplate
+		:param varNames: Optional list of varNames to clear; omit to clear all of this
+			mod's highlights.
+
+		Takes effect the next time the window renders this mod (reopening the menu, or
+		reloadModTemplate); an already-open window keeps showing its current state.
+		Older API builds lack it - feature-detect with
+		hasattr(g_modsSettingsApi, 'resetFeatureHighlights').
+		"""
+		try:
+			seen = self.state.get('seenFeatures', {})
+			if linkage not in seen:
+				return
+			if varNames is None:
+				del seen[linkage]
+			else:
+				for varName in varNames:
+					seen[linkage].pop(str(varName), None)
+				if not seen[linkage]:
+					del seen[linkage]
+			self.saveState()
+		except Exception:
+			_logger.exception("[ModsSettings API] resetFeatureHighlights failed for '%s'", linkage)
 		self._fireEvent('onMarkAllFeaturesSeen', linkage)
 
 	def getWindowScrollPosition(self):
