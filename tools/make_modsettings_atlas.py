@@ -73,6 +73,7 @@ FFDec (only for .swf input): https://github.com/jindrapetrik/jpexs-decompiler  (
 """
 import argparse
 import glob
+import json
 import math
 import os
 import re
@@ -87,11 +88,30 @@ except ImportError:
     sys.exit("This tool needs Pillow. Install it with:\n    python -m pip install Pillow")
 
 _IMG_EXT = ('.png', '.gif', '.bmp', '.jpg', '.jpeg', '.webp', '.tga')
+# Sheets wider/taller than this are risky: it is the texture size older GPUs are guaranteed to
+# take, and anything above may be refused or silently downscaled by the driver.
+TEXTURE_SIZE_WARN = 2048
 _FFDEC_GUESSES = (
     r'C:\Program Files (x86)\FFDec\ffdec-cli.exe',
     r'C:\Program Files\FFDec\ffdec-cli.exe',
     r'C:\Program Files (x86)\JPEXS\ffdec-cli.exe',
 )
+
+
+def _suggestColumns(count, fw, fh):
+    """ Column count whose sheet fits within TEXTURE_SIZE_WARN on both sides, the squarest
+    one available. Returns (columns, width, height) or None when no split fits - which means
+    the cells themselves are too big and have to shrink. """
+    best = None
+    for cols in range(1, count + 1):
+        rows = int(math.ceil(count / float(cols)))
+        w, h = cols * fw, rows * fh
+        if w > TEXTURE_SIZE_WARN or h > TEXTURE_SIZE_WARN:
+            continue
+        ratio = max(w, h) / float(min(w, h))
+        if best is None or ratio < best[0]:
+            best = (ratio, cols, w, h)
+    return (best[1], best[2], best[3]) if best else None
 
 
 def _natural_key(name):
@@ -260,26 +280,57 @@ def main():
     atlas.save(out, 'PNG')
 
     loop = not args.no_loop
-    params = ("{{'source': <same path as source>, 'frameWidth': {fw}, 'frameHeight': {fh}, "
+    # The in-game path is the mods/ path the author ships the PNG to, which this tool cannot
+    # know - so suggest one built from the file name. It stays a valid Python string either
+    # way, so the printed block can be pasted as-is and only the folder swapped.
+    gamePath = 'mods/configs/<You>/<yourmod>/%s' % os.path.basename(out)
+    params = ("{{'source': '{src}', 'frameWidth': {fw}, 'frameHeight': {fh}, "
               "'columns': {cols}, 'count': {count}, 'fps': {fps}, 'loop': {loop}}}").format(
-                  fw=fw, fh=fh, cols=cols, count=count, fps=args.fps, loop=loop)
+                  src=gamePath, fw=fw, fh=fh, cols=cols, count=count, fps=args.fps, loop=loop)
+
+    sheetW, sheetH = cols * fw, rows * fh
 
     print("")
     print("  Atlas written: %s" % os.path.abspath(out))
     print("  Sheet size   : %d x %d px   (%d cols x %d rows, %d frames)" % (
-        cols * fw, rows * fh, cols, rows, count))
+        sheetW, sheetH, cols, rows, count))
     print("  Cell size    : %d x %d px" % (fw, fh))
     if upscaled:
         print("  WARNING: some frames were smaller than the cell and got UPSCALED - they may look soft.")
+    if sheetW > TEXTURE_SIZE_WARN or sheetH > TEXTURE_SIZE_WARN:
+        print("  WARNING: the sheet is larger than %dpx on one side - some GPUs refuse or downscale" % TEXTURE_SIZE_WARN)
+        print("           such a texture, and it costs ~%.1f MB of memory. Reduce the cell size with" % (
+            sheetW * sheetH * 4 / 1048576.0))
+        print("           --fw/--fh, drop frames with --range, or try a different -c (columns).")
+        best = _suggestColumns(count, fw, fh)
+        if best:
+            print("           Best fit for these cells: -c %d  (%d x %d px)" % best)
+        else:
+            print("           No column count fits both sides at these cell dimensions - shrink the cells.")
     print("")
-    print("  Paste this atlas= into your createImage call:")
+    print("  Paste this atlas= into your createImage call (fix the mods/ path to where you ship the PNG):")
     print("  atlas=%s" % params)
     print("")
 
+    # Companion atlas.json, written next to the sheet in the exact shape a folder-based
+    # animated icon expects (image + grid). Export straight into the icon folder - e.g.
+    # -o "mods/configs/Aslain/customsixthsense/animated/My Icon/atlas.png" - and the pair
+    # is ready to ship; 'image' carries the real PNG name, so a different -o still matches.
     try:
-        with open(os.path.splitext(out)[0] + '_atlas.txt', 'w') as fh_:
-            fh_.write("frameWidth=%d\nframeHeight=%d\ncolumns=%d\ncount=%d\nfps=%d\nloop=%s\n" % (
-                fw, fh, cols, count, args.fps, loop))
+        jsonPath = os.path.join(os.path.dirname(os.path.abspath(out)), 'atlas.json')
+        with open(jsonPath, 'w') as fh_:
+            json.dump({
+                'image': os.path.basename(out),
+                'frameWidth': fw,
+                'frameHeight': fh,
+                'columns': cols,
+                'count': count,
+                'fps': float(args.fps),
+                'loop': loop,
+            }, fh_, indent=2, sort_keys=False)
+        print("  Also wrote  : %s" % jsonPath)
+        print("                (animated-icon metadata - keep it in the same folder as the PNG)")
+        print("")
     except Exception:
         pass
 
