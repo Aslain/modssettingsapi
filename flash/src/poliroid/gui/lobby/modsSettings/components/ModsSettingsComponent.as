@@ -1060,6 +1060,25 @@ package poliroid.gui.lobby.modsSettings.components
 			_resetButton.buttonMode = true;
 			_resetButton.useHandCursor = true;
 
+			positionResetButton();
+
+			if (_fieldSet != null)
+				_resetColor = _fieldSet.textField.textColor;
+
+			_resetButton.addEventListener(MouseEvent.CLICK, handleResetClick);
+			_resetButton.addEventListener(MouseEvent.ROLL_OVER, onResetOver);
+			_resetButton.addEventListener(MouseEvent.ROLL_OUT, onResetOut);
+
+			addChild(_resetButton);
+
+			drawResetIcon(_resetColor);
+		}
+
+		private function positionResetButton():void
+		{
+			if (_resetButton == null)
+				return;
+
 			if (_stateSwitcher != null)
 			{
 				var sw:Number = (_stateSwitcher.width > 0) ? _stateSwitcher.width : RESET_SIZE;
@@ -1073,17 +1092,6 @@ package poliroid.gui.lobby.modsSettings.components
 				_resetButton.x = (Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET) + (slotW - RESET_SIZE) / 2;
 				_resetButton.y = 16;
 			}
-
-			if (_fieldSet != null)
-				_resetColor = _fieldSet.textField.textColor;
-
-			_resetButton.addEventListener(MouseEvent.CLICK, handleResetClick);
-			_resetButton.addEventListener(MouseEvent.ROLL_OVER, onResetOver);
-			_resetButton.addEventListener(MouseEvent.ROLL_OUT, onResetOut);
-
-			addChild(_resetButton);
-
-			drawResetIcon(_resetColor);
 		}
 
 		private function drawResetIcon(color:uint):void
@@ -1437,6 +1445,8 @@ package poliroid.gui.lobby.modsSettings.components
 			}
 			if (_stateSwitcher != null)
 				_stateSwitcher.x = Constants.MOD_COMPONENT_WIDTH - SWITCHER_RIGHT_OFFSET;
+
+			positionResetButton();
 
 			updateComponentsState();
 			refreshNewMarkers();
