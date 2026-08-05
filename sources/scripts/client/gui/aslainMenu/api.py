@@ -40,6 +40,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self._warnedLegacyLiveMode = set()
 		self._modTranslations = {}
 		self._liveImages = {}
+		self._modsListEntryAdded = False
 		self.hotkeys = HotkeysController(self)
 
 		self.onWindowOpened = Event.Event()
@@ -61,13 +62,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		self.loadSettings()
 		self.loadState()
 
-		g_modsListApi.addModification(
-			id=MOD_ID, name=self.userSettings.get('modsListApiName') or l10n('name'),
-			description=self.userSettings.get('modsListApiDescription') or l10n('description'),
-			icon=self.userSettings.get('modsListApiIcon') or MOD_ICON,
-			enabled=True, login=True, lobby=True,
-			callback=functools.partial(loadView, self)
-		)
+		self._ensureModsListEntry()
+		self._scheduleEmptyEntryCleanup()
 
 		manager = getDependencyManager()
 		if manager is not None:
@@ -197,6 +193,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None, multiColumnTemplate=None):
 		try:
 			self.activeMods.add(linkage)
+			self._ensureModsListEntry()
 			currentTemplate = self.state['templates'].get(linkage)
 			if not currentTemplate:
 				newVars = self._collectNewFeatureVars(template)
@@ -230,6 +227,81 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			return self.getModSettings(linkage, self.state['templates'][linkage])
 		except Exception:
 			_logger.exception('Error occured when trying to register mod template!')
+
+	def _ensureModsListEntry(self):
+		""" Put the menu's entry in the mods list, once, when a mod first registers a template.
+
+		Registering it in __init__ meant the icon was always there, even when nothing ever
+		registered - a player running only izeberg-API mods (no bridge) opened it to an empty
+		window. Tying it to the first setModTemplate means the entry appears exactly when there
+		is something to show; the mods list refreshes itself, so a mod registering later (on
+		the lobby) still gets in. Defensive: a failure here must never break registration. """
+		if getattr(self, '_modsListEntryAdded', False):
+			return
+		try:
+			g_modsListApi.addModification(
+				id=MOD_ID, name=self.userSettings.get('modsListApiName') or l10n('name'),
+				description=self.userSettings.get('modsListApiDescription') or l10n('description'),
+				icon=self.userSettings.get('modsListApiIcon') or MOD_ICON,
+				enabled=True, login=True, lobby=True,
+				callback=functools.partial(loadView, self)
+			)
+			self._modsListEntryAdded = True
+		except Exception:
+			_logger.exception('[ModsSettings API] Failed to add the mods list entry')
+
+	def _scheduleEmptyEntryCleanup(self):
+		""" Arrange the checks that settle the mods list entry.
+
+		Two rounds, because the list is reachable from the login screen already: the startup
+		one covers mods that register on import (all of them by then), so the entry is right
+		before the player can even open the list; the garage one covers mods that only register
+		once the lobby is up. """
+		try:
+			for delay in ENTRY_SETTLE_DELAYS:
+				BigWorld.callback(delay, self._settleModsListEntry)
+		except Exception:
+			_logger.exception('[ModsSettings API] Failed to schedule the startup entry check')
+		try:
+			from PlayerEvents import g_playerEvents
+			g_playerEvents.onAccountShowGUI += self.__onAccountShowGUI
+		except Exception:
+			_logger.exception('[ModsSettings API] Failed to hook the garage event')
+
+	def __onAccountShowGUI(self, ctx=None):
+		try:
+			from PlayerEvents import g_playerEvents
+			g_playerEvents.onAccountShowGUI -= self.__onAccountShowGUI
+		except Exception:
+			pass
+		try:
+			for delay in ENTRY_SETTLE_DELAYS:
+				BigWorld.callback(delay, self._settleModsListEntry)
+		except Exception:
+			_logger.exception('[ModsSettings API] Failed to schedule the mods list entry check')
+
+	def _settleModsListEntry(self):
+		""" Settle our mods list entry once the garage is up and every mod has had its chance
+		to register. Runs twice (ENTRY_SETTLE_DELAYS) so a late arrival is caught as well;
+		the second pass is a no-op whenever the first already got it right.
+
+		No mod registered - drop the entry, so a player running only mods that use another
+		settings menu does not get an empty window of ours (a mod registering later puts it
+		back through _ensureModsListEntry).
+
+		Some did register - claim the entry again. addModification overwrites an entry that
+		already uses this id, so another mod registering under it after us would otherwise
+		leave the player with its name and icon opening our menu. """
+		try:
+			if not self.activeMods:
+				if getattr(self, '_modsListEntryAdded', False):
+					g_modsListApi.removeModification(MOD_ID)
+					self._modsListEntryAdded = False
+				return
+			self._modsListEntryAdded = False
+			self._ensureModsListEntry()
+		except Exception:
+			_logger.exception('[ModsSettings API] Failed to settle the mods list entry')
 
 	def _autoDefaults(self, linkage, template):
 		""" Derive this mod's factory defaults from its template.

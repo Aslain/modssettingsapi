@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### 1.7.1
+
+**Improved**
+- **No empty menu when nothing uses it**: the mods-list entry was always added, whether or not any mod ended up using the menu (inherited from the original izeberg API), so a player running only mods that keep their options in a different settings menu found an entry that opened an empty window. The entry now appears only while at least one mod has registered its settings here, and it shows up as soon as one does - both on the login screen and in the garage.
+- **The entry keeps its own name and icon**: another menu registering under the same mods-list id could take the entry over, leaving its label and icon on the button that opens this menu. The entry now keeps its own identity, so each menu appears under its own name.
+
 ### 1.7.0
 
 **New for mod authors**

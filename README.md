@@ -2,7 +2,7 @@
 
 Aslain's ModsSettings API (Aslain Menu) - the in-garage settings menu for World of Tanks mods, based on [izeberg's modsSettingsApi](https://github.com/izeberg/modssettingsapi). It keeps the same template format and API, and adds features for navigating long mod lists and a richer settings UI.
 
-It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features. In the hangar's mods list the menu appears as **"Mods settings+"** (localized), with a "+" badge on its icon.
+It ships under its own package `gui.aslainMenu` with its own `aslainmenu.dat`, so it runs independently of izeberg and never touches izeberg's `modsettings.dat`. Mods import `gui.aslainMenu` (with a fallback to izeberg) to use this menu and its new features. In the hangar's mods list the menu appears as **"Mods settings+"** (localized), with a "+" badge on its icon - and only while at least one installed mod actually registers its settings here, so it never shows up as an empty window.
 
 ## Enhancements over the original
 
