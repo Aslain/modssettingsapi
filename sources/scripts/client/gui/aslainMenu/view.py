@@ -1,7 +1,12 @@
 import json
 import logging
 
-from gui.Scaleform.framework import ScopeTemplates, ViewSettings, g_entitiesFactories
+from gui.Scaleform.framework import ViewSettings
+try:
+	from gui.Scaleform.framework import g_entitiesFactories, ScopeTemplates
+except ImportError:
+	from gui.Scaleform.framework.ScopeControllers import ScopeTemplates
+	g_entitiesFactories = None
 from gui.Scaleform.framework.entities.View import View
 from gui.Scaleform.framework.managers.loaders import SFViewLoadParams
 from gui.shared.personality import ServicesLocator
@@ -9,6 +14,7 @@ from gui.shared.view_helpers.blur_manager import CachedBlur
 from gui.shared.utils.functions import makeTooltip
 from frameworks.wulf import WindowLayer
 from helpers import dependency
+from skeletons.gui.impl import IGuiLoader
 
 from ._constants import *
 from .l10n import l10n
@@ -324,5 +330,13 @@ class ModsSettingsApiWindow(ModsSettingsApiWindowMeta):
 def getViewSettings():
 	return (ViewSettings(VIEW_ALIAS, ModsSettingsApiWindow, VIEW_SWF, WindowLayer.OVERLAY, None, ScopeTemplates.GLOBAL_SCOPE), )
 
+def _entitiesFactories():
+	if g_entitiesFactories is not None:
+		return g_entitiesFactories
+	factory = dependency.instance(IGuiLoader).entitiesFactory
+	if callable(factory) and not hasattr(factory, 'addSettings'):
+		factory = factory()
+	return factory
+
 for viewSettings in getViewSettings():
-	g_entitiesFactories.addSettings(viewSettings)
+	_entitiesFactories().addSettings(viewSettings)

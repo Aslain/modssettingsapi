@@ -8,8 +8,8 @@ MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 ENTRY_SETTLE_DELAYS = (5.0, 20.0)
 
-VERSION = '1.7.1'
-VERSION_TUPLE = (1, 7, 1)
+VERSION = '1.7.2'
+VERSION_TUPLE = (1, 7, 2)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
 
