@@ -756,7 +756,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			except Exception:
 				_logger.exception("[ModsSettings API] Failed to reset hotkey '%s' of '%s'", varName, linkage)
 
-		_logger.debug("[ModsSettings API] Reset '%s' to defaults: %d control(s), %d hotkey(s)",
+		_logger.info("[ModsSettings API] Reset '%s' to defaults: %d control(s), %d hotkey(s)",
 			linkage, len(defaults), len(hotkeyVars))
 
 		self._fireEvent('onResetMod', linkage, dict(defaults))
