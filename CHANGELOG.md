@@ -1,5 +1,12 @@
 # CHANGELOG
 
+### 1.7.2
+
+**Improved**
+- **Ready for World of Tanks 2.4.1.0**: that client moved the registry of its Scaleform windows, which stopped the previous build from loading there at all. The API now loads on both clients - the same package serves 2.4.0.x and 2.4.1.0.
+- **Mods list on 2.4.1.0**: the menu is still opened from its mods-list entry. On the 2.4.1.0 client that takes ModsList API 1.8.0, the release made for that client; 1.7.9 stays the one for 2.4.0.x.
+- **The reset line is back in the game log**: World of Tanks 2.4 drops log records below the info level, which hid the line written when a mod is reset to its defaults. The line is now written at info level.
+
 ### 1.7.1
 
 **Improved**
