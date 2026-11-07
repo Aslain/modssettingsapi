@@ -5,6 +5,7 @@ import copy
 import logging
 
 import BigWorld
+import base64
 import cPickle
 import Event
 
@@ -365,18 +366,36 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		if buttonHandler is not None:
 			self.onButtonClicked += buttonHandler
 
+	_MOD_DATA_FORMAT = 'pickle2-base64'
+
 	def getModData(self, linkage, version, default):
 		storage = self.state['storage']
-		if linkage not in storage or storage[linkage]['version'] != version:
+		record = storage.get(linkage)
+		if isinstance(record, dict) and record.get('version') == version:
+			try:
+				return self._unpackModData(record)
+			except Exception:
+				if 'data' in record:
+					_logger.warning('%s: its saved data could not be read, the default is used', linkage)
+		try:
 			self.saveModData(linkage, version, default)
-		return cPickle.loads(storage[linkage]['data'])
+			return self._unpackModData(storage[linkage])
+		except Exception:
+			_logger.exception('%s: Failed to keep its data', linkage)
+			return default
 
 	def saveModData(self, linkage, version, data):
 		self.state['storage'][linkage] = {
 			'version': version,
-			'data': cPickle.dumps(data, -1),
+			'format': self._MOD_DATA_FORMAT,
+			'data': base64.b64encode(cPickle.dumps(data, 2)),
 		}
 		self.saveState()
+
+	def _unpackModData(self, record):
+		if record.get('format') == self._MOD_DATA_FORMAT:
+			return cPickle.loads(base64.b64decode(record['data']))
+		return cPickle.loads(record['data'])
 
 	def getUserColorPresets(self):
 		""" User palette for the color picker: a list of exactly 48 slots (up to four
