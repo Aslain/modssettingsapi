@@ -480,6 +480,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		for varName, token in vars.items():
 			seen[str(varName)] = token
 		self.saveState()
+		self._fireEvent('onMarkAllFeaturesSeen', linkage)
 
 	def resetFeatureHighlights(self, linkage, varNames=None):
 		""" Forget that the user has seen this mod's highlighted options, so the ones
@@ -513,7 +514,6 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			self.saveState()
 		except Exception:
 			_logger.exception("[ModsSettings API] resetFeatureHighlights failed for '%s'", linkage)
-		self._fireEvent('onMarkAllFeaturesSeen', linkage)
 
 	def getWindowScrollPosition(self):
 		""" Scroll memory is intentionally session-only: reopening the window mid-session

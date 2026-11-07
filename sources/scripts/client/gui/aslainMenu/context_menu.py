@@ -146,13 +146,27 @@ class NewFeatureContextMenuHandler(AbstractContextMenuHandler):
 		self._linkage = None
 
 	def markAllRead(self):
-		if self._linkage and hasattr(self.api, 'markAllFeaturesSeen'):
-			self.api.markAllFeaturesSeen(self._linkage)
+		if not self._linkage:
+			return
+		window = _openWindow()
+		api = getattr(window, 'api', None) or self.api
+		if hasattr(api, 'markAllFeaturesSeen'):
+			api.markAllFeaturesSeen(self._linkage)
+		if window is not None and not hasattr(api, 'onMarkAllFeaturesSeen'):
+			window.as_markAllFeaturesSeenS(self._linkage)
 
 	def _generateOptions(self, ctx=None):
 		return [
 			self._makeItem(NEW_FEATURE_OPTIONS.MARK_ALL_READ, l10n('newfeature/menu/markallread')),
 		]
+
+def _openWindow():
+	try:
+		from gui.Scaleform.framework.entities.View import ViewKey
+		from gui.shared.personality import ServicesLocator
+		return ServicesLocator.appLoader.getDefLobbyApp().containerManager.getViewByKey(ViewKey(VIEW_ALIAS))
+	except Exception:
+		return None
 
 def getContextMenuHandlers():
 	return (
