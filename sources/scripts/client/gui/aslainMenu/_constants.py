@@ -8,10 +8,13 @@ MOD_ID = 'aslainMenu'
 MOD_ICON = 'gui/maps/icons/aslainMenu/icon.png'
 ENTRY_SETTLE_DELAYS = (5.0, 20.0)
 
-VERSION = '1.7.4'
+VERSION = '1.7.5'
 VERSION_TUPLE = (1, 7, 2)
 
 USER_SETTINGS_PATH = os.path.join('mods', 'configs', 'aslainMenu.json')
+
+ABSENT_MOD_MAX_BYTES = 256 * 1024
+ABSENT_MODS_MAX_BYTES = 2 * 1024 * 1024
 
 try:
 	_path_getter = BigWorld.wg_getPreferencesFilePath

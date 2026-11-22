@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import functools
 import copy
 import logging
@@ -120,16 +121,63 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		except Exception:
 			_logger.exception('Error occured when trying to save state!')
 
+	_PER_MOD_STATE = ('templates', 'settings', 'defaults', 'seenFeatures', 'multiColumnTemplates',
+		'defaultsLocked', 'lastSeen')
+
 	def clearState(self):
+		for linkage in self.activeMods:
+			self._notePresent(linkage)
 		for linkage in self.state['templates'].keys():
 			if linkage not in self.activeMods:
-				del self.state['templates'][linkage]
-				del self.state['settings'][linkage]
-				self.state.get('defaults', {}).pop(linkage, None)
-				self.state.get('seenFeatures', {}).pop(linkage, None)
-				self.state.get('multiColumnTemplates', {}).pop(linkage, None)
-				self.state.get('defaultsLocked', {}).pop(linkage, None)
 				self._liveImageStore().pop(linkage, None)
+		self._trimAbsentMods()
+
+	def _notePresent(self, linkage):
+		try:
+			self.state.setdefault('lastSeen', {})[linkage] = int(time.time() // 86400)
+		except Exception:
+			_logger.exception("[ModsSettings API] Could not note '%s' as present", linkage)
+
+	def _forgetMod(self, linkage):
+		for key in self._PER_MOD_STATE:
+			block = self.state.get(key)
+			if isinstance(block, dict):
+				block.pop(linkage, None)
+		self._liveImageStore().pop(linkage, None)
+
+	def _trimAbsentMods(self):
+		try:
+			sizes = {}
+			for linkage in self.state['templates'].keys():
+				if linkage in self.activeMods:
+					continue
+				size = 0
+				for key in self._PER_MOD_STATE:
+					block = self.state.get(key)
+					if isinstance(block, dict) and linkage in block:
+						size += len(jsonDump(block[linkage]))
+				sizes[linkage] = size
+			dropped = []
+			for linkage, size in list(sizes.items()):
+				if size > ABSENT_MOD_MAX_BYTES:
+					dropped.append((linkage, size))
+					del sizes[linkage]
+			total = sum(sizes.values())
+			if total > ABSENT_MODS_MAX_BYTES:
+				lastSeen = self.state.get('lastSeen') or {}
+				for linkage in sorted(sizes, key=lambda name: (lastSeen.get(name) or 0, name)):
+					if total <= ABSENT_MODS_MAX_BYTES:
+						break
+					dropped.append((linkage, sizes[linkage]))
+					total -= sizes[linkage]
+			for linkage, size in dropped:
+				self._forgetMod(linkage)
+				_logger.warning("[ModsSettings API] Dropped the saved settings of '%s', a mod not loaded in this "
+					"client (%d bytes, over the size bound for absent mods)", linkage, size)
+			if dropped:
+				self.saveState()
+		except Exception:
+			_logger.exception('[ModsSettings API] Could not check the size of the absent mods')
 
 	def registerModTranslation(self, linkage, mapping):
 		""" Register a display-only label translation for one mod, applied to the copy
@@ -194,6 +242,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def setModTemplate(self, linkage, template, callback, buttonHandler=None, multiColumnTemplate=None):
 		try:
 			self.activeMods.add(linkage)
+			self._notePresent(linkage)
 			self._ensureModsListEntry()
 			currentTemplate = self.state['templates'].get(linkage)
 			if not currentTemplate:
@@ -362,6 +411,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def registerCallback(self, linkage, callback, buttonHandler=None):
 		self.activeMods.add(linkage)
+		self._notePresent(linkage)
 		self.onSettingsChanged += callback
 		if buttonHandler is not None:
 			self.onButtonClicked += buttonHandler
@@ -888,7 +938,8 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def generateSettingsData(self):
 		templates = []
-		linkages = sorted(self.state['templates'], key=self._modSortKey)
+		linkages = sorted((linkage for linkage in self.state['templates'] if linkage in self.activeMods),
+			key=self._modSortKey)
 		for linkage in linkages:
 			template = copy.deepcopy(self.state['templates'][linkage])
 			settings = self.getModSettings(linkage, template)

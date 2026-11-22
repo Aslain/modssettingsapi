@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 1.7.5
+
+**Fixed**
+- **Settings of mods missing from a client are kept**: opening the settings window in a game client with fewer mods (another client, or after removing some mods for a while) deleted the saved settings of the mods missing there, so they came back later on their default values. Their settings are now kept and return together with the mods.
+
 ### 1.7.4
 
 **Fixed**
