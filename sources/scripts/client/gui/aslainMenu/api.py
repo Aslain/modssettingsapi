@@ -109,6 +109,13 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def __save(self):
 		self.__saveCallbackID = None
+		waiting = getattr(self, '_modSaveCallbackID', None)
+		if waiting is not None:
+			self._modSaveCallbackID = None
+			try:
+				BigWorld.cancelCallback(waiting)
+			except Exception:
+				pass
 		try:
 			stateDir = os.path.dirname(STATE_FILE_PATH)
 			if not os.path.isdir(stateDir):
@@ -120,6 +127,22 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 				stateFile.write(jsonDump(self.state, True))
 		except Exception:
 			_logger.exception('Error occured when trying to save state!')
+
+	def _saveModChange(self):
+		if getattr(self, '_ModsSettingsApi__saveCallbackID', None) is not None \
+				or getattr(self, '_modSaveCallbackID', None) is not None:
+			return
+		wait = getattr(self, '_lastModSave', 0.0) + MOD_SAVE_INTERVAL - time.time()
+		if 0 < wait <= MOD_SAVE_INTERVAL:
+			self._modSaveCallbackID = BigWorld.callback(wait, self.__saveModChange)
+		else:
+			self.__saveModChange()
+
+	def __saveModChange(self):
+		self._modSaveCallbackID = None
+		self._lastModSave = time.time()
+		if getattr(self, '_ModsSettingsApi__saveCallbackID', None) is None:
+			self.__saveCallbackID = BigWorld.callback(0.0, self.__save)
 
 	_PER_MOD_STATE = ('templates', 'settings', 'defaults', 'seenFeatures', 'multiColumnTemplates',
 		'defaultsLocked', 'lastSeen')
@@ -647,6 +670,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 
 	def updateModSettings(self, linkage, newSettings):
 		self.state['settings'][linkage] = newSettings
+		self._saveModChange()
 		self.onSettingsChanged(linkage, newSettings)
 
 	def setModCollapsed(self, linkage, collapsed):
