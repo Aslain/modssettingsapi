@@ -3,6 +3,7 @@ import re
 import time
 import functools
 import copy
+import json
 import logging
 
 import BigWorld
@@ -123,8 +124,12 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 		except Exception:
 			_logger.exception('Error occured when trying to recreate folder structure for state file!')
 		try:
+			try:
+				payload = json.dumps(self.state, separators=(',', ':'))
+			except Exception:
+				payload = jsonDump(self.state, True)
 			with open(STATE_FILE_PATH, 'wb') as stateFile:
-				stateFile.write(jsonDump(self.state, True))
+				stateFile.write(payload)
 		except Exception:
 			_logger.exception('Error occured when trying to save state!')
 
