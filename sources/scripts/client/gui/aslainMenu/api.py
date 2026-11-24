@@ -2,6 +2,7 @@ import os
 import re
 import time
 import functools
+import collections
 import copy
 import json
 import logging
@@ -22,6 +23,13 @@ from .skeleton import IModsSettingsApiInternal
 from .utils import deprecated, getDependencyManager, jsonLoad, jsonDump
 
 _logger = logging.getLogger(__name__)
+
+def _jsonFallback(value):
+	if isinstance(value, collections.Mapping):
+		return dict((str(key), item) for key, item in value.iteritems())
+	if isinstance(value, collections.Iterable) and not isinstance(value, basestring):
+		return list(value)
+	raise TypeError('%r is not JSON serializable' % (value,))
 
 class ModsSettingsApi(IModsSettingsApiInternal):
 
@@ -125,8 +133,12 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			_logger.exception('Error occured when trying to recreate folder structure for state file!')
 		try:
 			try:
-				payload = json.dumps(self.state, separators=(',', ':'))
-			except Exception:
+				payload = json.dumps(self.state, separators=(',', ':'), default=_jsonFallback)
+			except Exception as error:
+				if not getattr(self, '_quickSaveRefused', False):
+					self._quickSaveRefused = True
+					_logger.warning('[ModsSettings API] the quick save cannot write the state (%s: %s), saving the slow way',
+						type(error).__name__, error)
 				payload = jsonDump(self.state, True)
 			with open(STATE_FILE_PATH, 'wb') as stateFile:
 				stateFile.write(payload)
