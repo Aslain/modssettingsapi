@@ -1,5 +1,11 @@
 # CHANGELOG
 
+### 1.7.6
+
+**Fixed**
+- **A setting a mod changes by itself is saved at once**: a setting a mod changed by itself, from its hotkey for instance, was saved only with the next save made for another reason, such as closing the settings window, so closing the game before that lost it. Such a change is now saved right away.
+- **Faster saving**: saving the settings took about 30 ms with a full modpack, which showed as a short stutter. It now takes about 1 ms.
+
 ### 1.7.5
 
 **Fixed**
