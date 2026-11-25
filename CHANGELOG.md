@@ -1,5 +1,10 @@
 # CHANGELOG
 
+### 1.7.7
+
+**Fixed**
+- **Settings of other mods are no longer lost**: since 1.7.6, a settings change made through a mod that keeps its own settings window and file, such as CHAMPi's mods, could overwrite this API's settings file, so after the next game start the other mods were back on their default settings. Such a mod saves only to its own file again.
+
 ### 1.7.6
 
 **Fixed**
