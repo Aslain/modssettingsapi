@@ -113,7 +113,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 			self.state['storage'] = data
 
 	def saveState(self):
-		if self.__saveCallbackID is None:
+		if getattr(self, '_ModsSettingsApi__saveCallbackID', None) is None:
 			self.__saveCallbackID = BigWorld.callback(0.0, self.__save)
 
 	def __save(self):
@@ -158,8 +158,7 @@ class ModsSettingsApi(IModsSettingsApiInternal):
 	def __saveModChange(self):
 		self._modSaveCallbackID = None
 		self._lastModSave = time.time()
-		if getattr(self, '_ModsSettingsApi__saveCallbackID', None) is None:
-			self.__saveCallbackID = BigWorld.callback(0.0, self.__save)
+		self.saveState()
 
 	_PER_MOD_STATE = ('templates', 'settings', 'defaults', 'seenFeatures', 'multiColumnTemplates',
 		'defaultsLocked', 'lastSeen')
